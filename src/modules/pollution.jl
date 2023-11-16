@@ -21,13 +21,13 @@ A struct containing GRIB data on air pollution.
     latitude. For example, it could be the PM2.5 concentration.
 """
 struct GribData
-    year::Integer
+    year::Union{Nothing, Integer}
     month::Union{Nothing, Integer}
     day::Union{Nothing, Integer}
-    projection::String
-    longitudes::Array{Float64, 1}
-    latitudes::Array{Float64, 1}
-    values::Array{Float64, 1}
+    projection::Union{Nothing, String}
+    longitudes::Union{Nothing, Array{Float64, 1}}
+    latitudes::Union{Nothing, Array{Float64, 1}}
+    values::Union{Nothing, Array{Float64, 1}}
 end
 
 
@@ -37,11 +37,15 @@ end
 Load a *.grib2 file and almalgamate the data by taking the mean.
 
 # Arguments
-- `filename::AbstractChar`: the .grib2 file to open.
+- `filename::String`: the .grib2 file to open.
 
 """
-function load_grib_file(filename::AbstractChar)
+function load_grib_file(filename::String)
     df = DataFrame()
+    year = 0
+    month = 0
+    day = 0
+    projection = ""
     GribFile(filename) do f
         index = 1
         for record in f
@@ -51,10 +55,9 @@ function load_grib_file(filename::AbstractChar)
             year = record["year"]
             month = record["month"]
             day = record["day"]
-            projection = record["gridType"]
+            projection = String(record["gridType"])
         end
     end
-
     grib_data = get_grib_data_average(df, year, month, day, projection)
     return grib_data
 end
@@ -66,22 +69,24 @@ end
 Load multiple *.grib2 files and almalgamate the data by taking the mean.
 
 # Arguments
-- `folder::AbstractChar`: the folder containing the .grib2 files to open.
+- `folder::String`: the folder containing the .grib2 files to open.
 
 """
-function load_grib_files(folder::AbstractChar)
+function load_grib_files(folder::String)
     index = 1
     df = DataFrame()
+    grib_data = GribData(nothing, nothing, nothing, nothing, nothing, nothing, nothing)
     for filename in readdir(folder)
         extension = filename[findlast(isequal('.'), filename):end]
         if extension == ".grib2"
-            grib_data = load_grib_file(filename)
+            grib_data = load_grib_file(string(folder, "/", filename))
             df = add_record_to_df!(df, grib_data.longitudes, grib_data.latitudes,
                 grib_data.values, index)
             index += 1
         end
     end
-    final_grib_data = get_grib_data_average(df, year, month, day, projection)
+    final_grib_data = get_grib_data_average(df, grib_data.year, grib_data.month, nothing,
+        grib_data.projection)
     return final_grib_data
 end
 
@@ -96,7 +101,7 @@ Add a new column to the grib data frame.
 - `df::DataFrame`: a data frame with the following columns:
     `longitudes`: Float64, a list of longitude values.
     `latitudes`: Float64, a list of latitude values.
-    `value_$index`: Float64, a list of the values of interest at a specified longitude and latitude.
+    `value_{index}`: Float64, a list of the values of interest at a specified longitude and latitude.
         For example, it could be the PM2.5 concentration. Each value column corresponds to either
         a record in the original grib file, or a file in a folder.
 - `longitudes::Array{Float64, 1}`: a list of longitude values.
@@ -131,7 +136,7 @@ Find the mean of all the `value_*` columns, and return a `GribData` object.
 - `df::DataFrame`: a data frame with the following columns:
     `longitudes`: Float64, a list of longitude values.
     `latitudes`: Float64, a list of latitude values.
-    `value_$index`: Float64, a list of the values of interest at a specified longitude and latitude.
+    `value_{index}`: Float64, a list of the values of interest at a specified longitude and latitude.
         For example, it could be the PM2.5 concentration. Each value column corresponds to either
         a record in the original grib file, or a file in a folder.
 - `year::Integer`: year the data was collected.
