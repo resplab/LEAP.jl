@@ -1,6 +1,7 @@
 using GRIB
 using DataFrames
 using Statistics
+using CSV
 
 
 """
@@ -153,4 +154,13 @@ function get_grib_data_average(df::DataFrame, year::Integer, month::Union{Nothin
         df.mean
     )
     return grib_data
+end
+
+
+function save_grib_data(grib_data::GribData, file_path::String)
+    df = DataFrame()
+    df[!, "longitudes"] = grib_data.longitudes
+    df[!, "latitudes"] = grib_data.latitudes
+    df[!, "values"] = grib_data.values
+    CSV.write(file_path, df)
 end
