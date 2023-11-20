@@ -1,18 +1,42 @@
 # better to use UInt64 but the syntax may not be intuitive to others
+
+"""
+    Agent
+
+A person in the model.
+
+# Fields
+- `sex::Bool`: Sex of person, true = male, false = female.
+- `age::Integer`: Age of person in years.
+- `cal_year::Integer`: The calendar year, e.g. 2020.
+- `cal_year_index::Integer`: TODO.
+- `alive::Bool`: Whether the person is alive, true = alive.
+- `num_antibiotic_use::Int`: TODO.
+- `has_asthma::Bool`: Whether the person has astham, true = has asthma.
+- `asthma_age::Union{Nothing, Int}`: Age at which the person was diagnosed with asthma.
+- `severity::Union{Nothing, Int}`: Asthma severity level: 1 = mild, 2 = severe, 3 = very severe.
+- `control::Union{Nothing,Vector{Float64}}`: Asthma control level: 1 = uncontrolled,
+    2 = partially controlled, 3 = fully controlled.
+- `exac_hist::Union{Nothing, Vector{Int}}`: Total number of exacerbations.
+- `exac_sev_hist::Union{Nothing,Vector{Vector{Int}}}`: Number of exacerbations by severity.
+- `total_hosp::Integer`: Total number of very severe asthma exacerbations leading to hospitalization.
+- `family_hist::Bool`: Is there a family history of asthma?
+- `asthma_status::Bool`: TODO.
+"""
 struct Agent  <: Agent_Module
-    sex::Bool # true: male
-    age::Int
-    cal_year::Int
-    cal_year_index::Int
-    alive::Bool # true: alive
-    num_antibiotic_use::Int
-    has_asthma::Bool # true: has asthma
-    asthma_age::Union{Nothing,Int} # asthma dx age
-    severity::Union{Nothing,Int} # asthma severity level: 1 (mild), 2 (severe), 3 very severe
-    control::Union{Nothing,Vector{Float64}} # asthma control level: 1 (controlled), 2 (partially controlled), 3 (fully controlled)
-    exac_hist::Union{Nothing,Vector{Int}} # total number of exacerbations
-    exac_sev_hist::Union{Nothing,Vector{Vector{Int}}} # number of exacerbations by severity
-    total_hosp::Int # total number of very severe asthma exacerbation "hospitalization" 
+    sex::Bool
+    age::Integer
+    cal_year::Integer
+    cal_year_index::Integer
+    alive::Bool
+    num_antibiotic_use::Integer
+    has_asthma::Bool
+    asthma_age::Union{Nothing, Integer}
+    severity::Union{Nothing, Integer}
+    control::Union{Nothing, Vector{Float64}}
+    exac_hist::Union{Nothing, Vector{Integer}}
+    exac_sev_hist::Union{Nothing, Vector{Vector{Integer}}}
+    total_hosp::Integer
     family_hist::Bool
     asthma_status::Bool
 end
