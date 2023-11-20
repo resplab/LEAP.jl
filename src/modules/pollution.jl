@@ -71,19 +71,33 @@ Load multiple *.grib2 files and almalgamate the data by taking the mean.
 
 # Arguments
 - `folder::String`: the folder containing the .grib2 files to open.
+- `recursive::Bool`: if true, iterate through all subdirectories and compute an
+    aggregate average. If false, only read `.grib2` files in the given directory.
 
 """
-function load_grib_files(folder::String)
+function load_grib_files(folder::String, recursive::Bool=false)
     index = 1
     df = DataFrame()
     grib_data = GribData(nothing, nothing, nothing, nothing, nothing, nothing, nothing)
-    for filename in readdir(folder)
-        extension = filename[findlast(isequal('.'), filename):end]
-        if extension == ".grib2"
-            grib_data = load_grib_file(string(folder, "/", filename))
-            df = add_record_to_df!(df, grib_data.longitudes, grib_data.latitudes,
-                grib_data.values, index)
-            index += 1
+    for item in readdir(folder, join=true)
+        if isdir(item)
+            if recursive
+                println("Reading directory ", item)
+                grib_data = load_grib_files(item)
+                df = add_record_to_df!(df, grib_data.longitudes, grib_data.latitudes,
+                    grib_data.values, index)
+                index += 1
+            end
+        else
+            println("Reading file ", item)
+            filename = item
+            extension = filename[findlast(isequal('.'), filename):end]
+            if extension == ".grib2"
+                grib_data = load_grib_file(string(filename))
+                df = add_record_to_df!(df, grib_data.longitudes, grib_data.latitudes,
+                    grib_data.values, index)
+                index += 1
+            end
         end
     end
     final_grib_data = get_grib_data_average(df, grib_data.year, grib_data.month, nothing,
