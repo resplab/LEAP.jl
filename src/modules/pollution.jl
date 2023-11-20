@@ -179,3 +179,24 @@ function save_grib_data(grib_data::GribData, file_path::String)
     df[!, "values"] = grib_data.values
     CSV.write(file_path, df)
 end
+
+
+"""
+    invert_longitude(longitude)
+
+Longitude values can be given as either + degrees East of the Prime Meridian, or as
+- degrees West of the Prime Meridian; convert between the two.
+
+# Arguments
+- `longitude::Float64`: a number in [0, 360) giving the degrees east or west of the Prime Meridian.
+
+"""
+function invert_longitude(longitude::Float64)
+    if longitude > 0
+        return longitude - 360
+    elseif longitude < 0
+        return 360 + longitude
+    else
+        return longitude
+    end
+end
