@@ -162,6 +162,16 @@ function get_grib_data_average(df::DataFrame, year::Integer, month::Union{Nothin
 end
 
 
+"""
+    save_grib_data(grib_data, file_path)
+
+Given a GribData object, save it to a *.csv file.
+
+# Arguments
+- `grib_data::GribData`: a GribData object, see [`GribData`](@ref).
+- `file_path::String`: full file name of *.csv file to save the data to.
+
+"""
 function save_grib_data(grib_data::GribData, file_path::String)
     df = DataFrame()
     df[!, "longitudes"] = grib_data.longitudes
