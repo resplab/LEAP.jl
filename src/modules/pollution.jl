@@ -49,7 +49,8 @@ function load_grib_file(filename::String)
     GribFile(filename) do f
         index = 1
         for record in f
-            df = add_record_to_df!(df, record["longitudes"], record["latitudes"],
+            longitudes = invert_longitude.(record["longitudes"])
+            df = add_record_to_df!(df, longitudes, record["latitudes"],
                 record["codedValues"], index)
             index += 1
             year = record["year"]
