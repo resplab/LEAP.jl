@@ -96,10 +96,22 @@ function set_agent!(agent::Agent, sex::Bool, age::Integer, cal_year::Integer,
 end
 
 
-function process_initial(ag::Agent,asthma_age_data)
-    if ag.age==0
+"""
+    process_initial(agent, asthma_age_data)
+
+TODO.
+
+# Arguments
+- `agent::Agent`: An agent, see [`Agent`](@ref).
+- `asthma_age_data::Array{Float64, 2}`: An array of two vectors, with the first one corresponding
+    to female and the second one to male. Each vector element represents the asthma incidence
+    probability at the specified age.
+
+"""
+function process_initial(agent::Agent, asthma_age_data::Array{Float64, 2})
+    if agent.age == 0
         return 0
     else
-        return StatsBase.sample(Weights(asthma_age_data[1:ag.age+1,Int(ag.sex)+1]))-1
+        return StatsBase.sample(Weights(asthma_age_data[1:agent.age + 1, Int(agent.sex) + 1])) - 1
     end
 end
