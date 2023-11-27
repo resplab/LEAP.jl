@@ -215,45 +215,39 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
             if cal_year == min_cal_year
                 initial_pop_index = process_initial(simulation.birth, simulation.n)
                 tmp_index = initial_pop_index[i]
-                simulation.agent = process(cal_year,tmp_cal_year_index,simulation.birth,rand(Bernoulli(simulation.birth.initial_population.prop_male[tmp_index])),
-                simulation.birth.initial_population.age[tmp_index])
-                if simulation.agent.age == 0
-                    @set! simulation.agent.num_antibiotic_use = process(simulation.agent,simulation.antibioticExposure)
-                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use
-                    @set! simulation.agent.family_hist = process(simulation.agent,simulation.familyHistory)
-                    event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist
-                else
-                    @set! simulation.agent.num_antibiotic_use = process_initial(simulation.agent,
+                simulation.agent = process_birth(cal_year, tmp_cal_year_index, simulation.birth,
+                    rand(Bernoulli(simulation.birth.initial_population.prop_male[tmp_index])),
+                    simulation.birth.initial_population.age[tmp_index],
                     simulation.antibioticExposure,
-                    cal_year-simulation.agent.age)
-                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use
-                    @set! simulation.agent.family_hist = process_initial(simulation.agent,simulation.familyHistory)
-                    event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist
-                end
+                    simulation.familyHistory
+                )
+                event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
+                    simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use
+                event_dict["family_history"][simulation.agent.cal_year_index,
+                    simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist
+
             # otherwise newborn or immigrant
             else
                 # create a new-born
                 if new_born_indicator[i]
-                    # new born
-                    simulation.agent = process(cal_year, tmp_cal_year_index, simulation.birth)
-                    @set! simulation.agent.num_antibiotic_use = process(simulation.agent,simulation.antibioticExposure)
-                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use
-                    @set! simulation.agent.family_hist = process(simulation.agent,simulation.familyHistory)
-                    event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist
+                    simulation.agent = process_birth(
+                        cal_year, tmp_cal_year_index, simulation.birth,
+                        simulation.antibioticExposure
+                    )
                 else
                     # immigrant
                     simulation.agent = process(Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrants_index[immigrant_counter]]),
                     simulation.immigration.table[tmp_cal_year_index].age[immigrants_index[immigrant_counter]],cal_year,tmp_cal_year_index,simulation.immigration)
                     @set! simulation.agent.num_antibiotic_use = process_initial(simulation.agent,
                     simulation.antibioticExposure,cal_year-simulation.agent.age)
-                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use 
                     @set! simulation.agent.family_hist = process_initial(simulation.agent,simulation.familyHistory)
-                    event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist
                     event_dict["immigration"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
                     immigrant_counter += 1
                 end
+                event_dict["antibiotic_exposure"][simulation.agent.cal_year_index, simulation.agent.age+1, simulation.agent.sex+1] += simulation.agent.num_antibiotic_use
+                event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist
             end
-            
+
             n_list[tmp_cal_year_index,simulation.agent.sex+1] +=1
 
             # if age >4, we need to generate the initial distribution of asthma related events
