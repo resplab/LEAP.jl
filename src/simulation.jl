@@ -105,8 +105,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
     end
 
     # time the performance
-    to = TimerOutput()
-    @timeit to "sleep" sleep(0.02)
+    timer_output = TimerOutput()
+    @timeit timer_output "sleep" sleep(0.02)
 
     # loop by year
     for cal_year in cal_years
@@ -115,9 +115,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
         end
 
         # time stamp
-        @timeit to "calendar year $cal_year" begin
+        @timeit time_output "calendar year $cal_year" begin
 
-        # index for cal_year    
+        # index for cal_year
         tmp_cal_year_index = cal_year - min_cal_year + 1
 
         # num of newborns and immigrants in cal_year
@@ -352,10 +352,10 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
 
 
     @set! simulation.outcomeMatrix = (; n = n_list, outcome_matrix = event_dict);
-    
+
     if verbose
         print("\n Simulation finished. Check your simulation object for results.")
-        print_timer(to::TimerOutput)
+        print_timer(timer_output::TimerOutput)
     end
 
     return simulation.outcomeMatrix;
