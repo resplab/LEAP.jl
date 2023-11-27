@@ -29,12 +29,24 @@ mutable struct Simulation <: Simulation_Module
     outcomeMatrix
 end
 
-function process(simulation::Simulation,seed=missing,until_all_die=false,verbose=true)
+
+"""
+    process(simulation, seed, until_all_die, verbose)
+
+TODO.
+
+# Arguments
+- `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
+- `seed:: Union{Missing, Float64}`: TODO.
+- `until_all_die::Bool`: TODO.
+- `verbose::Bool`: If true, print out updates during simulation. Default true.
+"""
+function process(simulation::Simulation, seed=missing, until_all_die::Bool=false, verbose::Bool=true)
     # reproducibility
     if !ismissing(seed)
         Random.seed!(seed)
     end
-    
+
     max_age = simulation.max_age
     min_cal_year = simulation.starting_calendar_year
     max_cal_year = min_cal_year + simulation.time_horizon - 1
