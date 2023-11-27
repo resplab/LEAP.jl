@@ -1,4 +1,5 @@
-# better to use UInt64 but the syntax may not be intuitive to others
+import Base.@kwdef
+
 
 """
     Agent
@@ -23,7 +24,7 @@ A person in the model.
 - `family_hist::Bool`: Is there a family history of asthma?
 - `asthma_status::Bool`: TODO.
 """
-struct Agent  <: Agent_Module
+@kwdef struct Agent  <: Agent_Module
     sex::Bool
     age::Integer
     cal_year::Integer
