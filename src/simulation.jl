@@ -30,6 +30,62 @@ mutable struct Simulation <: Simulation_Module
 end
 
 
+function create_event_dict(until_all_die::Bool, cal_years::UnitRange{Int64}, min_cal_year::Integer,
+    max_cal_year::Integer, max_age::Integer)
+    event_list = [
+        "antibiotic_exposure", "asthma_status", "asthma_incidence", "asthma_prevalence",
+        "death","alive", "control", "exacerbation", "exacerbation_hospital",
+        "exacerbation_by_severity", "emigration","immigration","family_history",
+        "asthma_prevalence_family_history", "asthma_prevalence_antibiotic_exposure",
+        "asthma_status_family_history", "asthma_status_antibiotic_exposure",
+        "asthma_incidence_family_history", "asthma_incidence_antibiotic_exposure",
+        "asthma_prevalence_contingency_table", "asthma_incidence_contingency_table",
+        "family_history_prevalence", "util", "cost"
+    ]
+
+    event_dict = Dict()
+
+    for event_name in event_list
+        if event_name in ["asthma_prevalence_contingency_table", "asthma_incidence_contingency_table"]
+            tmp_df = DataFrame(year=Int64[], sex=Int64[], age=Int64[], fam_history = Int64[],
+                abx_exposure = Int64[], n_asthma= Int64[], n_no_asthma = Int64[])
+            foreach(x -> push!(tmp_df, x), Iterators.product(
+                min_cal_year:1:max_cal_year, 0:1:1, 0:1:max_age+1, 0:1:1, 0:1:3, 0, 0)
+            )
+            tmp_df = groupby(tmp_df, [:year, :sex, :fam_history, :abx_exposure])
+            event_dict[event_name] = tmp_df
+        else
+            if event_name in ["control"]
+                # year age sex 3-levels
+                type = Real
+                dimensions = (length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2, 3)
+            elseif event_name in ["exacerbation_by_severity"]
+                # year age sex 4-levels
+                type = Real
+                dimensions = (length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2, 4)
+            elseif event_name in ["asthma_prevalence_family_history", "asthma_incidence_family_history",
+                "asthma_status_family_history", "family_history_prevalence"]
+                type = Int
+                dimensions = (2, length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2)
+            elseif event_name in ["asthma_prevalence_antibiotic_exposure",
+                "asthma_incidence_antibiotic_exposure", "asthma_status_antibiotic_exposure"]
+                type = Int
+                dimensions = (4, length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2)
+            elseif event_name in ["util","cost"]
+                type = Real
+                dimensions = (length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2)
+            else
+                # year age sex
+                type = Int
+                dimensions = (length(cal_years)+(until_all_die ? max_age : 0), max_age + 1, 2)
+            end
+            event_dict[event_name] = zeros(type, dimensions)
+        end
+    end
+    return event_dict
+end
+
+
 """
     process(simulation, seed, until_all_die, verbose)
 
@@ -67,42 +123,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
 
     # store events
     n_list = zeros(Int,simulation.time_horizon,2)
-    event_list = [
-        "antibiotic_exposure", "asthma_status", "asthma_incidence", "asthma_prevalence",
-        "death","alive", "control", "exacerbation", "exacerbation_hospital",
-        "exacerbation_by_severity", "emigration","immigration","family_history",
-        "asthma_prevalence_family_history", "asthma_prevalence_antibiotic_exposure",
-        "asthma_status_family_history", "asthma_status_antibiotic_exposure",
-        "asthma_incidence_family_history", "asthma_incidence_antibiotic_exposure",
-        "asthma_prevalence_contingency_table", "asthma_incidence_contingency_table",
-        "family_history_prevalence", "util", "cost"
-    ]
 
-    event_dict = Dict()
-
-    for event_name in event_list
-        if event_name in ["control"]
-            # year age sex 3-levels
-            event_dict[event_name] = zeros(Real,length(cal_years)+(until_all_die ? max_age : 0),max_age+1,2,3)
-        elseif event_name in ["exacerbation_by_severity"]
-            # year age sex 4-levels
-            event_dict[event_name] = zeros(Real,length(cal_years)+(until_all_die ? max_age : 0),max_age+1,2,4)
-        elseif event_name in [ "asthma_prevalence_family_history","asthma_incidence_family_history","asthma_status_family_history","family_history_prevalence"]
-            event_dict[event_name] = zeros(Int,2,length(cal_years)+(until_all_die ? max_age : 0),max_age+1,2)
-        elseif event_name in [ "asthma_prevalence_antibiotic_exposure","asthma_incidence_antibiotic_exposure","asthma_status_antibiotic_exposure"]
-            event_dict[event_name] = zeros(Int,4,length(cal_years)+(until_all_die ? max_age : 0),max_age+1,2)
-        elseif event_name in ["asthma_prevalence_contingency_table","asthma_incidence_contingency_table"]
-            tmp_df = DataFrame(year=Int64[], sex=Int64[], age=Int64[],fam_history = Int64[], abx_exposure = Int64[],n_asthma= Int64[],n_no_asthma = Int64[])
-            foreach(x -> push!(tmp_df, x), Iterators.product(min_cal_year:1:max_cal_year, 0:1:1, 0:1:max_age+1,0:1:1,0:1:3,0,0))
-            tmp_df = groupby(tmp_df,[:year,:sex,:fam_history,:abx_exposure])
-            event_dict[event_name] = tmp_df
-        elseif event_name in ["util","cost"]
-            event_dict[event_name] = zeros(Real,length(cal_years)+(until_all_die ? max_age : 0),max_age+1,2)
-        else
-            # year age sex
-            event_dict[event_name] = zeros(Int,length(cal_years)+(until_all_die ? max_age : 0),max_age+1,2)
-        end
-    end
+    event_dict = create_event_dict(until_all_die, cal_years, min_cal_year, max_cal_year, max_age)
 
     # time the performance
     timer_output = TimerOutput()
