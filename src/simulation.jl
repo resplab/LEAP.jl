@@ -85,6 +85,37 @@ function create_event_dict(until_all_die::Bool, cal_years::UnitRange{Int64}, min
     return event_dict
 end
 
+"""
+    get_num_new_agents(cal_year, min_cal_year, num_new_born, num_immigrants, simulation)
+
+TODO.
+
+# Arguments
+- `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
+- `min_cal_year::Integer`: the calendar year of the initial iteration, e.g. 2010.
+- `num_new_born::Integer`: the number of babies born in the specified year `cal_year`.
+- `num_immigrants::Integer`: the number of immigrants who moved to Canada in the specified year
+    `cal_year`.
+- `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
+"""
+function get_num_new_agents(cal_year::Integer, min_cal_year::Integer, num_new_born::Integer,
+    num_immigrants::Integer, simulation::Simulation)
+    # for the first/initial year, we generate the initial population
+    # otherwise we generate num_new_born + num_immigrants
+    num_new_agents = (
+        cal_year==min_cal_year ? ceil(
+            Int, num_new_born / sum(filter(:age=> ==(0), simulation.birth.initial_population).prop)
+        ) : num_new_born + num_immigrants
+    )
+    initial_pop_index = Int[]
+
+    if cal_year == min_cal_year
+        initial_pop_index = process_initial(simulation.birth, simulation.n)
+        num_new_agents = length(initial_pop_index)
+    end
+    return num_new_agents
+end
+
 
 """
     process(simulation, seed, until_all_die, verbose)
@@ -145,30 +176,22 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
         # num of newborns and immigrants in cal_year
         num_new_born = ceil(Int, simulation.n * simulation.birth.estimate.N_relative[tmp_cal_year_index])
         num_immigrants = ceil(Int, num_new_born * sum( simulation.immigration.table[tmp_cal_year_index].n_prop_birth))
-
-        # for the first/initial year, we generate the initial population
-        # otherwise we generate num_new_born + num_immigrants
-        n_cal_year = (cal_year==min_cal_year ? ceil(Int,num_new_born / sum(filter(:age=> ==(0),simulation.birth.initial_population).prop)) : num_new_born + num_immigrants)
-        initial_pop_index = Int[]
-
-        if cal_year == min_cal_year
-            initial_pop_index = process_initial(simulation.birth,simulation.n)
-            n_cal_year = length(initial_pop_index)
-        end
+        num_new_agents = get_num_new_agents(cal_year, min_cal_year, num_new_born, num_immigrants,
+            simulation)
 
         # indicator for the new born;
         # otherwise immigrant
-        new_born_indicator = vcat(trues(num_new_born),falses(num_immigrants))
-        
+        new_born_indicator = vcat(trues(num_new_born), falses(num_immigrants))
+
         # weighted sampling of the immigrant profile
-        if cal_year != min_cal_year 
+        if cal_year != min_cal_year
             immigrants_index = sample(1:nrow(simulation.immigration.table[tmp_cal_year_index]),
-            Weights(simulation.immigration.table[tmp_cal_year_index].weights),num_immigrants)
+            Weights(simulation.immigration.table[tmp_cal_year_index].weights), num_immigrants)
             immigrant_counter = 1
         end
 
         # for each agent i born/immigrated in cal_year
-        for i in 1:n_cal_year
+        for i in 1:num_new_agents
 
             # simulate an agent
 
@@ -184,30 +207,31 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
             # if cal_year is the first year,
             # generate the initial population
             if cal_year == min_cal_year
+                initial_pop_index = process_initial(simulation.birth, simulation.n)
                 tmp_index = initial_pop_index[i]
                 simulation.agent = process(cal_year,tmp_cal_year_index,simulation.birth,rand(Bernoulli(simulation.birth.initial_population.prop_male[tmp_index])),
                 simulation.birth.initial_population.age[tmp_index])
                 if simulation.agent.age == 0
                     @set! simulation.agent.num_antibiotic_use = process(simulation.agent,simulation.antibioticExposure)
-                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use 
+                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use
                     @set! simulation.agent.family_hist = process(simulation.agent,simulation.familyHistory)
-                    event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist 
+                    event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist
                 else
                     @set! simulation.agent.num_antibiotic_use = process_initial(simulation.agent,
                     simulation.antibioticExposure,
                     cal_year-simulation.agent.age)
-                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use 
+                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use
                     @set! simulation.agent.family_hist = process_initial(simulation.agent,simulation.familyHistory)
-                    event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist 
+                    event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist
                 end
             # otherwise newborn or immigrant
             else
                 # create a new-born
                 if new_born_indicator[i]
                     # new born
-                    simulation.agent = process(cal_year,tmp_cal_year_index,simulation.birth)
+                    simulation.agent = process(cal_year, tmp_cal_year_index, simulation.birth)
                     @set! simulation.agent.num_antibiotic_use = process(simulation.agent,simulation.antibioticExposure)
-                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use 
+                    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.num_antibiotic_use
                     @set! simulation.agent.family_hist = process(simulation.agent,simulation.familyHistory)
                     event_dict["family_history"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.family_hist
                 else
