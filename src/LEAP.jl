@@ -7,8 +7,14 @@ using TimerOutputs, Printf
 using GRIB
 
 # using Plots
-
+include("global_variables.jl")
+include("utils.jl")
+include("modules/abstractModule.jl")
+include("modules/agent.jl")
+include("modules/familyHistory.jl")
+include.(filter(contains(r".jl$"), readdir(joinpath(dirname(pathof(LEAP)),"modules/"); join=true)))
 include("simulation.jl")
+
 
 export
     # functions
