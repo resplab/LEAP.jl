@@ -15,6 +15,7 @@ export
     process,
     process_initial,
     random_parameter_initialization!,
+    create_event_dict,
     set_up,
     # global datasets
     master_birth_estimate,
