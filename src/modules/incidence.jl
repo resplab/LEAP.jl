@@ -9,61 +9,78 @@ struct Incidence <: Incidence_Module
     initial_distribution
 end
 
-function process(ag::Agent,inc::Incidence,abx)
-    tmp_age = min(ag.age,95)
+
+function agent_has_asthma(agent::Agent, incidence::Incidence, abx)
+    tmp_age = min(agent.age, 95)
     # max_year = length(inc.incidence_table)
-    tmp_year = min(ag.cal_year,inc.max_year)
+    tmp_year = min(agent.cal_year, incidence.max_year)
     if tmp_age < 3
-        return false 
+        has_asthma false
     elseif tmp_age < 7
-        try 
-            rand(Bernoulli(inc.calibration_table[(tmp_year,Int(ag.sex),Int(ag.family_hist),min(ag.num_antibiotic_use,3))][tmp_age-2,"calibrated_inc"]))
-        catch 
-            println(tmp_year," ",ag.sex, " ", ag.family_hist, " ",ag.num_antibiotic_use, " ", tmp_age)
+        try
+            has_asthma = rand(Bernoulli(
+                incidence.calibration_table[(
+                    tmp_year, Int(agent.sex), Int(agent.family_hist), min(agent.num_antibiotic_use,3)
+                )][tmp_age - 2, "calibrated_inc"]))
+        catch
+            println(tmp_year, " ", agent.sex, " ", agent.family_hist, " ",
+                agent.num_antibiotic_use, " ", tmp_age)
         end
     else # no effect of Abx beyond 7 years of age
-        rand(Bernoulli(inc.calibration_table[(tmp_year,Int(ag.sex),Int(ag.family_hist),0)][tmp_age-2,"calibrated_inc"]))
+        rand(Bernoulli(incidence.calibration_table[(
+            tmp_year, Int(agent.sex), Int(agent.family_hist), 0
+        )][tmp_age - 2, "calibrated_inc"]))
     end
+    return has_asthma
+end
+
+
+function agent_has_asthma(agent::Agent, incidence::Incidence)
+    tmp_age = min(agent.age, 95) - 1
+    max_year = incidence.max_year
+    tmp_year = min(agent.cal_year, max_year) - 1
+    # assume no asthma if age < 3
+    if tmp_age < 3
+        has_asthma = false
+    elseif tmp_age < 7
+        has_asthma = rand(Bernoulli(incidence.calibration_table[(
+            tmp_year, Int(agent.sex), Int(agent.family_hist), min(agent.num_antibiotic_use, 3)
+            )][tmp_age - 2, "calibrated_prev"]))
+    else # no effect of Abx beyond 7 years of age
+        has_asthma = rand(Bernoulli(incidence.calibration_table[(
+            tmp_year, Int(agent.sex), Int(agent.family_hist), 0
+            )][tmp_age - 2, "calibrated_prev"]))
+    end
+    return has_asthma
 end
 
 # initialization means prevalence ! ! !
-function process_initial(ag::Agent,inc::Incidence)
-    tmp_age = min(ag.age,95)-1
-    max_year = inc.max_year
-    tmp_year = min(ag.cal_year,max_year)-1
-    # assume no asthma if age < 3
-    if tmp_age < 3
-        false
-    elseif tmp_age < 7
-        rand(Bernoulli(inc.calibration_table[(tmp_year,Int(ag.sex),Int(ag.family_hist),min(ag.num_antibiotic_use,3))][tmp_age-2,"calibrated_prev"]))
-    else # no effect of Abx beyond 7 years of age
-        rand(Bernoulli(inc.calibration_table[(tmp_year,Int(ag.sex),Int(ag.family_hist),0)][tmp_age-2,"calibrated_prev"]))
-    end
-end
 
-function process_initial(ag::Agent, inc::Incidence, current_age)    
+
+
+function compute_asthma_age(age::Agent, incidence::Incidence, current_age)
     # obtain the previous incidence
-    min_year = inc.min_year 
-    max_year = inc.max_year 
+    min_year = inc.min_year
+    max_year = inc.max_year
     if current_age==3
         return 3
     else
         find_asthma_age = true
         asthma_age = 3
-        tmp_family_hist = Int(ag.family_hist)
-        tmp_sex = Int(ag.sex)
-        tmp_abx_num = min(ag.num_antibiotic_use,3)
-        tmp_year = min(max(ag.cal_year-current_age+asthma_age,min_year),max_year)
+        tmp_family_hist = Int(agent.family_hist)
+        tmp_sex = Int(agent.sex)
+        tmp_abx_num = min(agent.num_antibiotic_use,3)
+        tmp_year = min(max(agent.cal_year-current_age+asthma_age, min_year), max_year)
         while find_asthma_age && asthma_age < 110
-            if rand(Bernoulli(inc.calibration_table[(tmp_year,tmp_sex,tmp_family_hist,(asthma_age < 7 ? min(tmp_abx_num,3) : 0))][asthma_age-2,"calibrated_inc"]))
+            if rand(Bernoulli(incidence.calibration_table[(tmp_year,tmp_sex,tmp_family_hist,(asthma_age < 7 ? min(tmp_abx_num,3) : 0))][asthma_age-2,"calibrated_inc"]))
                 return asthma_age
             end
-            asthma_age += 1 
+            asthma_age += 1
             asthma_age = min(asthma_age,95)
             tmp_year += 1
             tmp_year = min(tmp_year,max_year)
         end
-        return asthma_age 
+        return asthma_age
     end
 end
 

@@ -23,6 +23,8 @@ export
     random_parameter_initialization!,
     create_event_dict,
     set_up,
+    process_birth,
+    agent_has_asthma,
     # global datasets
     master_birth_estimate,
     master_life_table,
