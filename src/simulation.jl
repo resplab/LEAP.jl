@@ -256,7 +256,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         simulation.agent, simulation.control
                     )
                     # the number of exacerbation
-                    @set! simulation.agent.exac_hist[1] = process_initial(
+                    @set! simulation.agent.exac_hist[1] = compute_num_exacerbations_initial(
                         simulation.agent, simulation.exacerbation
                     )
                     # the number of exacerbation by severity
