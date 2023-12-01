@@ -35,7 +35,7 @@ function compute_num_exacerbations(age::Integer, sex::Bool, cal_year::Integer, c
     tmp_age = min(age, 90)
     μ = (
         params[:β0] +
-        params[:β0_calibration]
+        params[:β0_calibration] + 
         age * params[:βage] +
         sex * params[:βsex] +
         control[1] * params[:βcontrol_C] +
