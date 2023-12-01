@@ -241,21 +241,18 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     simulation.agent, simulation.incidence
                 )
                 if simulation.agent.has_asthma
-                    # update asthma status
                     @set! simulation.agent.asthma_status = true
-                    # the first time individual got asthma
                     @set! simulation.agent.asthma_age = compute_asthma_age(
                         simulation.agent, simulation.incidence, simulation.agent.age
                     )
                     # previous hosp
-                    @set! simulation.agent.total_hosp = process_initial(
+                    @set! simulation.agent.total_hosp = compute_hospitalization_prob(
                         simulation.exacerbation_severity, simulation.agent.asthma_age, simulation
                     )
                     # control
                     @set! simulation.agent.control = process_initial(
                         simulation.agent, simulation.control
                     )
-                    # the number of exacerbation
                     @set! simulation.agent.exac_hist[1] = compute_num_exacerbations_initial(
                         simulation.agent, simulation.exacerbation
                     )

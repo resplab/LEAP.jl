@@ -25,6 +25,7 @@ export
     set_up,
     process_birth,
     agent_has_asthma,
+    compute_num_exacerbations,
     # global datasets
     master_birth_estimate,
     master_life_table,
