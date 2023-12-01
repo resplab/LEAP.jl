@@ -57,22 +57,31 @@ end
 # initialization means prevalence ! ! !
 
 
+"""
+    compute_asthma_age(agent, incidence, current_age)
 
-function compute_asthma_age(age::Agent, incidence::Incidence, current_age)
+Compute the age at which the person (agent) is first diagnosed with asthma.
+
+# Arguments
+- `agent::Agent`: A person in the model, see  [`Agent`](@ref).
+- `incidence::Incidence`: Asthma incidence, see [`Incidence`](@ref).
+"""
+function compute_asthma_age(agent::Agent, incidence::Incidence, current_age::Integer)
     # obtain the previous incidence
-    min_year = inc.min_year
-    max_year = inc.max_year
-    if current_age==3
+    min_year = incidence.min_year
+    max_year = incidence.max_year
+    if current_age == 3
         return 3
     else
         find_asthma_age = true
         asthma_age = 3
         tmp_family_hist = Int(agent.family_hist)
         tmp_sex = Int(agent.sex)
-        tmp_abx_num = min(agent.num_antibiotic_use,3)
+        tmp_abx_num = min(agent.num_antibiotic_use, 3)
         tmp_year = min(max(agent.cal_year-current_age+asthma_age, min_year), max_year)
         while find_asthma_age && asthma_age < 110
-            if rand(Bernoulli(incidence.calibration_table[(tmp_year,tmp_sex,tmp_family_hist,(asthma_age < 7 ? min(tmp_abx_num,3) : 0))][asthma_age-2,"calibrated_inc"]))
+            if rand(Bernoulli(
+                incidence.calibration_table[(tmp_year,tmp_sex,tmp_family_hist,(asthma_age < 7 ? min(tmp_abx_num,3) : 0))][asthma_age-2,"calibrated_inc"]))
                 return asthma_age
             end
             asthma_age += 1
