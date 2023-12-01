@@ -15,7 +15,7 @@ function agent_has_asthma(agent::Agent, incidence::Incidence, abx)
     # max_year = length(inc.incidence_table)
     tmp_year = min(agent.cal_year, incidence.max_year)
     if tmp_age < 3
-        has_asthma false
+        has_asthma = false
     elseif tmp_age < 7
         try
             has_asthma = rand(Bernoulli(
