@@ -328,16 +328,28 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                             simulation.agent.cal_year_index, simulation.agent.age+1,
                             simulation.agent.sex+1, :] += simulation.agent.control
 
-                        @set! simulation.agent.exac_hist[1] = process(
+                        @set! simulation.agent.exac_hist[1] = compute_num_exacerbations(
                             simulation.agent, simulation.exacerbation
                         )
 
                         if simulation.agent.exac_hist[1] != 0
                             @set! simulation.agent.exac_sev_hist[1] = process(
-                                simulation.exacerbation_severity,simulation.agent.exac_hist[1],(simulation.agent.total_hosp>0),simulation.agent.age)
+                                simulation.exacerbation_severity,
+                                simulation.agent.exac_hist[1],
+                                (simulation.agent.total_hosp>0),
+                                simulation.agent.age
+                            )
                             @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist[1][4]
-                            event_dict["exacerbation"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.exac_hist[1]
-                            event_dict["exacerbation_hospital"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.exac_sev_hist[1][4]
+                            event_dict["exacerbation"][
+                                simulation.agent.cal_year_index,
+                                simulation.agent.age+1,
+                                simulation.agent.sex+1
+                            ] += simulation.agent.exac_hist[1]
+                            event_dict["exacerbation_hospital"][
+                                simulation.agent.cal_year_index,
+                                simulation.agent.age+1,
+                                simulation.agent.sex+1
+                            ] += simulation.agent.exac_sev_hist[1][4]
                             event_dict["exacerbation_by_severity"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1,:] .+= simulation.agent.exac_sev_hist[1]
                         end
                     end
@@ -361,7 +373,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         # update exacerbation
                         @set! simulation.agent.exac_hist[2] = copy(simulation.agent.exac_hist[1])
                         @set! simulation.agent.exac_sev_hist[2] = copy(simulation.agent.exac_sev_hist[1])
-                        @set! simulation.agent.exac_hist[1] = process(simulation.agent,simulation.exacerbation)
+                        @set! simulation.agent.exac_hist[1] = compute_num_exacerbations(
+                            simulation.agent, simulation.exacerbation
+                        )
 
                         if simulation.agent.exac_hist[1] != 0
                             @set! simulation.agent.exac_sev_hist[1] = process(simulation.exacerbation_severity,simulation.agent.exac_hist[1],(simulation.agent.total_hosp>0),simulation.agent.age)

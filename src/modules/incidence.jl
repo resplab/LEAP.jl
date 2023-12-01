@@ -27,7 +27,7 @@ function agent_has_asthma(agent::Agent, incidence::Incidence, abx)
                 agent.num_antibiotic_use, " ", tmp_age)
         end
     else # no effect of Abx beyond 7 years of age
-        rand(Bernoulli(incidence.calibration_table[(
+        has_asthma = rand(Bernoulli(incidence.calibration_table[(
             tmp_year, Int(agent.sex), Int(agent.family_hist), 0
         )][tmp_age - 2, "calibrated_inc"]))
     end
