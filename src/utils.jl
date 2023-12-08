@@ -47,6 +47,28 @@ function set_up_death(starting_year::Integer, province::String)
     return death
 end
 
+function set_up_emigration(starting_year::Integer, population_growth_type::String,
+    province::String)
+
+    emigration = Emigration(nothing, nothing, nothing)
+    @set! emigration.table = groupby(
+        select(
+            select(
+                filter(
+                    ([:year, :province, :proj_scenario] => (x, y,z) -> x > starting_year
+                    && y == province
+                    && z==population_growth_type),
+                    master_emigration_table
+                ),
+                Not(:province)
+            ),
+            Not(:proj_scenario)
+        ),
+        :year
+    )
+    return emigration
+end
+
 
 function set_up_incidence(starting_year::Integer, province::String)::Incidence
     incidence = Incidence(
@@ -162,17 +184,27 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
     population_growth_type="LG")
     if province=="BC" || province=="CA"
 
-        agent = Agent(false,0,starting_year,1,true,0,false,0,0,nothing,[0,0],[zeros(4),zeros(4)],0,false,false)
+        agent = Agent(
+            false,
+            0,
+            starting_year,
+            1,
+            true,
+            0,
+            false,
+            0,
+            0,
+            nothing,
+            [0,0],
+            [zeros(4), zeros(4)],
+            0,
+            false,
+            false
+        )
 
         birth = set_up_birth(starting_year, population_growth_type, province)
         death = set_up_death(starting_year, province)
-
-        emigration = Emigration(nothing, nothing,nothing)
-        @set! emigration.table = groupby(select(
-            select(
-                filter([:year, :province, :proj_scenario] => (x, y,z) -> x > starting_year && y == province && z==population_growth_type, master_emigration_table),
-            Not(:province)),
-        Not(:proj_scenario)),:year)
+        emigration = set_up_emigration(starting_year, population_growth_type, province)
 
         immigration = Immigration(nothing, nothing, nothing,nothing,nothing)
         @set! immigration.table = groupby(select(
