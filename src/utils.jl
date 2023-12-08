@@ -1,4 +1,4 @@
-function Dict_initializer(parameter_names::Union{Nothing,Vector{Symbol}})
+function dict_initializer(parameter_names::Union{Nothing,Vector{Symbol}})
     isnothing(parameter_names) ? nothing : Dict(parameter_names .=> missing)
 end
 
@@ -28,7 +28,7 @@ function set_up_birth(starting_year::Integer, population_growth_type::String, pr
 end
 
 function set_up_death(starting_year::Integer, province::String)
-    death = Death(Dict_initializer([:β0,:β1,:β2]), nothing)
+    death = Death(dict_initializer([:β0,:β1,:β2]), nothing)
     @set! death.parameters[:β0] = 0;
     @set! death.parameters[:β1] = 0;
     @set! death.parameters[:β2] = 0;
@@ -93,8 +93,8 @@ end
 
 function set_up_incidence(starting_year::Integer, province::String)::Incidence
     incidence = Incidence(
-        Dict_initializer([:β0_μ, :β0_σ]),
-        Dict_initializer([:β0]),
+        dict_initializer([:β0_μ, :β0_σ]),
+        dict_initializer([:β0]),
         nothing,
         nothing,
         nothing,
@@ -168,8 +168,8 @@ end
 
 function set_up_control()
     control = Control(
-        Dict_initializer([:β0_μ, :β0_σ]),
-        Dict_initializer([:β0, :βage, :βsex,:βsexage, :βsexage2, :βage2, :βDx2, :βDx3, :θ])
+        dict_initializer([:β0_μ, :β0_σ]),
+        dict_initializer([:β0, :βage, :βsex,:βsexage, :βsexage2, :βage2, :βDx2, :βDx3, :θ])
     )
     @set! control.hyperparameters[:β0_μ] = 0;
     @set! control.hyperparameters[:β0_σ] = 1.678728;
@@ -185,8 +185,8 @@ end
 
 function set_up_exacerbation(province::String)
     exacerbation = Exacerbation(
-        Dict_initializer([:β0_μ, :β0_σ]),
-        Dict_initializer([:β0, :βage, :βsex, :βasthmaDx, :βprev_exac1, :βprev_exac2,
+        dict_initializer([:β0_μ, :β0_σ]),
+        dict_initializer([:β0, :βage, :βsex, :βasthmaDx, :βprev_exac1, :βprev_exac2,
             :βcontrol_C, :βcontrol_PC, :βcontrol_UC, :calibration, :min_year]
         ),
         0
@@ -223,8 +223,8 @@ end
 
 function set_up_exacerbation_severity()
     exacerbation_severity = ExacerbationSeverity(
-        Dict_initializer([:p0_μ, :p0_σ]),
-        Dict_initializer([:p, :βprev_hosp_ped, :βprev_hosp_adult])
+        dict_initializer([:p0_μ, :p0_σ]),
+        dict_initializer([:p, :βprev_hosp_ped, :βprev_hosp_adult])
     )
     @set! exacerbation_severity.hyperparameters[:p0_μ] = [0.495, 0.195, 0.283, 0.026];
     @set! exacerbation_severity.hyperparameters[:p0_σ] = 100;
@@ -237,8 +237,8 @@ end
 
 function set_up_antibiotic_exposure()
     antibiotic_exposure = AntibioticExposure(
-        Dict_initializer([:β0_μ, :β0_σ]),
-        Dict_initializer([:θ, :β0, :βage,:βsex, :βcal_year, :β2005, :β2005_cal_year,
+        dict_initializer([:β0_μ, :β0_σ]),
+        dict_initializer([:θ, :β0, :βage,:βsex, :βcal_year, :β2005, :β2005_cal_year,
             :fix2000, :βfloor, :midtrends]),
         nothing
     )
@@ -257,13 +257,13 @@ end
 
 
 function set_up_family_history()
-    family_history = FamilyHistory(nothing, Dict_initializer([:p]))
+    family_history = FamilyHistory(nothing, dict_initializer([:p]))
     @set! family_history.parameters[:p] = 0.2927242;
     return family_history
 end
 
 function set_up_utility()
-    utility = Utility(Dict_initializer([:eq5d, :control, :exac]))
+    utility = Utility(dict_initializer([:eq5d, :control, :exac]))
     @set! utility.parameters[:eq5d] = eq5d
     # disutil
     @set! utility.parameters[:control] = [0.06, 0.09, 0.10]
@@ -276,7 +276,7 @@ end
 function set_up_cost()
     # exchange rate btw 2018 USD and 2023 CAD Sept
     exchange_rate_usd_cad = 1.66
-    cost = Cost(Dict_initializer([:control, :exac]))
+    cost = Cost(dict_initializer([:control, :exac]))
     @set! cost.parameters[:control] = [2372, 2965, 3127] * exchange_rate_usd_cad;
     @set! cost.parameters[:exac] = [130, 594, 2425, 9900] * exchange_rate_usd_cad;
     return cost
