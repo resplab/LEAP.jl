@@ -27,6 +27,7 @@ function set_up_birth(starting_year::Integer, population_growth_type::String, pr
     return birth
 end
 
+
 function set_up_incidence(starting_year::Integer, province::String)::Incidence
     incidence = Incidence(
         Dict_initializer([:β0_μ, :β0_σ]),
@@ -69,6 +70,28 @@ function set_up_incidence(starting_year::Integer, province::String)::Incidence
         )[1]
     return incidence
 end
+
+
+function set_up_antibiotic_exposure()
+    antibiotic_exposure = AntibioticExposure(
+        Dict_initializer([:β0_μ, :β0_σ]),
+        Dict_initializer([:θ, :β0, :βage,:βsex, :βcal_year, :β2005, :β2005_cal_year,
+            :fix2000, :βfloor, :midtrends]),
+        nothing
+    )
+    @set! antibiotic_exposure.parameters[:θ] = 727.383;
+    @set! antibiotic_exposure.parameters[:β0] = 110.000442;
+    @set! antibiotic_exposure.parameters[:βage] = 0.0;
+    @set! antibiotic_exposure.parameters[:βsex] = 0.249033;
+    @set! antibiotic_exposure.parameters[:βcal_year] = -0.055100;
+    @set! antibiotic_exposure.parameters[:β2005] = 55.033675;
+    @set! antibiotic_exposure.parameters[:β2005_cal_year] = -0.027437;
+    @set! antibiotic_exposure.parameters[:fixyear] = nothing;
+    @set! antibiotic_exposure.parameters[:βfloor] = 50/1000;
+    @set! antibiotic_exposure.parameters[:midtrends] = abx_mid_trends;
+    return antibiotic_exposure
+end
+
 
 function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19, n=100,
     population_growth_type="LG")
@@ -149,17 +172,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         @set! exacerbation_severity.parameters[:βprev_hosp_ped] = 1.79
         @set! exacerbation_severity.parameters[:βprev_hosp_adult] = 2.88
 
-        antibioticExposure = AntibioticExposure(Dict_initializer([:β0_μ,:β0_σ]),Dict_initializer([:θ,:β0,:βage,:βsex,:βcal_year,:β2005,:β2005_cal_year,:fix2000,:βfloor,:midtrends]),nothing)
-        @set! antibioticExposure.parameters[:θ] =  727.383;
-        @set! antibioticExposure.parameters[:β0] = 110.000442;
-        @set! antibioticExposure.parameters[:βage] = 0.0;
-        @set! antibioticExposure.parameters[:βsex] = 0.249033;
-        @set! antibioticExposure.parameters[:βcal_year] = -0.055100;
-        @set! antibioticExposure.parameters[:β2005] =  55.033675;
-        @set! antibioticExposure.parameters[:β2005_cal_year] =  -0.027437;
-        @set! antibioticExposure.parameters[:fixyear] = nothing;
-        @set! antibioticExposure.parameters[:βfloor] = 50/1000;
-        @set!  antibioticExposure.parameters[:midtrends] = abx_mid_trends;
+        antibiotic_exposure = set_up_antibiotic_exposure()
 
         familyHistory = FamilyHistory(nothing,Dict_initializer([:p]))
         @set! familyHistory.parameters[:p] = 0.2927242;
@@ -194,7 +207,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             control,
             exacerbation,
             exacerbation_severity,
-            antibioticExposure,
+            antibiotic_exposure,
             familyHistory,
             util,
             cost,
