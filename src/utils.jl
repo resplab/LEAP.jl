@@ -10,7 +10,51 @@ function vec_to_dict(v::AbstractArray, ll::AbstractVector)::AbstractDict
     return d
 end
 
-function set_up(max_age=111,province="BC",starting_year=2000,time_horizon=19,n=100,population_growth_type="LG")
+function set_up_incidence(starting_year::Integer, province::String)::Incidence
+    incidence = Incidence(
+        Dict_initializer([:β0_μ, :β0_σ]),
+        Dict_initializer([:β0]),
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing
+    )
+
+    @set! incidence.hyperparameters[:β0_μ] = 0;
+    @set! incidence.hyperparameters[:β0_σ] = 0.00000001;
+    @set! incidence.incidence_table = groupby(
+        filter([:year,:province] => (x,y) -> x >= min(
+            starting_year, master_incidence_rate.year[nrow(master_incidence_rate)]
+            ) && y==province, master_incidence_rate
+            ),
+        :year
+    );
+    @set! incidence.prevalence_table = groupby(
+        filter([:year, :province] => (x,y) -> x >= min(
+            starting_year-1, master_prevalence_rate.year[nrow(master_prevalence_rate)]
+            ) && y==province, master_prevalence_rate),
+        :year
+    );
+    @set! incidence.parameters[:β0] = 0;
+
+    @set! incidence.calibration_table = groupby(
+        select(
+            filter([:province] => (x) -> x == province, M3_calibrated_asthma_prev_inc),
+            Not([:province])
+        ),
+        [:year, :sex, :fam_history, :abx_exposure]
+    );
+    @set! incidence.min_year = collect(keys(incidence.calibration_table)[1])[1]+1
+    @set! incidence.max_year = collect(
+        keys(incidence.calibration_table)[length(incidence.calibration_table)]
+        )[1]
+    return incidence
+end
+
+function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19, n=100,
+    population_growth_type="LG")
     if province=="BC" || province=="CA"
 
         agent = Agent(false,0,starting_year,1,true,0,false,0,0,nothing,[0,0],[zeros(4),zeros(4)],0,false,false)
@@ -47,18 +91,8 @@ function set_up(max_age=111,province="BC",starting_year=2000,time_horizon=19,n=1
             Not(:province)),
         Not(:proj_scenario)),:year)
 
-        incidence = Incidence(Dict_initializer([:β0_μ,:β0_σ]),
-        Dict_initializer([:β0]),nothing,nothing,nothing,nothing,nothing,nothing)
+        incidence = set_up_incidence(starting_year, province)
 
-        @set! incidence.hyperparameters[:β0_μ] = 0;
-        @set! incidence.hyperparameters[:β0_σ] = 0.00000001;
-        @set! incidence.incidence_table = groupby(filter([:year,:province] => (x,y) -> x >= min(starting_year,master_incidence_rate.year[nrow(master_incidence_rate)]) && y==province,master_incidence_rate),:year);
-        @set! incidence.prevalence_table = groupby(filter([:year,:province] => (x,y) -> x >= min(starting_year-1,master_prevalence_rate.year[nrow(master_prevalence_rate)]) && y==province,master_prevalence_rate),:year);
-        @set! incidence.parameters[:β0] = 0;
-
-        @set! incidence.calibration_table = groupby(select(filter([:province] => (x) -> x == province ,M3_calibrated_asthma_prev_inc),Not([:province])),[:year,:sex,:fam_history,:abx_exposure]);
-        @set! incidence.min_year = collect(keys(incidence.calibration_table)[1])[1]+1
-        @set! incidence.max_year = collect(keys(incidence.calibration_table)[length(incidence.calibration_table )])[1]
         reassessment = Reassessment(nothing)
         @set! reassessment.table =  groupby(filter([:year, :province] => (x, y) -> x >= starting_year && y == province, master_reassessment),:year)
 
