@@ -113,6 +113,35 @@ function get_num_new_agents(cal_year::Integer, min_cal_year::Integer, num_new_bo
 end
 
 
+function generate_initial_asthma!(simulation::Simulation)
+    @set! simulation.agent.has_asthma = agent_has_asthma(
+        simulation.agent, simulation.incidence
+    )
+    if simulation.agent.has_asthma
+        @set! simulation.agent.asthma_status = true
+        @set! simulation.agent.asthma_age = compute_asthma_age(
+            simulation.agent, simulation.incidence, simulation.agent.age
+        )
+        @set! simulation.agent.total_hosp = compute_hospitalization_prob(
+            simulation.exacerbation_severity, simulation.agent.asthma_age, simulation
+        )
+        @set! simulation.agent.control = process_control(
+            simulation.agent, simulation.control
+        )
+        @set! simulation.agent.exac_hist[1] = compute_num_exacerbations_initial(
+            simulation.agent, simulation.exacerbation
+        )
+        # the number of exacerbation by severity
+        @set! simulation.agent.exac_sev_hist[1] = process(
+            simulation.exacerbation_severity, simulation.agent.exac_hist[1],
+            (simulation.agent.total_hosp>0), simulation.agent.age
+        )
+        # update total hosp
+        @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist[1][4]
+    end
+end
+
+
 """
     process(simulation, seed, until_all_die, verbose)
 
@@ -237,33 +266,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
 
             # if age >4, we need to generate the initial distribution of asthma related events
             if simulation.agent.age > 3
-                @set! simulation.agent.has_asthma = agent_has_asthma(
-                    simulation.agent, simulation.incidence
-                )
-                if simulation.agent.has_asthma
-                    @set! simulation.agent.asthma_status = true
-                    @set! simulation.agent.asthma_age = compute_asthma_age(
-                        simulation.agent, simulation.incidence, simulation.agent.age
-                    )
-                    # previous hosp
-                    @set! simulation.agent.total_hosp = compute_hospitalization_prob(
-                        simulation.exacerbation_severity, simulation.agent.asthma_age, simulation
-                    )
-                    # control
-                    @set! simulation.agent.control = process_initial(
-                        simulation.agent, simulation.control
-                    )
-                    @set! simulation.agent.exac_hist[1] = compute_num_exacerbations_initial(
-                        simulation.agent, simulation.exacerbation
-                    )
-                    # the number of exacerbation by severity
-                    @set! simulation.agent.exac_sev_hist[1] = process(
-                        simulation.exacerbation_severity, simulation.agent.exac_hist[1],
-                        (simulation.agent.total_hosp>0), simulation.agent.age
-                    )
-                    # update total hosp
-                    @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist[1][4]
-                end
+                generate_initial_asthma!(simulation)
             end
 
             # go through event processes for each agent
