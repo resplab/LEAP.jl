@@ -93,6 +93,13 @@ function set_up_antibiotic_exposure()
 end
 
 
+function set_up_family_history()
+    family_history = FamilyHistory(nothing, Dict_initializer([:p]))
+    @set! family_history.parameters[:p] = 0.2927242;
+    return family_history
+end
+
+
 function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19, n=100,
     population_growth_type="LG")
     if province=="BC" || province=="CA"
@@ -173,9 +180,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         @set! exacerbation_severity.parameters[:βprev_hosp_adult] = 2.88
 
         antibiotic_exposure = set_up_antibiotic_exposure()
-
-        familyHistory = FamilyHistory(nothing,Dict_initializer([:p]))
-        @set! familyHistory.parameters[:p] = 0.2927242;
+        family_history = set_up_family_history()
 
         util = Utility(Dict_initializer([:eq5d,:control,:exac]))
         @set! util.parameters[:eq5d] = eq5d
@@ -208,7 +213,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             exacerbation,
             exacerbation_severity,
             antibiotic_exposure,
-            familyHistory,
+            family_history,
             util,
             cost,
             nothing,
