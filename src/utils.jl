@@ -176,26 +176,33 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         @set! cost.parameters[:control] = [2372, 2965, 3127]*1.66;
         @set! cost.parameters[:exac] = [130,594, 2425,9900]*1.66;
 
-        sim = Simulation(max_age,province,starting_year,time_horizon,n,population_growth_type,
-        agent,
-        birth,
-        emigration,
-        immigration,
-        death,
-        incidence,
-        reassessment,
-        diagnosis,
-        control,
-        exacerbation,
-        exacerbation_severity,
-        antibioticExposure,
-        familyHistory,
-        util,
-        cost,
-        nothing,
-        (;))
+        simulation = Simulation(
+            max_age,
+            province,
+            starting_year,
+            time_horizon,
+            n,
+            population_growth_type,
+            agent,
+            birth,
+            emigration,
+            immigration,
+            death,
+            incidence,
+            reassessment,
+            diagnosis,
+            control,
+            exacerbation,
+            exacerbation_severity,
+            antibioticExposure,
+            familyHistory,
+            util,
+            cost,
+            nothing,
+            (;)
+        )
 
-        return sim
+        return simulation
     else
         error("Province not supported")
     end
