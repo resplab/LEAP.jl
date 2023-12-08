@@ -218,6 +218,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
         if cal_year != min_cal_year
             immigrants_index = sample(1:nrow(simulation.immigration.table[tmp_cal_year_index]),
             Weights(simulation.immigration.table[tmp_cal_year_index].weights), num_immigrants)
+        else
+            initial_pop_index = process_initial(simulation.birth, simulation.n)
         end
 
 
@@ -233,7 +235,6 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
 
             # if cal_year is the first year, generate the initial population
             if cal_year == min_cal_year
-                initial_pop_index = process_initial(simulation.birth, simulation.n)
                 tmp_index = initial_pop_index[i]
                 simulation.agent = process_birth(cal_year, tmp_cal_year_index, simulation.birth,
                     rand(Bernoulli(simulation.birth.initial_population.prop_male[tmp_index])),
