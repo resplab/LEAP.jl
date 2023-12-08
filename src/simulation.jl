@@ -350,7 +350,10 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                                 simulation.agent.age+1,
                                 simulation.agent.sex+1
                             ] += simulation.agent.exac_sev_hist[1][4]
-                            event_dict["exacerbation_by_severity"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1,:] .+= simulation.agent.exac_sev_hist[1]
+                            event_dict["exacerbation_by_severity"][
+                                simulation.agent.cal_year_index,
+                                simulation.agent.age+1,
+                                simulation.agent.sex+1,:] .+= simulation.agent.exac_sev_hist[1]
                         end
                     end
                 # has asthma
@@ -368,7 +371,10 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
 
                         #  update control
                         @set! simulation.agent.control = process(simulation.agent,simulation.control)
-                        event_dict["control"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1,:] += simulation.agent.control
+                        event_dict["control"][
+                            simulation.agent.cal_year_index,
+                            simulation.agent.age+1,
+                            simulation.agent.sex+1,:] += simulation.agent.control
 
                         # update exacerbation
                         @set! simulation.agent.exac_hist[2] = copy(simulation.agent.exac_hist[1])
@@ -378,11 +384,25 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         )
 
                         if simulation.agent.exac_hist[1] != 0
-                            @set! simulation.agent.exac_sev_hist[1] = process(simulation.exacerbation_severity,simulation.agent.exac_hist[1],(simulation.agent.total_hosp>0),simulation.agent.age)
+                            @set! simulation.agent.exac_sev_hist[1] = process(
+                                simulation.exacerbation_severity,
+                                simulation.agent.exac_hist[1],
+                                (simulation.agent.total_hosp>0),
+                                simulation.agent.age
+                            )
                             @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist[1][4]
-                            event_dict["exacerbation"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.exac_hist[1]
-                            event_dict["exacerbation_hospital"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += simulation.agent.exac_sev_hist[1][4]
-                            event_dict["exacerbation_by_severity"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1,:] .+= simulation.agent.exac_sev_hist[1]
+                            event_dict["exacerbation"][
+                                simulation.agent.cal_year_index,
+                                simulation.agent.age+1,
+                                simulation.agent.sex+1] += simulation.agent.exac_hist[1]
+                            event_dict["exacerbation_hospital"][
+                                simulation.agent.cal_year_index,
+                                simulation.agent.age+1,
+                                simulation.agent.sex+1] += simulation.agent.exac_sev_hist[1][4]
+                            event_dict["exacerbation_by_severity"][
+                                simulation.agent.cal_year_index,
+                                simulation.agent.age+1,
+                                simulation.agent.sex+1,:] .+= simulation.agent.exac_sev_hist[1]
                         end
                     end
                 end
@@ -396,22 +416,33 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 end
 
                 # util and cost
-                event_dict["util"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += process(simulation.agent,simulation.util) 
-                event_dict["cost"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += process(simulation.agent,simulation.cost) 
+                event_dict["util"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += process(simulation.agent,simulation.util)
+                event_dict["cost"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += process(simulation.agent,simulation.cost)
 
                 # death or emigration
                 # assume death occurs first
                 if process(simulation.agent,simulation.death)
                     @set! simulation.agent.alive = false
                     # everyone dies in the end... Inevitable
-                    event_dict["death"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
+                    event_dict["death"][
+                        simulation.agent.cal_year_index,
+                        simulation.agent.age+1,
+                        simulation.agent.sex+1
+                    ] += 1
                 # emigration
-                elseif process(simulation.agent.cal_year_index,simulation.agent.age,simulation.agent.sex,simulation.emigration)
+                elseif process(simulation.agent.cal_year_index,
+                    simulation.agent.age,simulation.agent.sex,simulation.emigration)
                     @set! simulation.agent.alive = false
-                    event_dict["emigration"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
+                    event_dict["emigration"][
+                        simulation.agent.cal_year_index,
+                        simulation.agent.age+1,
+                        simulation.agent.sex+1] += 1
                 else
                     # record alive
-                    event_dict["alive"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
+                    event_dict["alive"][
+                        simulation.agent.cal_year_index,
+                        simulation.agent.age+1,
+                        simulation.agent.sex+1] += 1
                     # update the patient stats
                     @set! simulation.agent.age += 1
                     @set! simulation.agent.cal_year += 1
