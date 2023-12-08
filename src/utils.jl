@@ -188,6 +188,19 @@ function set_up_exacerbation(province::String)
     return exacerbation
 end
 
+function set_up_exacerbation_severity()
+    exacerbation_severity = ExacerbationSeverity(
+        Dict_initializer([:p0_μ, :p0_σ]),
+        Dict_initializer([:p, :βprev_hosp_ped, :βprev_hosp_adult])
+    )
+    @set! exacerbation_severity.hyperparameters[:p0_μ] = [0.495, 0.195, 0.283, 0.026];
+    @set! exacerbation_severity.hyperparameters[:p0_σ] = 100;
+    @set! exacerbation_severity.parameters[:p] = ones(4) / 4;
+    @set! exacerbation_severity.parameters[:βprev_hosp_ped] = 1.79
+    @set! exacerbation_severity.parameters[:βprev_hosp_adult] = 2.88
+    return exacerbation_severity
+end
+
 
 function set_up_antibiotic_exposure()
     antibiotic_exposure = AntibioticExposure(
@@ -254,13 +267,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
 
         control = set_up_control()
         exacerbation = set_up_exacerbation(province)
-
-        exacerbation_severity = ExacerbationSeverity(Dict_initializer([:p0_μ,:p0_σ]), Dict_initializer([:p,:βprev_hosp_ped,:βprev_hosp_adult]))
-        @set! exacerbation_severity.hyperparameters[:p0_μ] = [0.495, 0.195, 0.283, 0.026];
-        @set! exacerbation_severity.hyperparameters[:p0_σ] = 100;
-        @set! exacerbation_severity.parameters[:p] = ones(4)/4;
-        @set! exacerbation_severity.parameters[:βprev_hosp_ped] = 1.79
-        @set! exacerbation_severity.parameters[:βprev_hosp_adult] = 2.88
+        exacerbation_severity = set_up_exacerbation_severity()
 
         antibiotic_exposure = set_up_antibiotic_exposure()
         family_history = set_up_family_history()
