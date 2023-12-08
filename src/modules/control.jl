@@ -3,34 +3,46 @@ struct Control <: Control_Module
     parameters::Union{AbstractDict,Nothing}
 end
 
-function process(ag::Agent,ctl::Control)
-    age_scaled = ag.age / 100
-    control_prediction(ctl.parameters[:β0]+
-    age_scaled*ctl.parameters[:βage]+
-    ag.sex*ctl.parameters[:βsex]+
-    age_scaled * ag.sex * ctl.parameters[:βsexage] +
-    age_scaled^2 * ag.sex * ctl.parameters[:βsexage2] +
-    age_scaled^2 * ctl.parameters[:βage2], ctl.parameters[:θ])
-end
 
+function process_control(agent::Agent, ctl::Control, initial::Bool=false)
+    if initial
+        age_scaled = (agent.age - 1) / 100
+    else
+        age_scaled = agent.age / 100
+    end
 
-function process_initial(ag::Agent, ctl::Control)
-    age_scaled = (ag.age-1) / 100
-    control_prediction(ctl.parameters[:β0]+
-    age_scaled*ctl.parameters[:βage]+
-    ag.sex*ctl.parameters[:βsex]+
-    age_scaled * ag.sex * ctl.parameters[:βsexage] +
-    age_scaled^2 * ag.sex * ctl.parameters[:βsexage2] +
-    age_scaled^2 * ctl.parameters[:βage2], ctl.parameters[:θ])
+    return control_prediction(
+        (ctl.parameters[:β0] +
+        age_scaled * ctl.parameters[:βage] +
+        agent.sex*ctl.parameters[:βsex] +
+        age_scaled * agent.sex * ctl.parameters[:βsexage] +
+        age_scaled^2 * agent.sex * ctl.parameters[:βsexage2] +
+        age_scaled^2 * ctl.parameters[:βage2]),
+        ctl.parameters[:θ]
+    )
 end
 
 # pred function
-function control_prediction(eta::Float64,theta::Union{Float64,Vector{Float64}};inv_link::Function=StatsFuns.logistic)::Union{Float64,Vector{Float64}}
+function control_prediction(eta::Float64, theta::Union{Float64,Vector{Float64}};
+    inv_link::Function=StatsFuns.logistic)::Union{Float64,Vector{Float64}}
     theta = [-1e5;theta;1e5]
     [inv_link(theta[j+1] - eta) - inv_link(theta[j] - eta) for j in 1:(length(theta)-1)]
 end
 
-# input: initialized hyperparameters, empty parameters
-function random_parameter_initialization!(ctl::Control)
-    ctl.parameters[:β0] = rand(Normal(ctl.hyperparameters[:β0_μ],ctl.hyperparameters[:β0_σ]))
+
+"""
+    random_parameter_initialization!(control)
+
+Assign the parameter β0 a random value from a normal distribution with a mean μ = β0_μ and a
+standard deviation σ = β0_σ.
+
+# Arguments
+
+- `control:Control`: Control module, see [`Control`](@ref).
+"""
+function random_parameter_initialization!(control::Control)
+    control.parameters[:β0] = rand(Normal(
+        control.hyperparameters[:β0_μ],
+        control.hyperparameters[:β0_σ]
+    ))
 end

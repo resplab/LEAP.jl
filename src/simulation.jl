@@ -126,7 +126,7 @@ function generate_initial_asthma!(simulation::Simulation)
             simulation.exacerbation_severity, simulation.agent.asthma_age, simulation
         )
         @set! simulation.agent.control = process_control(
-            simulation.agent, simulation.control
+            simulation.agent, simulation.control, true
         )
         @set! simulation.agent.exac_hist[1] = compute_num_exacerbations_initial(
             simulation.agent, simulation.exacerbation
@@ -378,7 +378,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         # event_dict["asthma_prevalence_contingency_table"][(simulation.agent.cal_year,Int(simulation.agent.sex),Int(simulation.agent.family_hist),min(simulation.agent.num_antibiotic_use,3))][simulation.agent.age+1,"n_asthma"] += 1
 
                         #  update control
-                        @set! simulation.agent.control = process(simulation.agent,simulation.control)
+                        @set! simulation.agent.control = process_control(
+                            simulation.agent, simulation.control
+                        )
                         event_dict["control"][
                             simulation.agent.cal_year_index,
                             simulation.agent.age+1,
