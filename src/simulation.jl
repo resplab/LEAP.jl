@@ -212,14 +212,14 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
 
         # indicator for the new born;
         # otherwise immigrant
-        new_born_indicator = vcat(trues(num_new_born), falses(num_immigrants))
+        new_born_indicator = vcat(falses(num_immigrants), trues(num_new_born))
 
         # weighted sampling of the immigrant profile
         if cal_year != min_cal_year
             immigrants_index = sample(1:nrow(simulation.immigration.table[tmp_cal_year_index]),
             Weights(simulation.immigration.table[tmp_cal_year_index].weights), num_immigrants)
-            immigrant_counter = 1
         end
+
 
         # for each agent i born/immigrated in cal_year
         for i in 1:num_new_agents
@@ -245,15 +245,19 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 if new_born_indicator[i] # create a new-born
                     simulation.agent = process_birth(
                         cal_year, tmp_cal_year_index, simulation.birth,
-                        simulation.antibioticExposure, simulation.familyHistory
+                        simulation.antibioticExposure,
+                        simulation.familyHistory
                     )
                 else # immigrant
                     simulation.agent = process_immigration(
-                        Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrants_index[immigrant_counter]]),
-                        simulation.immigration.table[tmp_cal_year_index].age[immigrants_index[immigrant_counter]],
-                        cal_year, tmp_cal_year_index, simulation.antibioticExposure, simulation.familyHistory)
-                    event_dict["immigration"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                    immigrant_counter += 1
+                        Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrants_index[i]]),
+                        simulation.immigration.table[tmp_cal_year_index].age[immigrants_index[i]],
+                        cal_year, tmp_cal_year_index, simulation.antibioticExposure,
+                        simulation.familyHistory)
+                    event_dict["immigration"][
+                        simulation.agent.cal_year_index,
+                        simulation.agent.age+1,
+                        simulation.agent.sex+1] += 1
                 end
             end
 
