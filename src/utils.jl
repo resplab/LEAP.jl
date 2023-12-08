@@ -308,7 +308,11 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         antibiotic_exposure = set_up_antibiotic_exposure()
         family_history = set_up_family_history()
         utility = set_up_utility()
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> cacd4b97393b2ed89d31076b9cce17856bc782f9
         cost = Cost(Dict_initializer([:control,:exac]))
         # 1.66 is the exchange rate btw 2018 USD and 2023 CAD Sept
         @set! cost.parameters[:control] = [2372, 2965, 3127]*1.66;
