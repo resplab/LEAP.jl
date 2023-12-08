@@ -134,6 +134,22 @@ function set_up_incidence(starting_year::Integer, province::String)::Incidence
     return incidence
 end
 
+function set_up_control()
+    control = Control(
+        Dict_initializer([:β0_μ, :β0_σ]),
+        Dict_initializer([:β0, :βage, :βsex,:βsexage, :βsexage2, :βage2, :βDx2, :βDx3, :θ])
+    )
+    @set! control.hyperparameters[:β0_μ] = 0;
+    @set! control.hyperparameters[:β0_σ] = 1.678728;
+    @set! control.parameters[:βage] = 3.5430381;
+    @set! control.parameters[:βage2] =-3.4980710;
+    @set! control.parameters[:βsexage] = -0.8161495;
+    @set! control.parameters[:βsexage2] = -1.1654264;
+    @set! control.parameters[:βsex] = 0.2347807;
+    @set! control.parameters[:θ] = [-0.3950; 2.754];
+    return control
+end
+
 
 function set_up_exacerbation(province::String)
     exacerbation = Exacerbation(
@@ -236,16 +252,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         @set! diagnosis.table =  groupby(filter([:year, :province] => (x, y) -> x >= starting_year && y == province, master_dx),:year)
         @set! diagnosis.table_mis =  groupby(filter([:year, :province] => (x, y) -> x >= starting_year && y == province, master_mis_dx),:year)
 
-        control = Control(Dict_initializer([:β0_μ,:β0_σ]), Dict_initializer( [:β0,:βage,:βsex,:βsexage,:βsexage2,:βage2, :βDx2,:βDx3,:θ]))
-        @set! control.hyperparameters[:β0_μ] = 0;
-        @set! control.hyperparameters[:β0_σ] = 1.678728;
-        @set! control.parameters[:βage] = 3.5430381;
-        @set! control.parameters[:βage2] =-3.4980710;
-        @set! control.parameters[:βsexage] = -0.8161495;
-        @set! control.parameters[:βsexage2] = -1.1654264;
-        @set! control.parameters[:βsex] =  0.2347807;
-        @set! control.parameters[:θ] =  [-0.3950; 2.754];
-
+        control = set_up_control()
         exacerbation = set_up_exacerbation(province)
 
         exacerbation_severity = ExacerbationSeverity(Dict_initializer([:p0_μ,:p0_σ]), Dict_initializer([:p,:βprev_hosp_ped,:βprev_hosp_adult]))
