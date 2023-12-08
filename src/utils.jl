@@ -134,6 +134,18 @@ function set_up_incidence(starting_year::Integer, province::String)::Incidence
     return incidence
 end
 
+function set_up_reassessment(starting_year::Integer, province::String)
+    reassessment = Reassessment(nothing)
+    @set! reassessment.table = groupby(
+        filter(
+            [:year, :province] => (x, y) -> x >= starting_year && y == province,
+            master_reassessment
+        ),
+        :year
+    )
+    return reassessment
+end
+
 
 function set_up_diagnosis(starting_year::Integer, province::String)
     diagnosis = Diagnosis(nothing, nothing)
@@ -279,8 +291,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         immigration = set_up_immigration(starting_year, population_growth_type, province)
         incidence = set_up_incidence(starting_year, province)
 
-        reassessment = Reassessment(nothing)
-        @set! reassessment.table =  groupby(filter([:year, :province] => (x, y) -> x >= starting_year && y == province, master_reassessment),:year)
+        reassessment = set_up_reassessment(starting_year, province)
 
         diagnosis = set_up_diagnosis(starting_year, province)
         control = set_up_control()
