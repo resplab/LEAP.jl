@@ -262,6 +262,16 @@ function set_up_family_history()
     return family_history
 end
 
+function set_up_utility()
+    utility = Utility(Dict_initializer([:eq5d, :control, :exac]))
+    @set! utility.parameters[:eq5d] = eq5d
+    # disutil
+    @set! utility.parameters[:control] = [0.06, 0.09, 0.10]
+    # disutil: duration 1 week for mild and two weeks for the rest
+    @set! utility.parameters[:exac] = [0.32 * 1,  0.44 * 2, 0.50 * 2, 0.56 * 2 ] / 52
+    return utility
+end
+
 
 function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19, n=100,
     population_growth_type="LG")
@@ -290,27 +300,20 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         emigration = set_up_emigration(starting_year, population_growth_type, province)
         immigration = set_up_immigration(starting_year, population_growth_type, province)
         incidence = set_up_incidence(starting_year, province)
-
         reassessment = set_up_reassessment(starting_year, province)
-
         diagnosis = set_up_diagnosis(starting_year, province)
         control = set_up_control()
         exacerbation = set_up_exacerbation(province)
         exacerbation_severity = set_up_exacerbation_severity()
         antibiotic_exposure = set_up_antibiotic_exposure()
         family_history = set_up_family_history()
-
-        util = Utility(Dict_initializer([:eq5d,:control,:exac]))
-        @set! util.parameters[:eq5d] = eq5d
-        # disutil
-        @set! util.parameters[:control] = [0.06,0.09,0.10]
-        # disutil: duration 1 week for mild and two weeks for the rest
-        @set! util.parameters[:exac] = [0.32 * 1,  0.44 * 2 , 0.50 * 2 , 0.56 * 2 ] / 52
-
+        utility = set_up_utility()
+        
         cost = Cost(Dict_initializer([:control,:exac]))
         # 1.66 is the exchange rate btw 2018 USD and 2023 CAD Sept
         @set! cost.parameters[:control] = [2372, 2965, 3127]*1.66;
         @set! cost.parameters[:exac] = [130,594, 2425,9900]*1.66;
+
 
         simulation = Simulation(
             max_age,
@@ -332,7 +335,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             exacerbation_severity,
             antibiotic_exposure,
             family_history,
-            util,
+            utility,
             cost,
             nothing,
             (;)
