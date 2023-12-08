@@ -134,6 +134,26 @@ function set_up_incidence(starting_year::Integer, province::String)::Incidence
     return incidence
 end
 
+
+function set_up_diagnosis(starting_year::Integer, province::String)
+    diagnosis = Diagnosis(nothing, nothing)
+    @set! diagnosis.table =  groupby(
+        filter(
+            [:year, :province] => (x, y) -> x >= starting_year && y == province,
+            master_dx
+        ),
+        :year
+    )
+    @set! diagnosis.table_mis = groupby(
+        filter(
+            [:year, :province] => (x, y) -> x >= starting_year && y == province,
+            master_mis_dx
+        ),
+        :year
+    )
+    return diagnosis
+end
+
 function set_up_control()
     control = Control(
         Dict_initializer([:β0_μ, :β0_σ]),
@@ -187,6 +207,7 @@ function set_up_exacerbation(province::String)
     )[1]+1
     return exacerbation
 end
+
 
 function set_up_exacerbation_severity()
     exacerbation_severity = ExacerbationSeverity(
@@ -261,14 +282,10 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         reassessment = Reassessment(nothing)
         @set! reassessment.table =  groupby(filter([:year, :province] => (x, y) -> x >= starting_year && y == province, master_reassessment),:year)
 
-        diagnosis = Diagnosis(nothing,nothing)
-        @set! diagnosis.table =  groupby(filter([:year, :province] => (x, y) -> x >= starting_year && y == province, master_dx),:year)
-        @set! diagnosis.table_mis =  groupby(filter([:year, :province] => (x, y) -> x >= starting_year && y == province, master_mis_dx),:year)
-
+        diagnosis = set_up_diagnosis(starting_year, province)
         control = set_up_control()
         exacerbation = set_up_exacerbation(province)
         exacerbation_severity = set_up_exacerbation_severity()
-
         antibiotic_exposure = set_up_antibiotic_exposure()
         family_history = set_up_family_history()
 
