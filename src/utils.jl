@@ -10,6 +10,23 @@ function vec_to_dict(v::AbstractArray, ll::AbstractVector)::AbstractDict
     return d
 end
 
+function set_up_birth(starting_year::Integer, population_growth_type::String, province::String)
+    birth = Birth(nothing, nothing)
+    @set! birth.estimate = filter(
+        ([:year, :province, :projection_scenario] => (x, y, z) -> x >= starting_year
+        && y == province && (z == population_growth_type || z == "past")),
+        master_birth_estimate
+    )
+    relative(x) = x / birth.estimate.N[1]
+    @set! birth.estimate = transform(birth.estimate, :N => relative)
+    @set! birth.initial_population =  filter(
+        ([:year, :province, :projection_scenario] => (x, y, z) -> x == starting_year
+        && y == province && (z == population_growth_type || z == "past")),
+        master_population_initial_distribution
+    )
+    return birth
+end
+
 function set_up_incidence(starting_year::Integer, province::String)::Incidence
     incidence = Incidence(
         Dict_initializer([:β0_μ, :β0_σ]),
@@ -59,11 +76,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
 
         agent = Agent(false,0,starting_year,1,true,0,false,0,0,nothing,[0,0],[zeros(4),zeros(4)],0,false,false)
 
-        birth = Birth(nothing,nothing)
-        @set! birth.estimate = filter([:year, :province, :projection_scenario] => (x, y, z) -> x >= starting_year && y == province && (z == population_growth_type || z == "past"), master_birth_estimate)
-        relative(x) = x/birth.estimate.N[1]
-        @set! birth.estimate = transform(birth.estimate,:N => relative)
-        @set! birth.initial_population =  filter([:year, :province, :projection_scenario] => (x, y, z) -> x == starting_year && y == province && (z == population_growth_type || z == "past"), master_population_initial_distribution)
+        birth = set_up_birth(starting_year, population_growth_type, province)
 
         death = Death(Dict_initializer([:β0,:β1,:β2]),nothing)
         @set! death.parameters[:β0] =0;
