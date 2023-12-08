@@ -92,6 +92,44 @@ function set_up_incidence(starting_year::Integer, province::String)::Incidence
 end
 
 
+function set_up_exacerbation(province::String)
+    exacerbation = Exacerbation(
+        Dict_initializer([:β0_μ, :β0_σ]),
+        Dict_initializer([:β0, :βage, :βsex, :βasthmaDx, :βprev_exac1, :βprev_exac2,
+            :βcontrol_C, :βcontrol_PC, :βcontrol_UC, :calibration, :min_year]
+        ),
+        0
+    )
+    @set! exacerbation.initial_rate = 0.347;
+    @set! exacerbation.hyperparameters[:β0_μ] = 0;
+    @set! exacerbation.hyperparameters[:β0_σ] = 0.0000001;
+    @set! exacerbation.parameters[:β0_calibration] = 0.0; # 0.056
+    @set! exacerbation.parameters[:βage] = 0;
+    @set! exacerbation.parameters[:βsex] = 0;
+    @set! exacerbation.parameters[:βasthmaDx] = 0;
+    @set! exacerbation.parameters[:βprev_exac1] = 0;
+    @set! exacerbation.parameters[:βprev_exac2] = 0;
+    @set! exacerbation.parameters[:βcontrol_C] =  log(0.1880058);
+    @set! exacerbation.parameters[:βcontrol_PC] =  log(0.3760116);
+    @set! exacerbation.parameters[:βcontrol_UC] =  log(0.5640174);
+    @set! exacerbation.parameters[:βcontrol] =  0;
+    @set! exacerbation.parameters[:calibration] = groupby(
+        select(
+            filter(
+                [:province] => (x) -> x == province,
+                exacerbation_calibration
+            ),
+            Not([:province])
+        ),
+        [:year,:sex]
+    );
+    @set! exacerbation.parameters[:min_year] = collect(
+        keys(exacerbation.parameters[:calibration])[1]
+    )[1]+1
+    return exacerbation
+end
+
+
 function set_up_antibiotic_exposure()
     antibiotic_exposure = AntibioticExposure(
         Dict_initializer([:β0_μ, :β0_σ]),
@@ -162,24 +200,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         @set! control.parameters[:βsex] =  0.2347807;
         @set! control.parameters[:θ] =  [-0.3950; 2.754];
 
-        exacerbation = Exacerbation(Dict_initializer([:β0_μ,:β0_σ]),
-        Dict_initializer([:β0,:βage,:βsex,:βasthmaDx,:βprev_exac1,:βprev_exac2,:βcontrol_C,:βcontrol_PC,:βcontrol_UC,:calibration,:min_year]),
-        0)
-        @set! exacerbation.initial_rate = 0.347;
-        @set! exacerbation.hyperparameters[:β0_μ] = 0;
-        @set! exacerbation.hyperparameters[:β0_σ] = 0.0000001;
-        @set! exacerbation.parameters[:β0_calibration] = 0.0; # 0.056
-        @set! exacerbation.parameters[:βage] = 0;
-        @set! exacerbation.parameters[:βsex] = 0;
-        @set! exacerbation.parameters[:βasthmaDx] = 0;
-        @set! exacerbation.parameters[:βprev_exac1] = 0;
-        @set! exacerbation.parameters[:βprev_exac2] = 0;
-        @set! exacerbation.parameters[:βcontrol_C] =  log(0.1880058);
-        @set! exacerbation.parameters[:βcontrol_PC] =  log(0.3760116);
-        @set! exacerbation.parameters[:βcontrol_UC] =  log(0.5640174);
-        @set! exacerbation.parameters[:βcontrol] =  0;
-        @set! exacerbation.parameters[:calibration] = groupby(select(filter([:province] => (x) -> x == province ,exacerbation_calibration),Not([:province])),[:year,:sex]);
-        @set! exacerbation.parameters[:min_year] = collect(keys(exacerbation.parameters[:calibration])[1])[1]+1
+        exacerbation = set_up_exacerbation(province)
 
         exacerbation_severity = ExacerbationSeverity(Dict_initializer([:p0_μ,:p0_σ]), Dict_initializer([:p,:βprev_hosp_ped,:βprev_hosp_adult]))
         @set! exacerbation_severity.hyperparameters[:p0_μ] = [0.495, 0.195, 0.283, 0.026];
