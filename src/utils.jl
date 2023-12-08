@@ -27,6 +27,26 @@ function set_up_birth(starting_year::Integer, population_growth_type::String, pr
     return birth
 end
 
+function set_up_death(starting_year::Integer, province::String)
+    death = Death(Dict_initializer([:β0,:β1,:β2]), nothing)
+    @set! death.parameters[:β0] = 0;
+    @set! death.parameters[:β1] = 0;
+    @set! death.parameters[:β2] = 0;
+    @set! death.life_table = groupby(select(unstack(
+        select(
+            select(
+                filter((
+                    [:year, :province] => (x, y) -> x >= starting_year
+                    && y == province
+                    ),
+                    master_life_table
+                ),
+            Not(:se)),
+        Not(:province)),
+    :sex,:prob_death),:F,:M,:year),:year)
+    return death
+end
+
 
 function set_up_incidence(starting_year::Integer, province::String)::Incidence
     incidence = Incidence(
@@ -107,18 +127,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         agent = Agent(false,0,starting_year,1,true,0,false,0,0,nothing,[0,0],[zeros(4),zeros(4)],0,false,false)
 
         birth = set_up_birth(starting_year, population_growth_type, province)
-
-        death = Death(Dict_initializer([:β0,:β1,:β2]),nothing)
-        @set! death.parameters[:β0] =0;
-        @set! death.parameters[:β1] =0;
-        @set! death.parameters[:β2] =0;
-        @set! death.life_table = groupby(select(unstack(
-            select(
-                select(
-                    filter([:year, :province] => (x, y) -> x >= starting_year && y == province, master_life_table),
-                Not(:se)),
-            Not(:province)),
-        :sex,:prob_death),:F,:M,:year),:year)
+        death = set_up_death(starting_year, province)
 
         emigration = Emigration(nothing, nothing,nothing)
         @set! emigration.table = groupby(select(
