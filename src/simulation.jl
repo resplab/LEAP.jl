@@ -500,11 +500,15 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 end
 
                 # util and cost
-                event_dict["util"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += process(simulation.agent,simulation.util)
+                event_dict["util"][
+                    simulation.agent.cal_year_index,
+                    simulation.agent.age + 1,
+                    simulation.agent.sex + 1
+                ] += compute_utility(simulation.agent, simulation.util)
                 event_dict["cost"][
                     simulation.agent.cal_year_index,
-                    simulation.agent.age+1,
-                    simulation.agent.sex+1
+                    simulation.agent.age + 1,
+                    simulation.agent.sex + 1
                 ] += compute_cost(simulation.agent, simulation.cost)
 
                 # death or emigration
