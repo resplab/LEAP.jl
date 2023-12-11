@@ -130,8 +130,7 @@ Mutates both `simulation` and `event_dict`.
 - `initial_pop_index::Integer`: Index of the agent (person) in the initial population.
 """
 function create_agent!(simulation::Simulation, event_dict::Dict,
-    cal_year::Integer, min_cal_year::Integer, cal_year_index::Integer,
-    initial_pop_index::Integer=0)
+    cal_year::Integer, cal_year_index::Integer, initial_pop_index::Integer=0)
 
     simulation.agent = process_birth(cal_year, cal_year_index, simulation.birth,
         rand(Bernoulli(simulation.birth.initial_population.prop_male[initial_pop_index])),
@@ -161,7 +160,7 @@ Mutates both `simulation` and `event_dict`.
     the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
 """
 function create_agent!(simulation::Simulation, event_dict::Dict, cal_year::Integer,
-    min_cal_year::Integer, cal_year_index::Integer)
+    cal_year_index::Integer)
 
     simulation.agent = process_birth(
         cal_year, cal_year_index, simulation.birth,
