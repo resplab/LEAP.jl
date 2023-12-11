@@ -511,11 +511,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     simulation.agent.sex + 1
                 ] += compute_cost(simulation.agent, simulation.cost)
 
-                # death or emigration
-                # assume death occurs first
-                if process(simulation.agent,simulation.death)
+                # death or emigration, assume death occurs first
+                if compute_prob_death(simulation.agent, simulation.death)
                     @set! simulation.agent.alive = false
-                    # everyone dies in the end... Inevitable
                     event_dict["death"][
                         simulation.agent.cal_year_index,
                         simulation.agent.age+1,
