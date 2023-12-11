@@ -4,6 +4,11 @@ struct Exacerbation <: Exacerbation_Module
     initial_rate::Float64
 end
 
+struct ExacerbationHist <: ExacerbationHist_Module
+    num_current_year::Integer
+    num_prev_year::Integer
+end
+
 """
     compute_num_exacerbations(agent, exacerbation)
 

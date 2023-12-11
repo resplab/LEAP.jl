@@ -7,8 +7,9 @@ function process_birth(cal_year::Integer, cal_year_index::Integer, birth::Birth)
     agent = Agent(
         sex=rand(Bernoulli(birth.estimate.prop_male[cal_year_index])),
         age=0, cal_year=cal_year, cal_year_index=cal_year_index, alive=true, num_antibiotic_use=0,
-        has_asthma=false, asthma_age=nothing, severity=nothing, control=nothing, exac_hist=[0,0],
-        exac_sev_hist=[zeros(4),zeros(4)], total_hosp=0, family_hist=false, asthma_status=false
+        has_asthma=false, asthma_age=nothing, severity=nothing, control=nothing,
+        exac_hist=ExacerbationHist(0, 0), exac_sev_hist=[zeros(4),zeros(4)], total_hosp=0,
+        family_hist=false, asthma_status=false
     )
     return agent
 end
@@ -19,8 +20,9 @@ function process_birth(cal_year::Integer, cal_year_index::Integer, birth::Birth,
     agent = Agent(
         sex=rand(Bernoulli(birth.estimate.prop_male[cal_year_index])),
         age=0, cal_year=cal_year, cal_year_index=cal_year_index, alive=true, num_antibiotic_use=0,
-        has_asthma=false, asthma_age=nothing, severity=nothing, control=nothing, exac_hist=[0,0],
-        exac_sev_hist=[zeros(4),zeros(4)], total_hosp=0, family_hist=false, asthma_status=false
+        has_asthma=false, asthma_age=nothing, severity=nothing, control=nothing,
+        exac_hist=ExacerbationHist(0, 0), exac_sev_hist=[zeros(4),zeros(4)],
+        total_hosp=0, family_hist=false, asthma_status=false
     )
     @set! agent.num_antibiotic_use = process(
         agent, antibiotic_exposure
@@ -37,7 +39,8 @@ function process_birth(cal_year::Integer, cal_year_index::Integer, birth::Birth,
     agent = Agent(
         sex=sex, age=age, cal_year=cal_year, cal_year_index=cal_year_index, alive=true,
         num_antibiotic_use=0, has_asthma=false, asthma_age=nothing, severity=nothing,
-        control=nothing, exac_hist=[0,0], exac_sev_hist=[zeros(4),zeros(4)], total_hosp=0,
+        control=nothing, exac_hist=ExacerbationHist(0, 0),
+        exac_sev_hist=[zeros(4),zeros(4)], total_hosp=0,
         family_hist=false, asthma_status=false
     )
     if age == 0
