@@ -395,7 +395,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                             simulation.agent.cal_year_index, simulation.agent.age+1,
                             simulation.agent.sex+1] += 1
 
-                        @set! simulation.agent.control = process(
+                        @set! simulation.agent.control = process_control(
                             simulation.agent, simulation.control
                         )
                         event_dict["control"][
