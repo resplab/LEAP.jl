@@ -321,13 +321,6 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         event_dict["asthma_incidence"][
                             simulation.agent.cal_year_index, simulation.agent.age+1,
                             simulation.agent.sex+1] += 1
-                        # event_dict["asthma_incidence_family_history"][simulation.agent.family_hist+1,simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                        # event_dict["asthma_incidence_antibiotic_exposure"][min(simulation.agent.num_antibiotic_use+1,4),simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-
-                        # event_dict["asthma_prevalence"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                        # # event_dict["asthma_prevalence_family_history"][simulation.agent.family_hist+1,simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                        # # event_dict["asthma_prevalence_antibiotic_exposure"][min(simulation.agent.num_antibiotic_use+1,4),simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                        # event_dict["asthma_prevalence_contingency_table"][(simulation.agent.cal_year,Int(simulation.agent.sex),Int(simulation.agent.family_hist),min(simulation.agent.num_antibiotic_use,3))][simulation.agent.age+1,"n_asthma"] += 1
 
                         @set! simulation.agent.control = process(
                             simulation.agent, simulation.control
