@@ -1,4 +1,5 @@
-# better to use UInt64 but the syntax may not be intuitive to others
+import Base.@kwdef
+
 
 """
     Agent
@@ -17,13 +18,13 @@ A person in the model.
 - `severity::Union{Nothing, Int}`: Asthma severity level: 1 = mild, 2 = severe, 3 = very severe.
 - `control::Union{Nothing,Vector{Float64}}`: Asthma control level: 1 = uncontrolled,
     2 = partially controlled, 3 = fully controlled.
-- `exac_hist::Union{Nothing, Vector{Int}}`: Total number of exacerbations.
-- `exac_sev_hist::Union{Nothing,Vector{Vector{Int}}}`: Number of exacerbations by severity.
+- `exac_hist::Union{Nothing, ExacerbationHist_Module}`: Total number of exacerbations.
+- `exac_sev_hist::Union{Nothing, ExacerbationSeverityHist_Module}`: Number of exacerbations by severity.
 - `total_hosp::Integer`: Total number of very severe asthma exacerbations leading to hospitalization.
 - `family_hist::Bool`: Is there a family history of asthma?
 - `asthma_status::Bool`: TODO.
 """
-struct Agent  <: Agent_Module
+@kwdef struct Agent  <: Agent_Module
     sex::Bool
     age::Integer
     cal_year::Integer
@@ -34,8 +35,8 @@ struct Agent  <: Agent_Module
     asthma_age::Union{Nothing, Integer}
     severity::Union{Nothing, Integer}
     control::Union{Nothing, Vector{Float64}}
-    exac_hist::Union{Nothing, Vector{Integer}}
-    exac_sev_hist::Union{Nothing, Vector{Vector{Integer}}}
+    exac_hist::Union{Nothing, ExacerbationHist_Module}
+    exac_sev_hist::Union{Nothing, ExacerbationSeverityHist_Module}
     total_hosp::Integer
     family_hist::Bool
     asthma_status::Bool

@@ -4,7 +4,7 @@ struct FamilyHistory <: FamilyHistory_Module
 end
 
 function process(ag::Agent,fam::FamilyHistory)
-        rand(Bernoulli(fam.parameters[:p]))
+    rand(Bernoulli(fam.parameters[:p]))
 end
 
 function process_initial(ag::Agent,fam::FamilyHistory)

@@ -1,13 +1,36 @@
-struct Cost <: Cost_Module
-    parameters
+"""
+    AsthmaCost
+
+A struct containing information about the cost of asthma.
+
+# Fields
+- `parameters::Union{AbstractDict, Nothing}`: A dictionary containing the following keys:
+    `control`: A vector of numbers.
+    `exac`: A vector of numbers.
+
+"""
+struct AsthmaCost <: Cost_Module
+    parameters::Union{AbstractDict, Nothing}
 end
 
-function process(ag::Agent,cost::Cost)
-    if !ag.has_asthma
-        # no asthma, so return 0
+
+"""
+    compute_cost(agent, incidence)
+
+Compute the cost in dollars (CAD) for the current year due to asthma exacerbations and control.
+
+# Arguments
+
+- `agent::Agent`: Agent module, see [`Agent`](@ref).
+- `asthma_cost::AsthmaCost`: AsthmaCost module, see [`AsthmaCost`](@ref).
+"""
+function compute_cost(agent::Agent, asthma_cost::AsthmaCost)
+    if !agent.has_asthma
         return 0
     else
-        # costs due to having exacerbation and control
-        return sum(ag.exac_sev_hist[1] .* cost.parameters[:exac]) + sum(ag.control .* cost.parameters[:control])
+        return (
+            sum(agent.exac_sev_hist.current_year .* asthma_cost.parameters[:exac]) +
+            sum(agent.control .* asthma_cost.parameters[:control])
+        )
     end
 end

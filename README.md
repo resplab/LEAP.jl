@@ -45,3 +45,11 @@ julia> # type ] here to enter the Pkg REPL
 ```
 
 ## Tests
+
+```
+cd LEAP.jl
+julia
+julia> # type ] here to enter the Pkg REPL
+[(@v1.x) pkg> activate . # activate our package REPL
+[(LEAP) pkg> test
+```

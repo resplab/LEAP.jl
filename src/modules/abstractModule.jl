@@ -24,7 +24,9 @@ abstract type Reassessment_Module <: AsthmaOccurrence_Module end
 
 # asthma outcomes
 abstract type Exacerbation_Module   <: AsthmaOutcomes_Module  end
+abstract type ExacerbationHist_Module end
 abstract type Exacerbation_Severity_Module <: Exacerbation_Module end
+abstract type ExacerbationSeverityHist_Module end
 abstract type Control_Module   <: AsthmaOutcomes_Module  end
 
 # payoffs
