@@ -5,7 +5,8 @@ struct ExacerbationSeverity <: Exacerbation_Severity_Module
     parameters::Union{AbstractDict,Nothing}
 end
 
-function process(exac_severity::ExacerbationSeverity,num::Int64,prev_hosp::Bool,ag::Int)
+function process_severity(exac_severity::ExacerbationSeverity, num::Integer, prev_hosp::Bool,
+    age::Integer)
     tmp_p = copy(exac_severity.parameters[:p])
     len_p = length(tmp_p)
 
@@ -16,7 +17,8 @@ function process(exac_severity::ExacerbationSeverity,num::Int64,prev_hosp::Bool,
         if prev_hosp
             tmp_weight = copy(tmp_p[1:3])
             tmp_weight = tmp_weight / sum(tmp_weight)
-            tmp_p[len_p] = tmp_p[len_p]*(ag < 14 ? exac_severity.parameters[:βprev_hosp_ped] : exac_severity.parameters[:βprev_hosp_adult])
+            tmp_p[len_p] = tmp_p[len_p]*(
+                age < 14 ? exac_severity.parameters[:βprev_hosp_ped] : exac_severity.parameters[:βprev_hosp_adult])
             tmp_p[1:(len_p-1)] .= tmp_weight * (1-tmp_p[len_p])
         end
 

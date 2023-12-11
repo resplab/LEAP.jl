@@ -232,7 +232,7 @@ function generate_initial_asthma!(simulation::Simulation)
             simulation.agent, simulation.exacerbation
         )
         # the number of exacerbation by severity
-        @set! simulation.agent.exac_sev_hist[1] = process(
+        @set! simulation.agent.exac_sev_hist[1] = process_severity(
             simulation.exacerbation_severity, simulation.agent.exac_hist.num_current_year,
             (simulation.agent.total_hosp>0), simulation.agent.age
         )
@@ -406,7 +406,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         )
 
                         if simulation.agent.exac_hist.num_current_year != 0
-                            @set! simulation.agent.exac_sev_hist[1] = process(
+                            @set! simulation.agent.exac_sev_hist[1] = process_severity(
                                 simulation.exacerbation_severity,
                                 simulation.agent.exac_hist.num_current_year,
                                 (simulation.agent.total_hosp>0),
@@ -454,7 +454,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         )
 
                         if simulation.agent.exac_hist.num_current_year != 0
-                            @set! simulation.agent.exac_sev_hist[1] = process(
+                            @set! simulation.agent.exac_sev_hist[1] = process_severity(
                                 simulation.exacerbation_severity,
                                 simulation.agent.exac_hist.num_current_year,
                                 (simulation.agent.total_hosp>0),
