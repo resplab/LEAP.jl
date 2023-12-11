@@ -21,7 +21,7 @@ end
 
 
 """
-    process(agent, death)
+    compute_prob_death(agent, death)
 
 Determine the probability of death of an agent in a given year.
 
