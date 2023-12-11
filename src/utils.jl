@@ -276,10 +276,10 @@ end
 function set_up_cost()
     # exchange rate btw 2018 USD and 2023 CAD Sept
     exchange_rate_usd_cad = 1.66
-    cost = Cost(dict_initializer([:control, :exac]))
-    @set! cost.parameters[:control] = [2372, 2965, 3127] * exchange_rate_usd_cad;
-    @set! cost.parameters[:exac] = [130, 594, 2425, 9900] * exchange_rate_usd_cad;
-    return cost
+    asthma_cost = AsthmaCost(dict_initializer([:control, :exac]))
+    @set! asthma_cost.parameters[:control] = [2372, 2965, 3127] * exchange_rate_usd_cad;
+    @set! asthma_cost.parameters[:exac] = [130, 594, 2425, 9900] * exchange_rate_usd_cad;
+    return asthma_cost
 end
 
 
