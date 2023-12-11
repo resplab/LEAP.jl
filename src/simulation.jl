@@ -520,7 +520,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         simulation.agent.sex+1
                     ] += 1
                 # emigration
-                elseif process(simulation.agent.cal_year_index,
+                elseif compute_prob_emigration(simulation.agent.cal_year_index,
                     simulation.agent.age,simulation.agent.sex,simulation.emigration)
                     @set! simulation.agent.alive = false
                     event_dict["emigration"][
