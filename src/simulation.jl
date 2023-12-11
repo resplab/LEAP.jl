@@ -311,26 +311,26 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     )
                     # crude incidence record
                     if simulation.agent.has_asthma
+                        # keep track of patients who got asthma for the first time
+                        if !simulation.agent.asthma_status
+                            @set! simulation.agent.asthma_status = true
+                            @set! simulation.agent.asthma_age = simulation.agent.age
+                            event_dict["asthma_status"][
+                                simulation.agent.cal_year_index, simulation.agent.age+1,
+                                simulation.agent.sex+1] += 1
+                        end
                         event_dict["asthma_incidence_contingency_table"][(
                             simulation.agent.cal_year, Int(simulation.agent.sex),
                             Int(simulation.agent.family_hist),
                             min(simulation.agent.num_antibiotic_use,3)
                             )][simulation.agent.age+1,"n_asthma"] += 1
+
                     else
                         event_dict["asthma_incidence_contingency_table"][(
                             simulation.agent.cal_year, Int(simulation.agent.sex),
                             Int(simulation.agent.family_hist),
                             min(simulation.agent.num_antibiotic_use,3)
                             )][simulation.agent.age+1,"n_no_asthma"] += 1
-                    end
-
-                    # keep track of patients who got asthma for the first time
-                    if simulation.agent.has_asthma && !simulation.agent.asthma_status
-                        @set! simulation.agent.asthma_status = true
-                        @set! simulation.agent.asthma_age = simulation.agent.age
-                        event_dict["asthma_status"][
-                            simulation.agent.cal_year_index, simulation.agent.age+1,
-                            simulation.agent.sex+1] += 1
                     end
 
                     # asthma Dx
