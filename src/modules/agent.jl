@@ -19,7 +19,7 @@ A person in the model.
 - `control::Union{Nothing,Vector{Float64}}`: Asthma control level: 1 = uncontrolled,
     2 = partially controlled, 3 = fully controlled.
 - `exac_hist::Union{Nothing, ExacerbationHist_Module}`: Total number of exacerbations.
-- `exac_sev_hist::Union{Nothing,Vector{Vector{Int}}}`: Number of exacerbations by severity.
+- `exac_sev_hist::Union{Nothing, ExacerbationSeverityHist_Module}`: Number of exacerbations by severity.
 - `total_hosp::Integer`: Total number of very severe asthma exacerbations leading to hospitalization.
 - `family_hist::Bool`: Is there a family history of asthma?
 - `asthma_status::Bool`: TODO.
@@ -36,7 +36,7 @@ A person in the model.
     severity::Union{Nothing, Integer}
     control::Union{Nothing, Vector{Float64}}
     exac_hist::Union{Nothing, ExacerbationHist_Module}
-    exac_sev_hist::Union{Nothing, Vector{Vector{Integer}}}
+    exac_sev_hist::Union{Nothing, ExacerbationSeverityHist_Module}
     total_hosp::Integer
     family_hist::Bool
     asthma_status::Bool

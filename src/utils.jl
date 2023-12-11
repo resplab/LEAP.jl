@@ -299,7 +299,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             0,
             nothing,
             ExacerbationHist(0, 0),
-            [zeros(4), zeros(4)],
+            ExacerbationSeverityHist(zeros(4), zeros(4)),
             0,
             false,
             false

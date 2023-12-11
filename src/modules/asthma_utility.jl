@@ -10,6 +10,6 @@ function process(ag::Agent,util::Utility)
         return baseline
     else
         # disutility due to having exacerbation and control
-        return max(0,baseline - sum(ag.exac_sev_hist[1] .* util.parameters[:exac]) - sum(ag.control .* util.parameters[:control]))
+        return max(0,baseline - sum(ag.exac_sev_hist.current_year .* util.parameters[:exac]) - sum(ag.control .* util.parameters[:control]))
     end
 end
