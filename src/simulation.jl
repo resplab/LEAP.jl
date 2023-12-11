@@ -331,8 +331,6 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         event_dict["asthma_status"][
                             simulation.agent.cal_year_index, simulation.agent.age+1,
                             simulation.agent.sex+1] += 1
-                        # event_dict["asthma_status_family_history"][simulation.agent.family_hist+1,simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                        # event_dict["asthma_status_antibiotic_exposure"][min(simulation.agent.num_antibiotic_use+1,4),simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
                     end
 
                     # asthma Dx
@@ -391,11 +389,6 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     )
                     # if still dxed with asthma
                     if simulation.agent.has_asthma
-                        # event_dict["asthma_prevalence"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                        # # event_dict["asthma_prevalence_family_history"][simulation.agent.family_hist+1,simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                        # # event_dict["asthma_prevalence_antibiotic_exposure"][min(simulation.agent.num_antibiotic_use+1,4),simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                        # event_dict["asthma_prevalence_contingency_table"][(simulation.agent.cal_year,Int(simulation.agent.sex),Int(simulation.agent.family_hist),min(simulation.agent.num_antibiotic_use,3))][simulation.agent.age+1,"n_asthma"] += 1
-
                         #  update control
                         @set! simulation.agent.control = process_control(
                             simulation.agent, simulation.control
@@ -439,9 +432,19 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 # if no asthma, record it
                 if simulation.agent.has_asthma
                     event_dict["asthma_prevalence"][simulation.agent.cal_year_index,simulation.agent.age+1,simulation.agent.sex+1] += 1
-                    event_dict["asthma_prevalence_contingency_table"][(simulation.agent.cal_year,Int(simulation.agent.sex),Int(simulation.agent.family_hist),min(simulation.agent.num_antibiotic_use,3))][simulation.agent.age+1,"n_asthma"] += 1
+                    event_dict["asthma_prevalence_contingency_table"][(
+                        simulation.agent.cal_year,
+                        Int(simulation.agent.sex),
+                        Int(simulation.agent.family_hist),
+                        min(simulation.agent.num_antibiotic_use, 3)
+                        )][simulation.agent.age+1,"n_asthma"] += 1
                 else
-                    event_dict["asthma_prevalence_contingency_table"][(simulation.agent.cal_year,Int(simulation.agent.sex),Int(simulation.agent.family_hist),min(simulation.agent.num_antibiotic_use,3))][simulation.agent.age+1,"n_no_asthma"] += 1
+                    event_dict["asthma_prevalence_contingency_table"][(
+                        simulation.agent.cal_year,
+                        Int(simulation.agent.sex),
+                        Int(simulation.agent.family_hist),
+                        min(simulation.agent.num_antibiotic_use, 3)
+                        )][simulation.agent.age+1,"n_no_asthma"] += 1
                 end
 
                 # util and cost
@@ -486,8 +489,17 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
     end # end for loop: cal year
 
     # return the output
-    event_dict["asthma_prevalence_contingency_table"] = Matrix(combine(event_dict["asthma_prevalence_contingency_table"],[:year,:sex,:age,:fam_history,:abx_exposure,:n_asthma,:n_no_asthma]))
-    event_dict["asthma_incidence_contingency_table"] = Matrix(combine(event_dict["asthma_incidence_contingency_table"],[:year,:sex,:age,:fam_history,:abx_exposure,:n_asthma,:n_no_asthma]))
+    event_dict["asthma_prevalence_contingency_table"] = Matrix(
+            combine(event_dict["asthma_prevalence_contingency_table"],
+            [:year,:sex,:age,:fam_history,:abx_exposure,:n_asthma,:n_no_asthma]
+        )
+    )
+    event_dict["asthma_incidence_contingency_table"] = Matrix(
+        combine(
+            event_dict["asthma_incidence_contingency_table"],
+            [:year,:sex,:age,:fam_history,:abx_exposure,:n_asthma,:n_no_asthma]
+        )
+    )
 
 
     @set! simulation.outcomeMatrix = (; n = n_list, outcome_matrix = event_dict);
