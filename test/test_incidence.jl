@@ -15,7 +15,7 @@ using DataFrames
     family_history = LEAP.set_up_family_history()
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
-    agent = process_birth(
+    agent = create_agent_newborn(
         cal_year, tmp_cal_year_index, birth,
         antibiotic_exposure, family_history
     )
