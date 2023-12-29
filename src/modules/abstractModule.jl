@@ -32,3 +32,7 @@ abstract type Control_Module   <: AsthmaOutcomes_Module  end
 # payoffs
 abstract type Utility_Module <: Payoffs_Module end
 abstract type Cost_Module <: Payoffs_Module end
+
+# pollution
+abstract type CensusDivisionModule <: SimulationModule end
+abstract type CensusTableModule <: SimulationModule end
