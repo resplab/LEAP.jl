@@ -3,7 +3,7 @@ struct Birth <: Birth_Module
     initial_population
 end
 
-function process_birth(cal_year::Integer, cal_year_index::Integer, birth::Birth)
+function create_agent_newborn(cal_year::Integer, cal_year_index::Integer, birth::Birth)
     agent = Agent(
         sex=rand(Bernoulli(birth.estimate.prop_male[cal_year_index])),
         age=0, cal_year=cal_year, cal_year_index=cal_year_index, alive=true, num_antibiotic_use=0,
@@ -15,7 +15,7 @@ function process_birth(cal_year::Integer, cal_year_index::Integer, birth::Birth)
 end
 
 
-function process_birth(cal_year::Integer, cal_year_index::Integer, birth::Birth,
+function create_agent_newborn(cal_year::Integer, cal_year_index::Integer, birth::Birth,
     antibiotic_exposure::AntibioticExposure, family_hist::FamilyHistory)
     agent = Agent(
         sex=rand(Bernoulli(birth.estimate.prop_male[cal_year_index])),
@@ -34,7 +34,7 @@ function process_birth(cal_year::Integer, cal_year_index::Integer, birth::Birth,
 end
 
 
-function process_birth(cal_year::Integer, cal_year_index::Integer, birth::Birth, sex::Bool,
+function create_agent_newborn(cal_year::Integer, cal_year_index::Integer, birth::Birth, sex::Bool,
     age::Integer, antibiotic_exposure::AntibioticExposure, family_hist::FamilyHistory)
     agent = Agent(
         sex=sex, age=age, cal_year=cal_year, cal_year_index=cal_year_index, alive=true,

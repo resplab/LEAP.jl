@@ -132,7 +132,7 @@ Mutates both `simulation` and `event_dict`.
 function create_agent!(simulation::Simulation, event_dict::Dict,
     cal_year::Integer, cal_year_index::Integer, initial_pop_index::Integer=0)
 
-    simulation.agent = process_birth(cal_year, cal_year_index, simulation.birth,
+    simulation.agent = create_agent_newborn(cal_year, cal_year_index, simulation.birth,
         rand(Bernoulli(simulation.birth.initial_population.prop_male[initial_pop_index])),
         simulation.birth.initial_population.age[initial_pop_index],
         simulation.antibioticExposure,
@@ -162,7 +162,7 @@ Mutates both `simulation` and `event_dict`.
 function create_agent!(simulation::Simulation, event_dict::Dict, cal_year::Integer,
     cal_year_index::Integer)
 
-    simulation.agent = process_birth(
+    simulation.agent = create_agent_newborn(
         cal_year, cal_year_index, simulation.birth,
         simulation.antibioticExposure,
         simulation.familyHistory
@@ -173,6 +173,7 @@ function create_agent!(simulation::Simulation, event_dict::Dict, cal_year::Integ
     event_dict["family_history"][simulation.agent.cal_year_index,
         simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.family_hist
 end
+
 
 """
     create_agent!(simulation, event_dict, cal_year, cal_year_index, immigrant_index)

@@ -25,7 +25,7 @@ export
     random_parameter_initialization!,
     create_event_dict,
     set_up,
-    process_birth,
+    create_agent_newborn,
     agent_has_asthma,
     compute_num_exacerbations,
     # global datasets
