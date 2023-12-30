@@ -94,12 +94,40 @@ function create_agent_newborn(cal_year::Integer, cal_year_index::Integer, birth:
     return agent
 end
 
-function process_initial(b::Birth,n::Int)
-    tmp_n = round.(Int,b.initial_population.prop*n)
-    tmp_index = Vector{Int}[]
-    for i in eachindex(tmp_n)
-        tmp_index = vcat(tmp_index,fill(i,tmp_n[i]))
+
+"""
+    get_initial_population_indices(birth, num_births)
+
+Get the indices for the agents from the initial population table, weighted by age.
+
+# Examples
+For example, if the number of births is 2, and we have the following initial population table:
+
+    age | prop | ...
+    ----------------
+    0     1.0    ...
+    1     2.0    ...
+    2     0.5    ...
+
+then we will return the following:
+
+    [1, 1, 2, 2, 2, 2, 3]
+
+# Arguments
+- `birth::Birth`: a Birth object, see  [`Birth`](@ref).
+- `num_births::Integer`: number of births.
+
+# Returns
+- `Vector{Integer}`: the indices for the initial population table.
+"""
+function get_initial_population_indices(birth::Birth, num_births::Integer)
+    num_agents_per_age_group = round.(Int, birth.initial_population.prop*num_births)
+    intial_population_indices = Vector{Integer}[]
+    for age_index in eachindex(num_agents_per_age_group)
+        initial_population_indices = vcat(
+            initial_population_indices,
+            fill(age_index, num_agents_per_age_group[age_index])
+        )
     end
-    tmp_index
-    # wsample(1:(nrow(b.initial_population)),b.initial_population.prop,n,replace=true)
+    return intial_population_indices
 end

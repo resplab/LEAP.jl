@@ -5,6 +5,7 @@ mutable struct Simulation <: SimulationModule
     starting_calendar_year::Int
     time_horizon::Union{Missing,Int,Vector{Int}}
     n::Union{Nothing,Missing,Real,String}
+    num_births_initial::Union{Nothing,Missing,Real,String}
     population_growth_type::Union{Missing,String,Char}
     agent::Agent_Module
     birth::Birth_Module
@@ -23,6 +24,17 @@ mutable struct Simulation <: SimulationModule
     cost::Cost_Module
     initial_distribution
     outcomeMatrix
+end
+
+function set_num_births_initial!(simulation::SimulationModule, num_births_initial::Integer=100)
+    if num_births_initial == "full"
+        simulation.num_births_initial = simulation.birth.initial_population.n_birth[1]
+    elseif num_births_initial < 1
+        simulation.num_births_initial = ceil(
+            Int,
+            num_births_initial*simulation.birth.initial_population.n_birth[1]
+        )
+    end
 end
 
 
@@ -107,7 +119,9 @@ function get_num_new_agents(cal_year::Integer, min_cal_year::Integer, num_new_bo
     initial_pop_indices = Int[]
 
     if cal_year == min_cal_year
-        initial_pop_indices = process_initial(simulation.birth, simulation.n)
+        initial_pop_indices = get_initial_population_indices(
+            simulation.birth, simulation.num_births_initial
+        )
         num_new_agents = length(initial_pop_indices)
     end
     return num_new_agents
@@ -263,15 +277,6 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
     min_cal_year = simulation.starting_calendar_year
     max_cal_year = min_cal_year + simulation.time_horizon - 1
 
-    # if n is not provided, use a default value, n=100
-    if ismissing(simulation.n)
-        simulation.n = 100
-    elseif simulation.n == "full"
-        simulation.n = simulation.birth.initial_population.n_birth[1]
-    elseif simulation.n < 1
-        simulation.n = ceil(Int,simulation.n*simulation.birth.initial_population.n_birth[1])
-    end
-
     max_time_horizon = (until_all_die ? typemax(Int) : simulation.time_horizon)
     cal_years = min_cal_year:max_cal_year
 
@@ -299,7 +304,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
         # num of newborns and immigrants in cal_year
         num_new_born = ceil(
             Int,
-            simulation.n * simulation.birth.estimate.N_relative[tmp_cal_year_index]
+            simulation.num_births_initial * simulation.birth.estimate.N_relative[tmp_cal_year_index]
         )
         num_immigrants = ceil(
             Int,
@@ -319,7 +324,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 num_immigrants
             )
         else
-            initial_pop_indices = process_initial(simulation.birth, simulation.n)
+            initial_pop_indices = get_initial_population_indices(
+                simulation.birth, simulation.num_births_initial
+            )
         end
 
 
