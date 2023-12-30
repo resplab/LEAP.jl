@@ -1,6 +1,37 @@
+"""
+    Birth
+
+A struct containing information about projected birth rates.
+
+# Fields
+- `estimate::Union{DataFrame, Nothing}`: A data frame giving the projected number of births in
+    Canada with the following columns:
+        `year`: integer year.
+        `province`: A string indicating the province abbreviation, e.g. "BC".
+        `N`: estimated number of births for that year.
+        `prop_male`: proportion of births which are male, a number in [0, 1].
+        `projection_scenario`: Population growth type, one of:
+            ["past", "LG", "HG", "M1", "M2", "M3", "M4", "M5", "M6", FA", "SA"].
+            See [Stats Canada](https://www150.statcan.gc.ca/n1/pub/91-520-x/91-520-x2022001-eng.htm).
+        `N_relative`: number of births relative to the previous year.
+    See `master_birth_estimate`.
+- `initial_population::Union{DataFrame, Nothing}`: A data frame giving the population for the
+    first year of the simulation:
+        `year`: integer year.
+        `age`: integer age.
+        `province`: a string indicating the province abbreviation, e.g. "BC".
+        `n`: estimated number of people in that age category in a given year.
+        `n_birth`: the number of people born that year.
+        `prop`: the ratio of that age group to the newborn age group (age = 0).
+        `prop_male`: proportion of people in that age group who are male, a number in [0, 1].
+        `projection_scenario`: Population growth type, one of:
+            ["past", "LG", "HG", "M1", "M2", "M3", "M4", "M5", "M6", FA", "SA"].
+            See [Stats Canada](https://www150.statcan.gc.ca/n1/pub/91-520-x/91-520-x2022001-eng.htm).
+    See `master_population_initial_distribution`.
+"""
 struct Birth <: Birth_Module
-    estimate
-    initial_population
+    estimate::Union{DataFrame, Nothing}
+    initial_population::Union{DataFrame, Nothing}
 end
 
 function create_agent_newborn(cal_year::Integer, cal_year_index::Integer, birth::Birth)
