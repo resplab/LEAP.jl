@@ -1,10 +1,22 @@
+"""
+    Simulation
 
+TODO.
+
+# Fields
+- `max_age::Integer`: the maximum age to compute in the simulation.
+- `province::Union{String, Char}`: a string indicating the province abbreviation, e.g. "BC".
+- `starting_calendar_year::Integer`: the calendar year to start the simulation at, e.g. 2000.
+- `time_horizon::Union{Missing,Int,Vector{Int}}`: TODO.
+- `num_births_initial::Union{Nothing,Missing,Real,String}`: the number of births for the initial
+    year of the simulation.
+
+"""
 mutable struct Simulation <: SimulationModule
-    max_age::Int
+    max_age::Integer
     province::Union{String,Char}
-    starting_calendar_year::Int
+    starting_calendar_year::Integer
     time_horizon::Union{Missing,Int,Vector{Int}}
-    n::Union{Nothing,Missing,Real,String}
     num_births_initial::Union{Nothing,Missing,Real,String}
     population_growth_type::Union{Missing,String,Char}
     agent::Agent_Module
