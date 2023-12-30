@@ -26,6 +26,7 @@ export
     create_event_dict,
     set_up,
     create_agent_newborn,
+    get_num_newborn,
     agent_has_asthma,
     compute_num_exacerbations,
     # global datasets

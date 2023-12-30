@@ -131,3 +131,26 @@ function get_initial_population_indices(birth::Birth, num_births::Integer)
     end
     return intial_population_indices
 end
+
+
+"""
+    get_num_newborn(birth, num_births_initial, cal_year_index)
+
+Get the number of births in a given year.
+
+# Arguments
+- `birth::Birth`: a Birth object, see  [`Birth`](@ref).
+- `num_births_initial::Integer`: number of births in the initial year of the simulation.
+- `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if the
+    simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
+
+# Returns
+- `Integer`: the number of births for the given year.
+"""
+function get_num_newborn(birth::Birth, num_births_initial::Integer, cal_year_index::Integer)
+    num_new_born = ceil(
+        Int,
+        num_births_initial * birth.estimate.N_relative[cal_year_index]
+    )
+    return num_new_born
+end

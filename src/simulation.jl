@@ -314,9 +314,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
         tmp_cal_year_index = cal_year - min_cal_year + 1
 
         # num of newborns and immigrants in cal_year
-        num_new_born = ceil(
-            Int,
-            simulation.num_births_initial * simulation.birth.estimate.N_relative[tmp_cal_year_index]
+        num_new_born = get_num_newborn(
+            simulation.birth, simulation.num_births_initial, tmp_cal_year_index
         )
         num_immigrants = ceil(
             Int,
