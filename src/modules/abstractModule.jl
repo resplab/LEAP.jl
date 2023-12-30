@@ -1,11 +1,11 @@
-abstract type Simulation_Module end
+abstract type SimulationModule end
 
-abstract type Agent_Module <: Simulation_Module end
-abstract type Demographics_Module <: Simulation_Module end
-abstract type AsthmaOccurrence_Module <: Simulation_Module end
-abstract type AsthmaOutcomes_Module <: Simulation_Module end
-abstract type RiskFactors_Module <: Simulation_Module end
-abstract type Payoffs_Module <: Simulation_Module end
+abstract type Agent_Module <: SimulationModule end
+abstract type Demographics_Module <: SimulationModule end
+abstract type AsthmaOccurrence_Module <: SimulationModule end
+abstract type AsthmaOutcomes_Module <: SimulationModule end
+abstract type RiskFactors_Module <: SimulationModule end
+abstract type Payoffs_Module <: SimulationModule end
 
 # demographics
 abstract type Birth_Module <: Demographics_Module  end

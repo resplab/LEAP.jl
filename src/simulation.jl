@@ -1,5 +1,5 @@
 
-mutable struct Simulation <: Simulation_Module
+mutable struct Simulation <: SimulationModule
     max_age::Int
     province::Union{String,Char}
     starting_calendar_year::Int
