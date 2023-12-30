@@ -122,14 +122,14 @@ then we will return the following:
 """
 function get_initial_population_indices(birth::Birth, num_births::Integer)
     num_agents_per_age_group = round.(Int, birth.initial_population.prop*num_births)
-    intial_population_indices = Vector{Integer}[]
+    initial_population_indices = Vector{Integer}[]
     for age_index in eachindex(num_agents_per_age_group)
         initial_population_indices = vcat(
             initial_population_indices,
             fill(age_index, num_agents_per_age_group[age_index])
         )
     end
-    return intial_population_indices
+    return initial_population_indices
 end
 
 
