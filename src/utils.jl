@@ -282,6 +282,13 @@ function set_up_cost()
     return asthma_cost
 end
 
+function set_up_census_division()
+    census_table = CensusTable(
+        nothing, 2021
+    )
+    @set! census_table.data = groupby(master_census_data, :province)
+end
+
 
 function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19, n=100,
     population_growth_type="LG")
