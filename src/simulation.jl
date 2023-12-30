@@ -317,9 +317,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
         num_new_born = get_num_newborn(
             simulation.birth, simulation.num_births_initial, tmp_cal_year_index
         )
-        num_immigrants = ceil(
-            Int,
-            num_new_born * sum(simulation.immigration.table[tmp_cal_year_index].n_prop_birth)
+        num_immigrants = get_num_new_immigrants(
+            simulation.immigration, num_new_born, tmp_cal_year_index
         )
         num_new_agents = get_num_new_agents(cal_year, min_cal_year, num_new_born, num_immigrants,
             simulation)

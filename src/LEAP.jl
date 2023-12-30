@@ -27,6 +27,7 @@ export
     set_up,
     create_agent_newborn,
     get_num_newborn,
+    get_num_new_immigrants,
     agent_has_asthma,
     compute_num_exacerbations,
     # global datasets
