@@ -42,7 +42,7 @@ A struct containing information about asthma incidence.
         `province`: A string indicating the province abbreviation, e.g. "BC".
     See `M3_calibrated_asthma_prev_inc`.
 """
-struct Incidence <: Incidence_Module
+struct Incidence <: IncidenceModule
     hyperparameters::Union{AbstractDict,Nothing}
     parameters::Union{AbstractDict,Nothing}
     incidence_table::Union{GroupedDataFrame{DataFrame}, Nothing}

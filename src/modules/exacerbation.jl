@@ -1,10 +1,10 @@
-struct Exacerbation <: Exacerbation_Module
+struct Exacerbation <: ExacerbationModule
     hyperparameters::Union{AbstractDict,Nothing}
     parameters::Union{AbstractDict,Nothing}
     initial_rate::Float64
 end
 
-struct ExacerbationHist <: ExacerbationHist_Module
+struct ExacerbationHist <: ExacerbationHistModule
     num_current_year::Integer
     num_prev_year::Integer
 end

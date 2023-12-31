@@ -1,49 +1,79 @@
 # include("abstractModule.jl")
 # include("../utils")
 
-struct AntibioticExposure <: AntibioticExposure_Module
+struct AntibioticExposure <: AntibioticExposureModule
     hyperparameters::AbstractDict
     parameters::AbstractDict
     AbxOR
 end
 
-function process(ag::Agent,anti::AntibioticExposure)
-    if !isnothing(anti.parameters[:fixyear])
-        if isa(anti.parameters[:fixyear],Number)
-            rand(NegativeBinomial(anti.parameters[:θ], antibioticExposure_prob(ag.sex,anti.parameters[:fixyear],anti.parameters)))
+function process_antibiotic_exposure(antibiotic_exposure::AntibioticExposure, sex::Bool, cal_year::Integer)
+    if !isnothing(antibiotic_exposure.parameters[:fixyear])
+        if isa(antibiotic_exposure.parameters[:fixyear], Number)
+            return rand(
+                NegativeBinomial(
+                    antibiotic_exposure.parameters[:θ],
+                    antibiotic_exposure_prob(
+                        sex,
+                        antibiotic_exposure.parameters[:fixyear],
+                        antibiotic_exposure.parameters
+            )))
         else
-            tmp_mu = max(anti.parameters[:midtrends][(ag.cal_year,Int(ag.sex))].rate[1],anti.parameters[:βfloor])
-            rand(NegativeBinomial(anti.parameters[:θ], anti.parameters[:θ] / (anti.parameters[:θ] + tmp_mu)))
+            tmp_mu = max(
+                antibiotic_exposure.parameters[:midtrends][(cal_year, Int(sex))].rate[1],
+                antibiotic_exposure.parameters[:βfloor]
+            )
+            return rand(NegativeBinomial(
+                antibiotic_exposure.parameters[:θ],
+                antibiotic_exposure.parameters[:θ] / (antibiotic_exposure.parameters[:θ] + tmp_mu)
+            ))
         end
     else
-        rand(NegativeBinomial(anti.parameters[:θ], antibioticExposure_prob(ag.sex,ag.cal_year,anti.parameters)))
+        return rand(NegativeBinomial(
+            antibiotic_exposure.parameters[:θ],
+            antibiotic_exposure_prob(sex, cal_year, antibiotic_exposure.parameters)
+        ))
     end
 
 end
 
-function process_initial(ag::Agent,anti::AntibioticExposure,cal_born)
+
+function process_antibiotic_exposure_initial(antibiotic_exposure::AntibioticExposure,
+    sex::Bool, cal_born::Integer)
+
     if cal_born < 2001
-        rand(NegativeBinomial(anti.parameters[:θ], antibioticExposure_prob(ag.sex,2000,anti.parameters))) 
+        return rand(NegativeBinomial(
+            antibiotic_exposure.parameters[:θ],
+            antibiotic_exposure_prob(sex, 2000, antibiotic_exposure.parameters)
+        ))
     else
-        if !isnothing(anti.parameters[:fixyear])
-            if isa(anti.parameters[:fixyear],Number)
-                rand(NegativeBinomial(anti.parameters[:θ], antibioticExposure_prob(ag.sex,anti.parameters[:fixyear],anti.parameters))) 
-            else 
-                tmp_mu = max( anti.parameters[:midtrends][(cal_born,Int(ag.sex))].rate[1],anti.parameters[:βfloor])
-                rand(NegativeBinomial(anti.parameters[:θ], anti.parameters[:θ] / (anti.parameters[:θ] + tmp_mu)))
-            end
-        else
-            rand(NegativeBinomial(anti.parameters[:θ], antibioticExposure_prob(ag.sex,cal_born,anti.parameters))) 
-        end
+        return process_antibiotic_exposure(antibiotic_exposure, sex, cal_born)
     end
 end
 
-# helper function for above
-function antibioticExposure_prob(sex::Bool,cal_year,parameters::AbstractDict)
-    mu = exp(parameters[:β0] + parameters[:βsex] * sex + parameters[:βcal_year] * cal_year + 
-    parameters[:β2005] * (cal_year>2005) +  parameters[:β2005_cal_year] * (cal_year>2005)*cal_year)
-    mu = max(mu,parameters[:βfloor]/1000)
-    parameters[:θ] / (parameters[:θ] + mu)
+
+"""
+    antibiotic_exposure_prob(sex, cal_year, parameters)
+
+Returns the probability of antibiotic exposure for a given year and sex.
+
+# Arguments
+- `sex::Bool`: Sex of agent, true = male, false = female.
+- `cal_year::Integer`: The calendar year.
+- `parameters::AbstractDict`: A dictionary containing the following keys:
+    `θ`, `β0`, `βage`, `βsex`, `βcal_year`.
+
+"""
+function antibiotic_exposure_prob(sex::Bool, cal_year::Integer, parameters::AbstractDict)
+    mu = exp(
+        parameters[:β0] +
+        parameters[:βsex] * sex +
+        parameters[:βcal_year] * cal_year +
+        parameters[:β2005] * (cal_year > 2005) +
+        parameters[:β2005_cal_year] * (cal_year > 2005)*cal_year
+    )
+    mu = max(mu, parameters[:βfloor] / 1000)
+    return parameters[:θ] / (parameters[:θ] + mu)
 end
 
 function random_parameter_initialization!(anti::AntibioticExposure)

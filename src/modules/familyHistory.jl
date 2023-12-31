@@ -1,12 +1,12 @@
-struct FamilyHistory <: FamilyHistory_Module
+struct FamilyHistory <: FamilyHistoryModule
     hyperparameters
     parameters::AbstractDict
 end
 
-function process(ag::Agent,fam::FamilyHistory)
-    rand(Bernoulli(fam.parameters[:p]))
+function process_family_history(family_history::FamilyHistory)
+    return rand(Bernoulli(family_history.parameters[:p]))
 end
 
-function process_initial(ag::Agent,fam::FamilyHistory)
-    rand(Bernoulli(fam.parameters[:p]))
+function process_family_history_initial(family_history::FamilyHistory)
+    return rand(Bernoulli(family_history.parameters[:p]))
 end

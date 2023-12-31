@@ -1,11 +1,11 @@
 using SpecialFunctions
 
-struct ExacerbationSeverity <: Exacerbation_Severity_Module
+struct ExacerbationSeverity <: ExacerbationSeverityModule
     hyperparameters::Union{AbstractDict,Nothing}
     parameters::Union{AbstractDict,Nothing}
 end
 
-struct ExacerbationSeverityHist <: ExacerbationSeverityHist_Module
+struct ExacerbationSeverityHist <: ExacerbationSeverityHistModule
     current_year::Array{Integer, 1}
     prev_year::Array{Integer, 1}
 end
@@ -39,7 +39,7 @@ end
 # 3) Re-do the analyses for a suitable period during which Quebec reported the primary diagnosis type (from April 2001 onwards).
 
 
-function process_ctl(age,sex, ctl::Control_Module)
+function process_ctl(age,sex, ctl::ControlModule)
     age_scaled = age / 100
     function control_prediction_here(eta::Float64,theta::Union{Float64,Vector{Float64}};inv_link::Function=StatsFuns.logistic)::Union{Float64,Vector{Float64}}
         theta = [-1e5;theta;1e5]

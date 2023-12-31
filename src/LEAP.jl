@@ -9,8 +9,10 @@ using GRIB
 # using Plots
 include("global_variables.jl")
 include("modules/abstractModule.jl")
-include("modules/agent.jl")
+include("modules/birth.jl")
 include("modules/familyHistory.jl")
+include("modules/antibioticExposure.jl")
+include("modules/agent.jl")
 include("modules/exacerbation.jl")
 include("modules/severity.jl")
 include.(filter(contains(r".jl$"), readdir(joinpath(dirname(pathof(LEAP)),"modules/"); join=true)))
@@ -20,12 +22,15 @@ include("simulation.jl")
 
 export
     # functions
+    create_agent,
     process,
     process_initial,
     random_parameter_initialization!,
     create_event_dict,
     set_up,
-    create_agent_newborn,
+    get_num_newborn,
+    get_initial_population_indices,
+    get_num_new_immigrants,
     agent_has_asthma,
     compute_num_exacerbations,
     # global datasets

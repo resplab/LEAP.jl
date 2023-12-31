@@ -1,28 +1,52 @@
+"""
+    Simulation
 
-mutable struct Simulation <: Simulation_Module
-    max_age::Int
+TODO.
+
+# Fields
+- `max_age::Integer`: the maximum age to compute in the simulation.
+- `province::Union{String, Char}`: a string indicating the province abbreviation, e.g. "BC".
+- `starting_calendar_year::Integer`: the calendar year to start the simulation at, e.g. 2000.
+- `time_horizon::Union{Missing,Int,Vector{Int}}`: TODO.
+- `num_births_initial::Union{Nothing,Missing,Real,String}`: the number of births for the initial
+    year of the simulation.
+
+"""
+mutable struct Simulation <: SimulationModule
+    max_age::Integer
     province::Union{String,Char}
-    starting_calendar_year::Int
+    starting_calendar_year::Integer
     time_horizon::Union{Missing,Int,Vector{Int}}
-    n::Union{Nothing,Missing,Real,String}
+    num_births_initial::Union{Nothing,Missing,Real,String}
     population_growth_type::Union{Missing,String,Char}
-    agent::Agent_Module
-    birth::Birth_Module
-    emigration::Emigration_Module
-    immigration::Immigration_Module
-    death::Death_Module
-    incidence::Incidence_Module
-    reassessment::Reassessment_Module
-    diagnosis::Diagnosis_Module
-    control::Control_Module
-    exacerbation::Exacerbation_Module
-    exacerbation_severity::Exacerbation_Severity_Module
-    antibioticExposure::AntibioticExposure_Module
-    familyHistory::FamilyHistory_Module
-    util::Utility_Module
-    cost::Cost_Module
+    agent::AgentModule
+    birth::BirthModule
+    emigration::EmigrationModule
+    immigration::ImmigrationModule
+    death::DeathModule
+    incidence::IncidenceModule
+    reassessment::ReassessmentModule
+    diagnosis::DiagnosisModule
+    control::ControlModule
+    exacerbation::ExacerbationModule
+    exacerbation_severity::ExacerbationSeverityModule
+    antibioticExposure::AntibioticExposureModule
+    familyHistory::FamilyHistoryModule
+    util::UtilityModule
+    cost::CostModule
     initial_distribution
     outcomeMatrix
+end
+
+function set_num_births_initial!(simulation::SimulationModule, num_births_initial::Integer=100)
+    if num_births_initial == "full"
+        simulation.num_births_initial = simulation.birth.initial_population.n_birth[1]
+    elseif num_births_initial < 1
+        simulation.num_births_initial = ceil(
+            Int,
+            num_births_initial*simulation.birth.initial_population.n_birth[1]
+        )
+    end
 end
 
 
@@ -107,110 +131,13 @@ function get_num_new_agents(cal_year::Integer, min_cal_year::Integer, num_new_bo
     initial_pop_indices = Int[]
 
     if cal_year == min_cal_year
-        initial_pop_indices = process_initial(simulation.birth, simulation.n)
+        initial_pop_indices = get_initial_population_indices(
+            simulation.birth, simulation.num_births_initial
+        )
         num_new_agents = length(initial_pop_indices)
     end
     return num_new_agents
 end
-
-"""
-    create_agent!(simulation, event_dict, cal_year, cal_year_index, initial_pop_index)
-
-Creates a new agent (person) for the first year of the simulation (min_cal_year). Since this
-is the first year, the new agent can be any age.
-
-Mutates both `simulation` and `event_dict`.
-
-# Arguments
-- `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
-- `event_dict::Dict`: TODO.
-- `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
-- `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if
-    the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
-- `initial_pop_index::Integer`: Index of the agent (person) in the initial population.
-"""
-function create_agent!(simulation::Simulation, event_dict::Dict,
-    cal_year::Integer, cal_year_index::Integer, initial_pop_index::Integer=0)
-
-    simulation.agent = create_agent_newborn(cal_year, cal_year_index, simulation.birth,
-        rand(Bernoulli(simulation.birth.initial_population.prop_male[initial_pop_index])),
-        simulation.birth.initial_population.age[initial_pop_index],
-        simulation.antibioticExposure,
-        simulation.familyHistory
-    )
-    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.num_antibiotic_use
-    event_dict["family_history"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.family_hist
-end
-
-
-"""
-    create_agent!(simulation, event_dict, cal_year, cal_year_index)
-
-Creates a new agent (person) who is a newborn.
-
-Mutates both `simulation` and `event_dict`.
-
-# Arguments
-- `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
-- `event_dict::Dict`: TODO.
-- `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
-- `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if
-    the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
-"""
-function create_agent!(simulation::Simulation, event_dict::Dict, cal_year::Integer,
-    cal_year_index::Integer)
-
-    simulation.agent = create_agent_newborn(
-        cal_year, cal_year_index, simulation.birth,
-        simulation.antibioticExposure,
-        simulation.familyHistory
-    )
-
-    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.num_antibiotic_use
-    event_dict["family_history"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.family_hist
-end
-
-
-"""
-    create_agent!(simulation, event_dict, cal_year, cal_year_index, immigrant_index)
-
-Creates a new agent (person) who is an immigrant.
-
-Mutates both `simulation` and `event_dict`.
-
-# Arguments
-- `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
-- `event_dict::Dict`: TODO.
-- `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
-- `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if
-    the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
-- `immigrant_index::Integer`: The index in the list of new immigrant agents.
-"""
-function create_agent!(simulation::Simulation, event_dict::Dict, cal_year::Integer,
-    cal_year_index::Integer, immigrant_index::Integer)
-
-    simulation.agent = process_immigration(
-        Bool(simulation.immigration.table[cal_year_index].sex[immigrant_index]),
-        simulation.immigration.table[cal_year_index].age[immigrant_index],
-        cal_year, cal_year_index, simulation.antibioticExposure,
-        simulation.familyHistory)
-    event_dict["immigration"][
-        simulation.agent.cal_year_index,
-        simulation.agent.age+1,
-        simulation.agent.sex+1] += 1
-
-    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.num_antibiotic_use
-    event_dict["family_history"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.family_hist
-end
-
-
-
 
 
 
@@ -264,15 +191,6 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
     min_cal_year = simulation.starting_calendar_year
     max_cal_year = min_cal_year + simulation.time_horizon - 1
 
-    # if n is not provided, use a default value, n=100
-    if ismissing(simulation.n)
-        simulation.n = 100
-    elseif simulation.n == "full"
-        simulation.n = simulation.birth.initial_population.n_birth[1]
-    elseif simulation.n < 1
-        simulation.n = ceil(Int,simulation.n*simulation.birth.initial_population.n_birth[1])
-    end
-
     max_time_horizon = (until_all_die ? typemax(Int) : simulation.time_horizon)
     cal_years = min_cal_year:max_cal_year
 
@@ -298,13 +216,11 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
         tmp_cal_year_index = cal_year - min_cal_year + 1
 
         # num of newborns and immigrants in cal_year
-        num_new_born = ceil(
-            Int,
-            simulation.n * simulation.birth.estimate.N_relative[tmp_cal_year_index]
+        num_new_born = get_num_newborn(
+            simulation.birth, simulation.num_births_initial, tmp_cal_year_index
         )
-        num_immigrants = ceil(
-            Int,
-            num_new_born * sum(simulation.immigration.table[tmp_cal_year_index].n_prop_birth)
+        num_immigrants = get_num_new_immigrants(
+            simulation.immigration, num_new_born, tmp_cal_year_index
         )
         num_new_agents = get_num_new_agents(cal_year, min_cal_year, num_new_born, num_immigrants,
             simulation)
@@ -320,7 +236,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 num_immigrants
             )
         else
-            initial_pop_indices = process_initial(simulation.birth, simulation.n)
+            initial_pop_indices = get_initial_population_indices(
+                simulation.birth, simulation.num_births_initial
+            )
         end
 
 
@@ -333,14 +251,46 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
             random_parameter_initialization!(simulation.exacerbation_severity)
 
             if cal_year == min_cal_year
-                create_agent!(simulation, event_dict, cal_year, tmp_cal_year_index,
-                    initial_pop_indices[i])
+                sex = rand(
+                    Bernoulli(simulation.birth.initial_population.prop_male[initial_pop_indices[i]])
+                )
+                age = simulation.birth.initial_population.age[initial_pop_indices[i]]
+                simulation.agent = create_agent(
+                    cal_year=cal_year,
+                    cal_year_index=tmp_cal_year_index,
+                    sex=sex,
+                    age=age,
+                    antibiotic_exposure=simulation.antibioticExposure,
+                    family_hist=simulation.familyHistory
+                )
             elseif new_born_indicator[i]
-                create_agent!(simulation, event_dict, cal_year, tmp_cal_year_index)
+                simulation.agent = create_agent(
+                    cal_year=cal_year,
+                    cal_year_index=tmp_cal_year_index,
+                    sex=rand(Bernoulli(simulation.birth.estimate.prop_male[tmp_cal_year_index])),
+                    age=0,
+                    antibiotic_exposure=simulation.antibioticExposure,
+                    family_hist=simulation.familyHistory
+                )
             else
-                create_agent!(simulation, event_dict, cal_year, tmp_cal_year_index,
-                    immigrant_indices[i])
+                simulation.agent = create_agent(
+                    cal_year=cal_year,
+                    cal_year_index=tmp_cal_year_index,
+                    sex=Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrant_indices[i]]),
+                    age=simulation.immigration.table[tmp_cal_year_index].age[immigrant_indices[i]],
+                    antibiotic_exposure=simulation.antibioticExposure,
+                    family_hist=simulation.familyHistory
+                )
+                event_dict["immigration"][
+                    simulation.agent.cal_year_index,
+                    simulation.agent.age+1,
+                    simulation.agent.sex+1] += 1
             end
+
+            event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
+                simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.num_antibiotic_use
+            event_dict["family_history"][simulation.agent.cal_year_index,
+                simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.family_hist
 
             n_list[tmp_cal_year_index, simulation.agent.sex+1] +=1
 
