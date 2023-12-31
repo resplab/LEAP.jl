@@ -30,7 +30,7 @@ mutable struct Simulation <: SimulationModule
     control::Control_Module
     exacerbation::Exacerbation_Module
     exacerbation_severity::Exacerbation_Severity_Module
-    antibioticExposure::AntibioticExposure_Module
+    antibioticExposure::AntibioticExposureModule
     familyHistory::FamilyHistory_Module
     util::Utility_Module
     cost::Cost_Module
@@ -164,10 +164,6 @@ function create_agent!(simulation::Simulation, event_dict::Dict,
         simulation.antibioticExposure,
         simulation.familyHistory
     )
-    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.num_antibiotic_use
-    event_dict["family_history"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.family_hist
 end
 
 
@@ -193,11 +189,6 @@ function create_agent!(simulation::Simulation, event_dict::Dict, cal_year::Integ
         simulation.antibioticExposure,
         simulation.familyHistory
     )
-
-    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.num_antibiotic_use
-    event_dict["family_history"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.family_hist
 end
 
 """
@@ -228,10 +219,7 @@ function create_agent!(simulation::Simulation, event_dict::Dict, cal_year::Integ
         simulation.agent.age+1,
         simulation.agent.sex+1] += 1
 
-    event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.num_antibiotic_use
-    event_dict["family_history"][simulation.agent.cal_year_index,
-        simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.family_hist
+
 end
 
 
@@ -349,14 +337,38 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
             random_parameter_initialization!(simulation.exacerbation_severity)
 
             if cal_year == min_cal_year
-                create_agent!(simulation, event_dict, cal_year, tmp_cal_year_index,
-                    initial_pop_indices[i])
+                sex = rand(
+                    Bernoulli(simulation.birth.initial_population.prop_male[initial_pop_indices[i]])
+                )
+                age = simulation.birth.initial_population.age[initial_pop_indices[i]]
+                simulation.agent = create_agent(
+                    cal_year=cal_year,
+                    cal_year_index=tmp_cal_year_index,
+                    birth=simulation.birth,
+                    sex=sex,
+                    age=age,
+                    antibiotic_exposure=simulation.antibioticExposure,
+                    family_hist=simulation.familyHistory
+                )
             elseif new_born_indicator[i]
-                create_agent!(simulation, event_dict, cal_year, tmp_cal_year_index)
+                simulation.agent = create_agent(
+                    cal_year=cal_year,
+                    cal_year_index=tmp_cal_year_index,
+                    age=0,
+                    birth=simulation.birth,
+                    antibiotic_exposure=simulation.antibioticExposure,
+                    family_hist=simulation.familyHistory,
+                    sex=nothing
+                )
             else
                 create_agent!(simulation, event_dict, cal_year, tmp_cal_year_index,
                     immigrant_indices[i])
             end
+
+            event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
+                simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.num_antibiotic_use
+            event_dict["family_history"][simulation.agent.cal_year_index,
+                simulation.agent.age + 1, simulation.agent.sex + 1] += simulation.agent.family_hist
 
             n_list[tmp_cal_year_index, simulation.agent.sex+1] +=1
 

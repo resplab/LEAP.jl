@@ -14,7 +14,7 @@ abstract type Emigration_Module <: Demographics_Module  end
 abstract type Death_Module <: Demographics_Module  end
 
 # risk factors
-abstract type AntibioticExposure_Module   <: RiskFactors_Module  end
+abstract type AntibioticExposureModule   <: RiskFactors_Module  end
 abstract type FamilyHistory_Module <: RiskFactors_Module end
 
 # asthma occurrence

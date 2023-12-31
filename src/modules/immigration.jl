@@ -33,10 +33,10 @@ function process_immigration(sex::Bool, age::Integer, cal_year::Integer, cal_yea
         exac_sev_hist=ExacerbationSeverityHist(zeros(4),zeros(4)), total_hosp=0,
         family_hist=false, asthma_status=false
     )
-    @set! agent.num_antibiotic_use = process_initial(
-        agent, antibiotic_exposure, cal_year - age
+    @set! agent.num_antibiotic_use = process_antibiotic_exposure_initial(
+        antibiotic_exposure, sex, cal_year - age
     )
-    @set! agent.family_hist = process_initial(agent, family_hist)
+    @set! agent.family_hist = process_family_history_initial(family_hist)
     return agent
 end
 

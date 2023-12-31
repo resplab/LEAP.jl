@@ -15,11 +15,15 @@ using DataFrames
     family_history = LEAP.set_up_family_history()
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
-    agent = create_agent_newborn(
-        cal_year, tmp_cal_year_index, birth,
-        antibiotic_exposure, family_history
+    agent = create_agent(
+        cal_year=cal_year,
+        cal_year_index=tmp_cal_year_index,
+        birth=birth,
+        age=0,
+        antibiotic_exposure=antibiotic_exposure,
+        family_hist=family_history,
+        sex=nothing
     )
     @test agent.has_asthma == false
     agent_has_asthma(agent, incidence)
-
 end

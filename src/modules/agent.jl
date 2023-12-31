@@ -69,3 +69,39 @@ function process_initial(ag::Agent,asthma_age_data)
         return StatsBase.sample(Weights(asthma_age_data[1:ag.age+1,Int(ag.sex)+1]))-1
     end
 end
+
+
+
+function create_agent(; cal_year::Integer, cal_year_index::Integer, birth::Birth,
+    age::Integer, antibiotic_exposure::AntibioticExposureModule,
+    family_hist::FamilyHistory, sex::Union{Bool, Nothing}=nothing)
+
+    if sex == nothing
+        sex = rand(Bernoulli(birth.estimate.prop_male[cal_year_index]))
+    end
+
+    agent = Agent(
+        sex=sex, age=age, cal_year=cal_year, cal_year_index=cal_year_index, alive=true,
+        num_antibiotic_use=0, has_asthma=false, asthma_age=nothing, severity=nothing,
+        control=nothing, exac_hist=ExacerbationHist(0, 0),
+        exac_sev_hist=ExacerbationSeverityHist(zeros(4),zeros(4)), total_hosp=0,
+        family_hist=false, asthma_status=false
+    )
+
+    if age == 0
+        @set! agent.num_antibiotic_use = process_antibiotic_exposure(
+            antibiotic_exposure, sex, cal_year
+        )
+        @set! agent.family_hist = process_family_history(
+            family_hist
+        )
+    else
+        @set! agent.num_antibiotic_use = process_antibiotic_exposure_initial(
+            antibiotic_exposure, sex, cal_year - age
+        )
+        @set! agent.family_hist = process_family_history_initial(
+            family_hist
+        )
+    end
+    return agent
+end
