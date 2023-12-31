@@ -139,57 +139,6 @@ function get_num_new_agents(cal_year::Integer, min_cal_year::Integer, num_new_bo
     return num_new_agents
 end
 
-"""
-    create_agent!(simulation, event_dict, cal_year, cal_year_index, initial_pop_index)
-
-Creates a new agent (person) for the first year of the simulation (min_cal_year). Since this
-is the first year, the new agent can be any age.
-
-Mutates both `simulation` and `event_dict`.
-
-# Arguments
-- `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
-- `event_dict::Dict`: TODO.
-- `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
-- `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if
-    the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
-- `initial_pop_index::Integer`: Index of the agent (person) in the initial population.
-"""
-function create_agent!(simulation::Simulation, event_dict::Dict,
-    cal_year::Integer, cal_year_index::Integer, initial_pop_index::Integer=0)
-
-    simulation.agent = create_agent_newborn(cal_year, cal_year_index, simulation.birth,
-        rand(Bernoulli(simulation.birth.initial_population.prop_male[initial_pop_index])),
-        simulation.birth.initial_population.age[initial_pop_index],
-        simulation.antibioticExposure,
-        simulation.familyHistory
-    )
-end
-
-
-"""
-    create_agent!(simulation, event_dict, cal_year, cal_year_index)
-
-Creates a new agent (person) who is a newborn.
-
-Mutates both `simulation` and `event_dict`.
-
-# Arguments
-- `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
-- `event_dict::Dict`: TODO.
-- `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
-- `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if
-    the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
-"""
-function create_agent!(simulation::Simulation, event_dict::Dict, cal_year::Integer,
-    cal_year_index::Integer)
-
-    simulation.agent = create_agent_newborn(
-        cal_year, cal_year_index, simulation.birth,
-        simulation.antibioticExposure,
-        simulation.familyHistory
-    )
-end
 
 """
     create_agent!(simulation, event_dict, cal_year, cal_year_index, immigrant_index)
