@@ -14,7 +14,7 @@ A struct containing information about the probability of death for a given agent
     `:β0`, `:β1`, `:β2`.
 - `life_table`: TODO.
 """
-struct Death <: Death_Module
+struct Death <: DeathModule
     parameters::Union{AbstractDict, Nothing}
     life_table
 end

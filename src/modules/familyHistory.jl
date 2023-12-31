@@ -1,4 +1,4 @@
-struct FamilyHistory <: FamilyHistory_Module
+struct FamilyHistory <: FamilyHistoryModule
     hyperparameters
     parameters::AbstractDict
 end

@@ -1,4 +1,4 @@
-struct Reassessment <: Reassessment_Module
+struct Reassessment <: ReassessmentModule
     table
 end
 

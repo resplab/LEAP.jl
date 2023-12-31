@@ -29,7 +29,7 @@ A struct containing information about projected birth rates.
             See [Stats Canada](https://www150.statcan.gc.ca/n1/pub/91-520-x/91-520-x2022001-eng.htm).
     See `master_population_initial_distribution`.
 """
-struct Birth <: Birth_Module
+struct Birth <: BirthModule
     estimate::Union{DataFrame, Nothing}
     initial_population::Union{DataFrame, Nothing}
 end

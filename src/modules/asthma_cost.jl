@@ -9,7 +9,7 @@ A struct containing information about the cost of asthma.
     `exac`: A vector of numbers.
 
 """
-struct AsthmaCost <: Cost_Module
+struct AsthmaCost <: CostModule
     parameters::Union{AbstractDict, Nothing}
 end
 

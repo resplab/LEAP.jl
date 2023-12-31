@@ -4,7 +4,7 @@
 # estimated num of newborn + proprotion of male
 # birth_project = CSV.read("../processed_data/brith_projection.csv",DataFrame)
 
-struct Immigration <: Immigration_Module
+struct Immigration <: ImmigrationModule
     sex_ratio
     estimate
     age_distribution

@@ -19,21 +19,21 @@ mutable struct Simulation <: SimulationModule
     time_horizon::Union{Missing,Int,Vector{Int}}
     num_births_initial::Union{Nothing,Missing,Real,String}
     population_growth_type::Union{Missing,String,Char}
-    agent::Agent_Module
-    birth::Birth_Module
-    emigration::Emigration_Module
-    immigration::Immigration_Module
-    death::Death_Module
-    incidence::Incidence_Module
-    reassessment::Reassessment_Module
-    diagnosis::Diagnosis_Module
-    control::Control_Module
-    exacerbation::Exacerbation_Module
-    exacerbation_severity::Exacerbation_Severity_Module
+    agent::AgentModule
+    birth::BirthModule
+    emigration::EmigrationModule
+    immigration::ImmigrationModule
+    death::DeathModule
+    incidence::IncidenceModule
+    reassessment::ReassessmentModule
+    diagnosis::DiagnosisModule
+    control::ControlModule
+    exacerbation::ExacerbationModule
+    exacerbation_severity::ExacerbationSeverityModule
     antibioticExposure::AntibioticExposureModule
-    familyHistory::FamilyHistory_Module
-    util::Utility_Module
-    cost::Cost_Module
+    familyHistory::FamilyHistoryModule
+    util::UtilityModule
+    cost::CostModule
     initial_distribution
     outcomeMatrix
 end

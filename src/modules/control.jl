@@ -1,4 +1,4 @@
-struct Control <: Control_Module
+struct Control <: ControlModule
     hyperparameters::Union{AbstractDict,Nothing}
     parameters::Union{AbstractDict,Nothing}
 end

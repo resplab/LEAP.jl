@@ -18,13 +18,13 @@ A person in the model.
 - `severity::Union{Nothing, Int}`: Asthma severity level: 1 = mild, 2 = severe, 3 = very severe.
 - `control::Union{Nothing,Vector{Float64}}`: Asthma control level: 1 = uncontrolled,
     2 = partially controlled, 3 = fully controlled.
-- `exac_hist::Union{Nothing, ExacerbationHist_Module}`: Total number of exacerbations.
-- `exac_sev_hist::Union{Nothing, ExacerbationSeverityHist_Module}`: Number of exacerbations by severity.
+- `exac_hist::Union{Nothing, ExacerbationHistModule}`: Total number of exacerbations.
+- `exac_sev_hist::Union{Nothing, ExacerbationSeverityHistModule}`: Number of exacerbations by severity.
 - `total_hosp::Integer`: Total number of very severe asthma exacerbations leading to hospitalization.
 - `family_hist::Bool`: Is there a family history of asthma?
 - `asthma_status::Bool`: TODO.
 """
-@kwdef struct Agent  <: Agent_Module
+@kwdef struct Agent  <: AgentModule
     sex::Bool
     age::Integer
     cal_year::Integer
@@ -35,8 +35,8 @@ A person in the model.
     asthma_age::Union{Nothing, Integer}
     severity::Union{Nothing, Integer}
     control::Union{Nothing, Vector{Float64}}
-    exac_hist::Union{Nothing, ExacerbationHist_Module}
-    exac_sev_hist::Union{Nothing, ExacerbationSeverityHist_Module}
+    exac_hist::Union{Nothing, ExacerbationHistModule}
+    exac_sev_hist::Union{Nothing, ExacerbationSeverityHistModule}
     total_hosp::Integer
     family_hist::Bool
     asthma_status::Bool
