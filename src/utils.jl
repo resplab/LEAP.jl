@@ -282,11 +282,12 @@ function set_up_cost()
     return asthma_cost
 end
 
-function set_up_census_division()
+function set_up_census_table()
     census_table = CensusTable(
         nothing, 2021
     )
     @set! census_table.data = groupby(master_census_data, :province)
+    return census_table
 end
 
 
@@ -295,21 +296,22 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
     if province=="BC" || province=="CA"
 
         agent = Agent(
-            false,
-            0,
-            starting_year,
-            1,
-            true,
-            0,
-            false,
-            0,
-            0,
-            nothing,
-            ExacerbationHist(0, 0),
-            ExacerbationSeverityHist(zeros(4), zeros(4)),
-            0,
-            false,
-            false
+            sex=false,
+            age=0,
+            cal_year=starting_year,
+            cal_year_index=1,
+            alive=true,
+            num_antibiotic_use=0,
+            has_asthma=false,
+            asthma_age=0,
+            severity=0,
+            control=nothing,
+            exac_hist=ExacerbationHist(0, 0),
+            exac_sev_hist=ExacerbationSeverityHist(zeros(4), zeros(4)),
+            total_hosp=0,
+            family_hist=false,
+            asthma_status=false,
+            census_division=nothing
         )
 
         birth = set_up_birth(starting_year, population_growth_type, province)
@@ -326,6 +328,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         family_history = set_up_family_history()
         utility = set_up_utility()
         cost = set_up_cost()
+        census_table = set_up_census_table()
 
         simulation = Simulation(
             max_age,
@@ -349,6 +352,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             family_history,
             utility,
             cost,
+            census_table,
             nothing,
             (;)
         )

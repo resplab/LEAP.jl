@@ -57,11 +57,19 @@ Randomly assign a census division based on population.
 - `CensusDivision`: the census division assigned.
 """
 function assign_census_division(census_table::CensusTable, province::String, year::Integer=2021)
-    census_table_province = census_table.data[(province,)]
-    census_division_name = sample(
-        census_table_province[!, "federal_census_division"],
-        Weights(census_table_province[!, "population"])
-    )
+    if province == "CA"
+        census_table_all = DataFrames.DataFrame(census_table.data)
+        census_division_name = sample(
+            census_table_all[!, "federal_census_division"],
+            Weights(census_table_all[!, "population"])
+        )
+    else
+        census_table_province = census_table.data[(province,)]
+        census_division_name = sample(
+            census_table_province[!, "federal_census_division"],
+            Weights(census_table_province[!, "population"])
+        )
+    end
     census_division = CensusDivision(
         census_division_name,
         year
