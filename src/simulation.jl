@@ -140,41 +140,6 @@ function get_num_new_agents(cal_year::Integer, min_cal_year::Integer, num_new_bo
 end
 
 
-"""
-    create_agent!(simulation, event_dict, cal_year, cal_year_index, immigrant_index)
-
-Creates a new agent (person) who is an immigrant.
-
-Mutates both `simulation` and `event_dict`.
-
-# Arguments
-- `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
-- `event_dict::Dict`: TODO.
-- `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
-- `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if
-    the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
-- `immigrant_index::Integer`: The index in the list of new immigrant agents.
-"""
-function create_agent!(simulation::Simulation, event_dict::Dict, cal_year::Integer,
-    cal_year_index::Integer, immigrant_index::Integer)
-
-    simulation.agent = process_immigration(
-        Bool(simulation.immigration.table[cal_year_index].sex[immigrant_index]),
-        simulation.immigration.table[cal_year_index].age[immigrant_index],
-        cal_year, cal_year_index, simulation.antibioticExposure,
-        simulation.familyHistory)
-    event_dict["immigration"][
-        simulation.agent.cal_year_index,
-        simulation.agent.age+1,
-        simulation.agent.sex+1] += 1
-
-
-end
-
-
-
-
-
 
 function generate_initial_asthma!(simulation::Simulation)
     @set! simulation.agent.has_asthma = agent_has_asthma(
@@ -303,15 +268,24 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 simulation.agent = create_agent(
                     cal_year=cal_year,
                     cal_year_index=tmp_cal_year_index,
+                    sex=rand(Bernoulli(birth.estimate.prop_male[cal_year_index]))
                     age=0,
-                    birth=simulation.birth,
                     antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory,
-                    sex=nothing
+                    family_hist=simulation.familyHistory
                 )
             else
-                create_agent!(simulation, event_dict, cal_year, tmp_cal_year_index,
-                    immigrant_indices[i])
+                simulation.agent = create_agent(
+                    cal_year=cal_year,
+                    cal_year_index=tmp_cal_year_index,
+                    sex=Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrant_indices[i]]),
+                    age=simulation.immigration.table[tmp_cal_year_index].age[immigrant_indices[i]],
+                    antibiotic_exposure=simulation.antibioticExposure,
+                    family_hist=simulation.familyHistory
+                )
+                event_dict["immigration"][
+                    simulation.agent.cal_year_index,
+                    simulation.agent.age+1,
+                    simulation.agent.sex+1] += 1
             end
 
             event_dict["antibiotic_exposure"][simulation.agent.cal_year_index,
