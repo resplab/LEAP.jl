@@ -258,7 +258,6 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 simulation.agent = create_agent(
                     cal_year=cal_year,
                     cal_year_index=tmp_cal_year_index,
-                    birth=simulation.birth,
                     sex=sex,
                     age=age,
                     antibiotic_exposure=simulation.antibioticExposure,
@@ -268,7 +267,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 simulation.agent = create_agent(
                     cal_year=cal_year,
                     cal_year_index=tmp_cal_year_index,
-                    sex=rand(Bernoulli(birth.estimate.prop_male[cal_year_index]))
+                    sex=rand(Bernoulli(simulation.birth.estimate.prop_male[tmp_cal_year_index])),
                     age=0,
                     antibiotic_exposure=simulation.antibioticExposure,
                     family_hist=simulation.familyHistory

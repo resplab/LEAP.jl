@@ -18,11 +18,10 @@ using DataFrames
     agent = create_agent(
         cal_year=cal_year,
         cal_year_index=tmp_cal_year_index,
-        birth=birth,
         age=0,
         antibiotic_exposure=antibiotic_exposure,
         family_hist=family_history,
-        sex=nothing
+        sex=false
     )
     @test agent.has_asthma == false
     agent_has_asthma(agent, incidence)
