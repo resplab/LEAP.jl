@@ -91,6 +91,23 @@ https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001002
 end
 
 
+function load_census_boundaries(shapefile_path::String, metadata_path::String, year::Integer=2021)
+    table = Shapefile.Table(shapefile_path)
+    metadata = JSON.parsefile(metadata_path)
+    census_boundaries = CensusBoundaries(
+        shapefile_data=DataFrame(table),
+        year=metadata["year"],
+        reference_longitude=metadata["reference_longitude"],
+        reference_latitude=metadata["reference_latitude"],
+        first_standard_parallel=metadata["first_standard_parallel"],
+        second_standard_parallel=metadata["second_standard_parallel"],
+        false_easting=metadata["false_easting"],
+        false_northing=metadata["false_northing"]
+    )
+    return census_boundaries
+end
+
+
 """
     assign_census_division(census_table, province, year)
 
