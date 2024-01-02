@@ -124,6 +124,59 @@ function assign_census_division(census_table::CensusTable, province::String, yea
     )
     return census_division
 end
+
+
+"""
+    get_census_division_from_lat_lon(longitude, latitude, census_boundaries)
+
+Given a latitude and longitude, find the corresponding census division.
+
+# Arguments
+
+- `longitude::Float64`: the longitude.
+- `latitude::Float64`: the latitude.
+- `census_boundaries::CensusBoundaries`: a struct containing information about Canadian census divisions.
+
+"""
+function get_census_division_from_lat_lon(; longitude::Float64, latitude::Float64,
+    census_boundaries::CensusBoundaries)::CensusDivision
+
+    point = get_lambert_conformal_from_lat_lon(
+        λ=longitude,
+        ϕ=latitude,
+        λ_0=census_boundaries.reference_longitude,
+        ϕ_0=census_boundaries.reference_latitude,
+        ϕ_1=census_boundaries.first_standard_parallel,
+        ϕ_2=census_boundaries.second_standard_parallel,
+        x_0=census_boundaries.false_easting,
+        y_0=census_boundaries.false_northing
+    )
+
+    census_division = CensusDivision(
+        federal_census_division=nothing,
+        year=census_boundaries.year
+    )
+    is_point_in_polygon = false
+
+    for row_index in 1:size(census_boundaries.shapefile_data)[1]
+        row = census_boundaries.shapefile_data[row_index, :]
+        polygon = row.geometry
+        println(row_index)
+        if point_in_polygon(point, polygon)
+            @set! census_division.federal_census_division = row.FEDENAME
+            is_point_in_polygon = true
+            break
+        end
+    end
+
+    if !is_point_in_polygon
+        throw(error("Could not find point in any of the federal electoral districts."))
+    else
+        return census_division
+    end
+end
+
+
 """
     point_in_polygon(point, polygon)
 
