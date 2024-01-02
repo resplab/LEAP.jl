@@ -42,25 +42,6 @@ A person in the model.
     asthma_status::Bool
 end
 
-function set_agent!(ag, sex, age,cal_year,cal_year_index,alive, num_antibiotic_use,
-    has_asthma,asthma_age,asthma_severity,asthma_control,asthma_exac_hist,asthma_exac_sev_history,total_hosp,fam_hist,asthma_status)
-    ag.sex = sex
-    ag.age= age
-    ag.cal_year = cal_year
-    ag.cal_year_index = cal_year_index
-    ag.alive = alive
-    ag.num_antibiotic_use=num_antibiotic_use
-    ag.has_asthma = has_asthma
-    ag.asthma_age = asthma_age
-    ag.severity = asthma_severity
-    ag.control = asthma_control
-    ag.exac_hist = asthma_exac_hist
-    ag.exac_sev_hist = asthma_exac_sev_history
-    ag.total_hosp = total_hosp
-    ag.family_hist = fam_hist
-    ag.asthma_status = asthma_status
-    nothing
-end
 
 function process_initial(ag::Agent,asthma_age_data)
     if ag.age==0
