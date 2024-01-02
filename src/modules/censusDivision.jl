@@ -85,7 +85,7 @@ https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001002
 - `federal_census_division::Union{String, Nothing}`: the federal census division name.
 - `year::Integer`: the year the census population data was collected.
 """
-struct CensusDivision <: CensusDivisionModule
+@kwdef struct CensusDivision <: CensusDivisionModule
     federal_census_division::Union{String, Nothing}
     year::Union{Integer, Nothing}
 end
