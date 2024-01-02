@@ -53,7 +53,7 @@ end
 
 
 """
-    create_agent(cal_year, cal_year_index, birth, age, antibiotic_exposure, family_hist, sex)
+    create_agent(cal_year, cal_year_index, sex, age, antibiotic_exposure, family_hist)
 
 Creates a new agent (person).
 
@@ -61,13 +61,12 @@ Creates a new agent (person).
 - `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
 - `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if
     the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
-- `birth::Birth`: a Birth object, see  [`Birth`](@ref).
+- `sex::Bool`: sex of person, 1 = male, 0 = female, default = nothing.
 - `age::Integer`: the age of the person.
 - `antibiotic_exposure::AntibioticExposure`: contains information about antibiotic exposure,
     see [`AntibioticExposure`](@ref).
 - `family_hist::FamilyHistory`: contains information about family history of asthma,
     see [`FamilyHistory`](@ref).
-- `sex::Bool`: sex of person, 1 = male, 0 = female, default = nothing.
 
 # Returns
 - `Agent`: a new agent.
