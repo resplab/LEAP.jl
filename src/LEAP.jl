@@ -4,7 +4,7 @@ module LEAP
 using DataFrames, Query, CSV, JLD, JLD2, FileIO
 using Setfield, Distributions, StatsFuns, StatsBase, Random, SpecialFunctions
 using TimerOutputs, Printf
-using GRIB
+using GRIB, PolygonOps, Shapefile, JSON, GeoInterface
 
 # using Plots
 include("global_variables.jl")
