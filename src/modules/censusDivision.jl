@@ -124,3 +124,60 @@ function assign_census_division(census_table::CensusTable, province::String, yea
     )
     return census_division
 end
+"""
+    get_lambert_conformal_from_lat_lon(λ, ϕ, λ_0, ϕ_0, ϕ_1, ϕ_2, x_0, y_0)
+
+Given a latitude and longitude, find the Lamber Conformal Conic projection coordinates.
+
+See: https://www.linz.govt.nz/guidance/geodetic-system/understanding-coordinate-conversions/projection-conversions/lambert-conformal-conic-geographic-transformation-formulae
+also: https://en.wikipedia.org/wiki/Geodetic_Reference_System_1980
+
+# Arguments
+
+- `λ::Float64`: the longitude.
+- `ϕ::Float64`: the latitude.
+- `λ_0::Float64`: the reference longitude.
+- `ϕ_0::Float64`: the reference latitude.
+- `ϕ_1::Float64`: the first standard parallel in degrees.
+- `ϕ_2::Float64`: the second standard parallel in degrees.
+- `x_0::Number`: false easting.
+- `y_0::Number`: false northing.
+"""
+function get_lambert_conformal_from_lat_lon(; λ::Number, ϕ::Number, λ_0::Number, ϕ_0::Number,
+    ϕ_1::Number, ϕ_2::Number, x_0::Number=0, y_0::Number=0)::Tuple{Number, Number}
+
+    λ = deg2rad(λ)
+    ϕ = deg2rad(ϕ)
+    λ_0 = deg2rad(λ_0)
+    ϕ_0 = deg2rad(ϕ_0)
+    ϕ_1 = deg2rad(ϕ_1)
+    ϕ_2 = deg2rad(ϕ_2)
+
+    R = 6378137 # Radius of Earth
+
+    f = 0.003352810681183637418 # flattening
+    e = sqrt(2*f - f^2) # eccentricity
+
+    m_1 = cos(ϕ_1)/(sqrt(1 - e^2*sin(ϕ_1)^2))
+    m_2 = cos(ϕ_2)/(sqrt(1 - e^2*sin(ϕ_2)^2))
+    t = tan(π/4 - ϕ/2) / ((1 - e*sin(ϕ))/(1 + e*sin(ϕ)))^(e/2)
+    t_0 = tan(π/4 - ϕ_0/2) / ((1 - e*sin(ϕ_0))/(1 + e*sin(ϕ_0)))^(e/2)
+    t_1 = tan(π/4 - ϕ_1/2) / ((1 - e*sin(ϕ_1))/(1 + e*sin(ϕ_1)))^(e/2)
+    t_2 = tan(π/4 - ϕ_2/2) / ((1 - e*sin(ϕ_2))/(1 + e*sin(ϕ_2)))^(e/2)
+
+    if ϕ_1 == ϕ_2
+        n = sin(ϕ_1)
+    else
+        n = (log(m_1) - log(m_2))/(log(t_1) - log(t_2))
+    end
+
+    F = m_1 / (n*t_1^n)
+    ρ_0 = R*F*t_0^n
+    ρ = R*F*t^n
+
+    x = x_0 + ρ*sin(n*(λ - λ_0))
+    y = y_0 + ρ_0 - ρ*cos(n*(λ - λ_0))
+
+    return x, y
+
+end
