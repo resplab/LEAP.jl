@@ -33,7 +33,10 @@ export
     get_num_new_immigrants,
     agent_has_asthma,
     compute_num_exacerbations,
+    load_census_boundaries,
+    point_in_polygon,
     # global datasets
+    PROCESSED_DATA_PATH,
     master_birth_estimate,
     master_life_table,
     master_population_initial_distribution,
