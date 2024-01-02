@@ -125,6 +125,41 @@ function assign_census_division(census_table::CensusTable, province::String, yea
     return census_division
 end
 """
+    point_in_polygon(point, polygon)
+
+Determine whether or not a given point is within a polygon.
+
+# Arguments
+
+- `point::Tuple{Number, Number}`: the point we want to check.
+- `polygon::Shapefile.Polygon`: a polygon object containing the points of its boundary.
+
+"""
+function point_in_polygon(point::Tuple{Number, Number}, polygon::Shapefile.Polygon)::Bool
+    polygon_array = [];
+    polygon_array = GeoInterface.coordinates(polygon)
+    return point_in_polygon_array(point, polygon_array)
+end
+
+
+function point_in_polygon_array(point::Tuple{Number, Number}, polygon_array::Array)::Bool
+    first_entry = polygon_array[1]
+    if typeof(first_entry) == Vector{Float64} && typeof(first_entry[1]) == Float64 && typeof(first_entry[2]) == Float64
+        return PolygonOps.inpolygon(point, polygon_array)
+    else
+        is_in_polygon_array = false
+        for polygon_sub_array in polygon_array
+            if point_in_polygon_array(point, polygon_sub_array)
+                is_in_polygon_array = true
+                break
+            end
+        end
+        return is_in_polygon_array
+    end
+end
+
+
+"""
     get_lambert_conformal_from_lat_lon(λ, ϕ, λ_0, ϕ_0, ϕ_1, ϕ_2, x_0, y_0)
 
 Given a latitude and longitude, find the Lamber Conformal Conic projection coordinates.
