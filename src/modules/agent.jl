@@ -44,26 +44,6 @@ A person in the model.
     census_division::Union{Nothing, CensusDivisionModule}
 end
 
-function set_agent!(agent, sex, age,cal_year,cal_year_index,alive, num_antibiotic_use,
-    has_asthma,asthma_age,asthma_severity,asthma_control,asthma_exac_hist,asthma_exac_sev_history,
-    total_hosp,fam_hist, asthma_status, census_division)
-    agent.sex = sex
-    agent.age= age
-    agent.cal_year = cal_year
-    agent.cal_year_index = cal_year_index
-    agent.alive = alive
-    agent.num_antibiotic_use=num_antibiotic_use
-    agent.has_asthma = has_asthma
-    agent.asthma_age = asthma_age
-    agent.severity = asthma_severity
-    agent.control = asthma_control
-    agent.exac_hist = asthma_exac_hist
-    agent.exac_sev_hist = asthma_exac_sev_history
-    agent.total_hosp = total_hosp
-    agent.family_hist = fam_hist
-    agent.asthma_status = asthma_status
-    agent.census_division = census_division
-end
 
 function process_initial(agent::Agent,asthma_age_data)
     if agent.age==0
@@ -75,7 +55,7 @@ end
 
 
 """
-    create_agent(cal_year, cal_year_index, birth, age, antibiotic_exposure, family_hist, sex)
+    create_agent(cal_year, cal_year_index, sex, age, antibiotic_exposure, family_hist)
 
 Creates a new agent (person).
 
@@ -83,13 +63,12 @@ Creates a new agent (person).
 - `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
 - `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if
     the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
-- `birth::Birth`: a Birth object, see  [`Birth`](@ref).
+- `sex::Bool`: sex of person, 1 = male, 0 = female, default = nothing.
 - `age::Integer`: the age of the person.
 - `antibiotic_exposure::AntibioticExposure`: contains information about antibiotic exposure,
     see [`AntibioticExposure`](@ref).
 - `family_hist::FamilyHistory`: contains information about family history of asthma,
     see [`FamilyHistory`](@ref).
-- `sex::Bool`: sex of person, 1 = male, 0 = female, default = nothing.
 
 # Returns
 - `Agent`: a new agent.

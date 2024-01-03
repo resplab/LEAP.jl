@@ -24,9 +24,9 @@ Compute the cost in dollars (CAD) for the current year due to asthma exacerbatio
 - `agent::Agent`: Agent module, see [`Agent`](@ref).
 - `asthma_cost::AsthmaCost`: AsthmaCost module, see [`AsthmaCost`](@ref).
 """
-function compute_cost(agent::Agent, asthma_cost::AsthmaCost)
+function compute_cost(agent::Agent, asthma_cost::AsthmaCost)::Float64
     if !agent.has_asthma
-        return 0
+        return 0.0
     else
         return (
             sum(agent.exac_sev_hist.current_year .* asthma_cost.parameters[:exac]) +

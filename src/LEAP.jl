@@ -17,6 +17,7 @@ include("modules/exacerbation.jl")
 include("modules/severity.jl")
 include.(filter(contains(r".jl$"), readdir(joinpath(dirname(pathof(LEAP)),"modules/"); join=true)))
 include("utils.jl")
+include("OutcomeMatrix.jl")
 include("simulation.jl")
 
 
@@ -26,7 +27,7 @@ export
     process,
     process_initial,
     random_parameter_initialization!,
-    create_event_dict,
+    create_outcome_matrix,
     set_up,
     get_num_newborn,
     get_initial_population_indices,
