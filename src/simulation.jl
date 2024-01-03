@@ -1,3 +1,5 @@
+import Base.@kwdef
+
 """
     Simulation
 
@@ -12,7 +14,7 @@ TODO.
     year of the simulation.
 
 """
-mutable struct Simulation <: SimulationModule
+@kwdef mutable struct Simulation <: SimulationModule
     max_age::Integer
     province::Union{String,Char}
     starting_calendar_year::Integer
@@ -34,6 +36,7 @@ mutable struct Simulation <: SimulationModule
     familyHistory::FamilyHistoryModule
     util::UtilityModule
     cost::CostModule
+    census_table::CensusTableModule
     initial_distribution
     outcome_matrix
 end
@@ -204,8 +207,10 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     cal_year_index=tmp_cal_year_index,
                     sex=sex,
                     age=age,
+                    province=simulation.province,
                     antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory
+                    family_hist=simulation.familyHistory,
+                    census_table=simulation.census_table
                 )
             elseif new_born_indicator[i]
                 simulation.agent = create_agent(
@@ -213,8 +218,10 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     cal_year_index=tmp_cal_year_index,
                     sex=rand(Bernoulli(simulation.birth.estimate.prop_male[tmp_cal_year_index])),
                     age=0,
+                    province=simulation.province,
                     antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory
+                    family_hist=simulation.familyHistory,
+                    census_table=simulation.census_table
                 )
             else
                 simulation.agent = create_agent(
@@ -222,8 +229,10 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     cal_year_index=tmp_cal_year_index,
                     sex=Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrant_indices[i]]),
                     age=simulation.immigration.table[tmp_cal_year_index].age[immigrant_indices[i]],
+                    province=simulation.province,
                     antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory
+                    family_hist=simulation.familyHistory,
+                    census_table=simulation.census_table
                 )
                 increment_field_in_outcome_matrix!(outcome_matrix, "immigration",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index

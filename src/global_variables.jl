@@ -57,3 +57,8 @@ abx_mid_trends = groupby(CSV.read(
     joinpath(PROCESSED_DATA_PATH,"midtrends.csv"),
     DataFrame
 ),[:year,:sex])
+
+master_census_data = CSV.read(
+    joinpath(PROCESSED_DATA_PATH, "master_census_data_2021.csv"),
+    DataFrame
+)

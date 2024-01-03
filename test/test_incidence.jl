@@ -13,6 +13,7 @@ using DataFrames
     birth = LEAP.set_up_birth(starting_year, population_growth_type, province)
     antibiotic_exposure = LEAP.set_up_antibiotic_exposure()
     family_history = LEAP.set_up_family_history()
+    census_table = LEAP.set_up_census_table()
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
     agent = create_agent(
@@ -21,7 +22,9 @@ using DataFrames
         age=0,
         antibiotic_exposure=antibiotic_exposure,
         family_hist=family_history,
-        sex=false
+        sex=false,
+        province=province,
+        census_table=census_table
     )
     @test agent.has_asthma == false
     agent_has_asthma(agent, incidence)
