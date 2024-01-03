@@ -32,3 +32,5 @@ abstract type ControlModule   <: AsthmaOutcomesModule  end
 # payoffs
 abstract type UtilityModule <: PayoffsModule end
 abstract type CostModule <: PayoffsModule end
+
+abstract type OutcomeMatrixModule <: SimulationModule end

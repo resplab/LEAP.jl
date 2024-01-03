@@ -7,5 +7,5 @@ using LEAP
 include("test_simulation.jl")
 include("test_incidence.jl")
 include("test_birth.jl")
-
+include("TestOutcomeMatrix.jl")
 end
