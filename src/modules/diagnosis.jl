@@ -1,4 +1,4 @@
-struct Diagnosis <: Diagnosis_Module
+struct Diagnosis <: DiagnosisModule
     table
     table_mis
 end

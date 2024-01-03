@@ -1,34 +1,36 @@
-abstract type Simulation_Module end
+abstract type SimulationModule end
 
-abstract type Agent_Module <: Simulation_Module end
-abstract type Demographics_Module <: Simulation_Module end
-abstract type AsthmaOccurrence_Module <: Simulation_Module end
-abstract type AsthmaOutcomes_Module <: Simulation_Module end
-abstract type RiskFactors_Module <: Simulation_Module end
-abstract type Payoffs_Module <: Simulation_Module end
+abstract type AgentModule <: SimulationModule end
+abstract type DemographicsModule <: SimulationModule end
+abstract type AsthmaOccurrenceModule <: SimulationModule end
+abstract type AsthmaOutcomesModule <: SimulationModule end
+abstract type RiskFactorsModule <: SimulationModule end
+abstract type PayoffsModule <: SimulationModule end
 
 # demographics
-abstract type Birth_Module <: Demographics_Module  end
-abstract type Immigration_Module <: Demographics_Module  end
-abstract type Emigration_Module <: Demographics_Module  end
-abstract type Death_Module <: Demographics_Module  end
+abstract type BirthModule <: DemographicsModule  end
+abstract type ImmigrationModule <: DemographicsModule  end
+abstract type EmigrationModule <: DemographicsModule  end
+abstract type DeathModule <: DemographicsModule  end
 
 # risk factors
-abstract type AntibioticExposure_Module   <: RiskFactors_Module  end
-abstract type FamilyHistory_Module <: RiskFactors_Module end
+abstract type AntibioticExposureModule   <: RiskFactorsModule  end
+abstract type FamilyHistoryModule <: RiskFactorsModule end
 
 # asthma occurrence
-abstract type Incidence_Module   <: AsthmaOccurrence_Module  end
-abstract type Diagnosis_Module <: AsthmaOccurrence_Module end
-abstract type Reassessment_Module <: AsthmaOccurrence_Module end
+abstract type IncidenceModule   <: AsthmaOccurrenceModule  end
+abstract type DiagnosisModule <: AsthmaOccurrenceModule end
+abstract type ReassessmentModule <: AsthmaOccurrenceModule end
 
 # asthma outcomes
-abstract type Exacerbation_Module   <: AsthmaOutcomes_Module  end
-abstract type ExacerbationHist_Module end
-abstract type Exacerbation_Severity_Module <: Exacerbation_Module end
-abstract type ExacerbationSeverityHist_Module end
-abstract type Control_Module   <: AsthmaOutcomes_Module  end
+abstract type ExacerbationModule   <: AsthmaOutcomesModule  end
+abstract type ExacerbationHistModule end
+abstract type ExacerbationSeverityModule <: ExacerbationModule end
+abstract type ExacerbationSeverityHistModule end
+abstract type ControlModule   <: AsthmaOutcomesModule  end
 
 # payoffs
-abstract type Utility_Module <: Payoffs_Module end
-abstract type Cost_Module <: Payoffs_Module end
+abstract type UtilityModule <: PayoffsModule end
+abstract type CostModule <: PayoffsModule end
+
+abstract type OutcomeMatrixModule <: SimulationModule end

@@ -9,7 +9,7 @@ A struct containing information about the disutility from having asthma.
     `exac`: A vector of numbers.
     `eq5d`: TODO.
 """
-struct Utility <: Utility_Module
+struct Utility <: UtilityModule
     parameters::Union{AbstractDict, Nothing}
 end
 
