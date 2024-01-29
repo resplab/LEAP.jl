@@ -90,7 +90,7 @@ end
 
 function generate_initial_asthma!(simulation::Simulation)
     @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.incidence
+        simulation.agent, simulation.incidence, "prevalence"
     )
     if simulation.agent.has_asthma
         @set! simulation.agent.asthma_status = true
@@ -152,12 +152,12 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
 
     # loop by year
     for cal_year in cal_years
+        # time stamp
+        @timeit timer_output "calendar year $cal_year" begin
+
         if verbose
             println(cal_year)
         end
-
-        # time stamp
-        @timeit timer_output "calendar year $cal_year" begin
 
         # index for cal_year
         tmp_cal_year_index = cal_year - min_cal_year + 1
@@ -249,7 +249,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 simulation.agent.num_antibiotic_use
             )
 
-            n_list[tmp_cal_year_index, simulation.agent.sex+1] +=1
+            n_list[tmp_cal_year_index, simulation.agent.sex+1] += 1
 
             # if age >4, we need to generate the initial distribution of asthma related events
             if simulation.agent.age > 3
@@ -263,7 +263,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 if !simulation.agent.has_asthma
                     # asthma inc
                     @set! simulation.agent.has_asthma = agent_has_asthma(
-                        simulation.agent, simulation.incidence, simulation.antibioticExposure.AbxOR
+                        simulation.agent, simulation.incidence, "incidence"
                     )
                     # crude incidence record
                     if simulation.agent.has_asthma
