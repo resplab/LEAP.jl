@@ -149,14 +149,14 @@ end
 
 function set_up_diagnosis(starting_year::Integer, province::String)
     diagnosis = Diagnosis(nothing, nothing)
-    @set! diagnosis.table =  groupby(
+    @set! diagnosis.true_positive_rates =  groupby(
         filter(
             [:year, :province] => (x, y) -> x >= starting_year && y == province,
             master_dx
         ),
         :year
     )
-    @set! diagnosis.table_mis = groupby(
+    @set! diagnosis.false_negative_rates = groupby(
         filter(
             [:year, :province] => (x, y) -> x >= starting_year && y == province,
             master_mis_dx

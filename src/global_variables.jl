@@ -32,6 +32,7 @@ master_reassessment = CSV.read(
     joinpath(PROCESSED_DATA_PATH, "master_asthma_assessment.csv"),
     DataFrame
 )
+
 master_dx = CSV.read(
     joinpath(PROCESSED_DATA_PATH, "master_asthma_dx.csv"),
     DataFrame
