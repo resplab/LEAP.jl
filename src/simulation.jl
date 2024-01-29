@@ -276,19 +276,15 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                                 simulation.agent.cal_year_index
                             )
                         end
-                        add_asthma_to_asthma_incidence_contingency_table!(outcome_matrix,
-                            simulation.agent.age, simulation.agent.sex,
-                            simulation.agent.cal_year, simulation.agent.family_hist,
-                            simulation.agent.num_antibiotic_use
-                        )
-
-                    else
-                        add_asthma_to_asthma_incidence_contingency_table!(outcome_matrix,
-                            simulation.agent.age, simulation.agent.sex,
-                            simulation.agent.cal_year, simulation.agent.family_hist,
-                            simulation.agent.num_antibiotic_use
-                        )
                     end
+
+                    update_asthma_in_contingency_table!(outcome_matrix,
+                        simulation.agent.age, simulation.agent.sex,
+                        simulation.agent.cal_year, simulation.agent.family_hist,
+                        simulation.agent.num_antibiotic_use,
+                        simulation.agent.has_asthma,
+                        "incidence"
+                    )
 
                     # asthma Dx
                     @set! simulation.agent.has_asthma = agent_has_asthma(
@@ -406,18 +402,14 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     increment_field_in_outcome_matrix!(outcome_matrix, "asthma_prevalence",
                         simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
                     )
-                    add_asthma_to_asthma_prevalence_contingency_table!(outcome_matrix,
-                        simulation.agent.age, simulation.agent.sex,
-                        simulation.agent.cal_year, simulation.agent.family_hist,
-                        simulation.agent.num_antibiotic_use
-                    )
-                else
-                    add_no_asthma_to_asthma_prevalence_contingency_table!(outcome_matrix,
-                        simulation.agent.age, simulation.agent.sex,
-                        simulation.agent.cal_year, simulation.agent.family_hist,
-                        simulation.agent.num_antibiotic_use
-                    )
                 end
+                update_asthma_in_contingency_table!(outcome_matrix,
+                    simulation.agent.age, simulation.agent.sex,
+                    simulation.agent.cal_year, simulation.agent.family_hist,
+                    simulation.agent.num_antibiotic_use,
+                    simulation.agent.has_asthma,
+                    "prevalence"
+                )
 
                 # util and cost
                 increment_field_in_outcome_matrix!(outcome_matrix, "util",
