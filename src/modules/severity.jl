@@ -62,7 +62,7 @@ function compute_distribution_exac_severity(exac_severity::ExacerbationSeverity,
     index_very_severe = 4
     index_max = index_very_severe
 
-    if n == 0
+    if num_current_year == 0
         return zeros(index_max)
     else
         if prev_hosp
