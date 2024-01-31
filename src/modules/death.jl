@@ -1,4 +1,4 @@
-# include("abstractModule.jl")
+# include("abstractmodule.jl")
 # include("utils")
 
 # prob of death by age and sex
