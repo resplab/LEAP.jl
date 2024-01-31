@@ -77,6 +77,7 @@ function compute_control_levels(control::Control, sex::Bool, age::Integer,
         :fully_controlled => control_levels_prob[1],
         :partially_controlled => control_levels_prob[2],
         :uncontrolled => control_levels_prob[3],
+        :as_array => control_levels_prob
     )
     return control_levels
 end

@@ -82,7 +82,7 @@ function create_agent(; cal_year::Integer, cal_year_index::Integer, sex::Bool, a
     agent = Agent(
         sex=sex, age=age, cal_year=cal_year, cal_year_index=cal_year_index, alive=true,
         num_antibiotic_use=0, has_asthma=false, asthma_age=nothing, severity=nothing,
-        control=nothing, exac_hist=ExacerbationHist(0, 0),
+        control_levels=nothing, exac_hist=ExacerbationHist(0, 0),
         exac_sev_hist=ExacerbationSeverityHist(zeros(4),zeros(4)), total_hosp=0,
         family_hist=false, asthma_status=false, census_division=census_division
     )

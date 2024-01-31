@@ -185,8 +185,8 @@ end
 
 
 function add_control_to_outcome_matrix!(outcome_matrix::OutcomeMatrix, age::Integer, sex::Bool,
-    cal_year_index::Integer, control::Any)
-    outcome_matrix.control[cal_year_index, age+1, sex+1, :] += control
+    cal_year_index::Integer, control_levels::AbstractDict)
+    outcome_matrix.control[cal_year_index, age+1, sex+1, :] += control_levels[:as_array]
 end
 
 function add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix::OutcomeMatrix, age::Integer,

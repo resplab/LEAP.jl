@@ -19,7 +19,7 @@ Return the number of asthma exacerbations in a given year.
 - `exacerbation::Exacerbation`: An asthma exacerbation, see [`Exacerbation`](@ref).
 """
 function compute_num_exacerbations(agent::Agent, exacerbation::Exacerbation)
-    return compute_num_exacerbations(agent.age, agent.sex, agent.cal_year, agent.control,
+    return compute_num_exacerbations(agent.age, agent.sex, agent.cal_year, agent.control_levels,
         exacerbation::Exacerbation)
 end
 

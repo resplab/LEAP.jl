@@ -299,12 +299,12 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                             simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
                         )
 
-                        @set! simulation.agent.control = compute_control_levels(
+                        @set! simulation.agent.control_levels = compute_control_levels(
                             simulation.control, simulation.agent.sex, simulation.agent.age
                         )
                         add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
                             simulation.agent.sex, simulation.agent.cal_year_index,
-                            simulation.agent.control
+                            simulation.agent.control_levels
                         )
 
                         @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations(
@@ -347,12 +347,12 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     # if still dxed with asthma
                     if simulation.agent.has_asthma
                         #  update control
-                        @set! simulation.agent.control = compute_control_levels(
+                        @set! simulation.agent.control_levels = compute_control_levels(
                             simulation.control, simulation.agent.sex, simulation.agent.age
                         )
                         add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
                             simulation.agent.sex, simulation.agent.cal_year_index,
-                            simulation.agent.control
+                            simulation.agent.control_levels
                         )
 
                         # update exacerbation

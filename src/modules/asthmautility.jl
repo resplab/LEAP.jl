@@ -31,7 +31,7 @@ function compute_utility(agent::Agent, utility::Utility)
         return baseline
     else
         disutil_exac = sum(agent.exac_sev_hist.current_year .* utility.parameters[:exac])
-        disutil_control = sum(agent.control .* utility.parameters[:control])
+        disutil_control = sum(agent.control_levels[:as_array] .* utility.parameters[:control])
         return max(0, (baseline - disutil_exac - disutil_control))
     end
 end

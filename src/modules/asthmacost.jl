@@ -30,7 +30,7 @@ function compute_cost(agent::Agent, asthma_cost::AsthmaCost)::Float64
     else
         return (
             sum(agent.exac_sev_hist.current_year .* asthma_cost.parameters[:exac]) +
-            sum(agent.control .* asthma_cost.parameters[:control])
+            sum(agent.control_levels[:as_array] .* asthma_cost.parameters[:control])
         )
     end
 end
