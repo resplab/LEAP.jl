@@ -128,7 +128,7 @@ TODO.
 - `until_all_die::Bool`: TODO.
 - `verbose::Bool`: If true, print out updates during simulation. Default true.
 """
-function process(simulation::Simulation, seed=missing, until_all_die::Bool=false, verbose::Bool=true)
+function process(simulation::Simulation, seed=missing, until_all_die::Bool=false, verbose::Bool=false)
     # reproducibility
     if !ismissing(seed)
         Random.seed!(seed)
@@ -261,7 +261,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 simulation.agent.cal_year_index <= max_time_horizon)
                 # no asthma
                 if !simulation.agent.has_asthma
-                    # asthma inc
+                    # asthma incidence
                     @set! simulation.agent.has_asthma = agent_has_asthma(
                         simulation.agent, simulation.incidence, "incidence"
                     )
