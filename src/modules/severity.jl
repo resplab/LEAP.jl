@@ -32,28 +32,6 @@ function process_severity(exac_severity::ExacerbationSeverity, num::Integer, pre
     # rescale p
 end
 
-# CIHI Data on Quebec:
-
-# 1) Impute the fraction of admissions due to asthma for Quebec (based on trend analysis) for prior to April 2001 and re-do the analyses;
-# 2) Re-do the analyses excluding Quebec before 2002;
-# 3) Re-do the analyses for a suitable period during which Quebec reported the primary diagnosis type (from April 2001 onwards).
-
-
-function process_ctl(age,sex, ctl::ControlModule)
-    age_scaled = age / 100
-    function control_prediction_here(eta::Float64,theta::Union{Float64,Vector{Float64}};inv_link::Function=StatsFuns.logistic)::Union{Float64,Vector{Float64}}
-        theta = [-1e5;theta;1e5]
-        [inv_link(theta[j+1] - eta) - inv_link(theta[j] - eta) for j in 1:(length(theta)-1)]
-    end
-
-    control_prediction_here(ctl.parameters[:β0]+
-    age_scaled*ctl.parameters[:βage]+
-    sex*ctl.parameters[:βsex]+
-    age_scaled * sex * ctl.parameters[:βsexage] +
-    age_scaled^2 * sex * ctl.parameters[:βsexage2] +
-    age_scaled^2 * ctl.parameters[:βage2], ctl.parameters[:θ])
-end
-
 
 """
     compute_hospitalization_prob(agent, incidence, current_age)
