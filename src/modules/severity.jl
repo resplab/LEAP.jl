@@ -76,7 +76,7 @@ function compute_distribution_exac_severity(exac_severity::ExacerbationSeverity,
             p[1:3] .= weight * (1 - p[index_very_severe])
         end
 
-        return rand(Multinomial(n, p))
+        return rand(Multinomial(num_current_year, p))
     end
 end
 
