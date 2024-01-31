@@ -108,6 +108,7 @@ function compute_hospitalization_prob(exac_severity::ExacerbationSeverity, asthm
         total_rate = 0
         for tmp_age in asthma_age:max_age
             tmp_control = process_control(sim.control, sex, tmp_age);
+            tmp_control = compute_control_levels_prob(sim.control, sex, tmp_age)
             # exac mean
             total_rate += compute_num_exacerbations(tmp_age, sex, tmp_cal_year, tmp_control,
                 sim.exacerbation)

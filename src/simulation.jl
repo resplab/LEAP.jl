@@ -100,7 +100,7 @@ function generate_initial_asthma!(simulation::Simulation)
         @set! simulation.agent.total_hosp = compute_hospitalization_prob(
             simulation.exacerbation_severity, simulation.agent.asthma_age, simulation
         )
-        @set! simulation.agent.control = process_control(
+        @set! simulation.agent.control = compute_control_levels_prob(
             simulation.control, simulation.agent.sex, simulation.agent.age, true
         )
         @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations_initial(
@@ -299,7 +299,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                             simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
                         )
 
-                        @set! simulation.agent.control = process_control(
+                        @set! simulation.agent.control = compute_control_levels_prob(
                             simulation.control, simulation.agent.sex, simulation.agent.age
                         )
                         add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
@@ -347,7 +347,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     # if still dxed with asthma
                     if simulation.agent.has_asthma
                         #  update control
-                        @set! simulation.agent.control = process_control(
+                        @set! simulation.agent.control = compute_control_levels_prob(
                             simulation.control, simulation.agent.sex, simulation.agent.age
                         )
                         add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
