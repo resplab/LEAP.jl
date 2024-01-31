@@ -101,7 +101,7 @@ function generate_initial_asthma!(simulation::Simulation)
             simulation.exacerbation_severity, simulation.agent.asthma_age, simulation
         )
         @set! simulation.agent.control = process_control(
-            simulation.agent, simulation.control, true
+            simulation.control, simulation.agent.sex, simulation.agent.age, true
         )
         @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations_initial(
             simulation.agent, simulation.exacerbation
@@ -300,7 +300,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         )
 
                         @set! simulation.agent.control = process_control(
-                            simulation.agent, simulation.control
+                            simulation.control, simulation.agent.sex, simulation.agent.age
                         )
                         add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
                             simulation.agent.sex, simulation.agent.cal_year_index,
@@ -348,7 +348,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     if simulation.agent.has_asthma
                         #  update control
                         @set! simulation.agent.control = process_control(
-                            simulation.agent, simulation.control
+                            simulation.control, simulation.agent.sex, simulation.agent.age
                         )
                         add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
                             simulation.agent.sex, simulation.agent.cal_year_index,

@@ -4,21 +4,23 @@ struct Control <: ControlModule
 end
 
 
-function process_control(agent::Agent, ctl::Control, initial::Bool=false)
+function process_control(control::Control, sex::Bool, age::Integer, initial::Bool=false)
     if initial
-        age_scaled = (agent.age - 1) / 100
+        age_scaled = (age - 1) / 100
     else
-        age_scaled = agent.age / 100
+        age_scaled = age / 100
     end
 
     return control_prediction(
-        (ctl.parameters[:β0] +
-        age_scaled * ctl.parameters[:βage] +
-        agent.sex*ctl.parameters[:βsex] +
-        age_scaled * agent.sex * ctl.parameters[:βsexage] +
-        age_scaled^2 * agent.sex * ctl.parameters[:βsexage2] +
-        age_scaled^2 * ctl.parameters[:βage2]),
-        ctl.parameters[:θ]
+        (
+            control.parameters[:β0] +
+            age_scaled * control.parameters[:βage] +
+            sex * control.parameters[:βsex] +
+            age_scaled * sex * control.parameters[:βsexage] +
+            age_scaled^2 * sex * control.parameters[:βsexage2] +
+            age_scaled^2 * control.parameters[:βage2]
+        ),
+        control.parameters[:θ]
     )
 end
 

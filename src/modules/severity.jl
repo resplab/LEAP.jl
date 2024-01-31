@@ -81,22 +81,6 @@ function compute_distribution_exac_severity(exac_severity::ExacerbationSeverity,
 end
 
 
-function process_ctl(age,sex, ctl::ControlModule)
-    age_scaled = age / 100
-    function control_prediction_here(eta::Float64,theta::Union{Float64,Vector{Float64}};inv_link::Function=StatsFuns.logistic)::Union{Float64,Vector{Float64}}
-        theta = [-1e5;theta;1e5]
-        [inv_link(theta[j+1] - eta) - inv_link(theta[j] - eta) for j in 1:(length(theta)-1)]
-    end
-
-    control_prediction_here(ctl.parameters[:β0]+
-    age_scaled*ctl.parameters[:βage]+
-    sex*ctl.parameters[:βsex]+
-    age_scaled * sex * ctl.parameters[:βsexage] +
-    age_scaled^2 * sex * ctl.parameters[:βsexage2] +
-    age_scaled^2 * ctl.parameters[:βage2], ctl.parameters[:θ])
-end
-
-
 """
     compute_hospitalization_prob(agent, incidence, current_age)
 
@@ -113,7 +97,7 @@ https://stats.stackexchange.com/questions/174952/marginal-probability-function-o
 """
 function compute_hospitalization_prob(exac_severity::ExacerbationSeverity, asthma_age::Integer, sim)
     max_age = sim.agent.age - 2
-    tmp_sex = sim.agent.sex
+    sex = sim.agent.sex
 
     if max_age < 3
         return 0
@@ -123,9 +107,9 @@ function compute_hospitalization_prob(exac_severity::ExacerbationSeverity, asthm
         tmp_cal_year = sim.agent.cal_year - (sim.agent.age - asthma_age)
         total_rate = 0
         for tmp_age in asthma_age:max_age
-            tmp_control = process_ctl(tmp_age,tmp_sex,sim.control);
+            tmp_control = process_control(sim.control, sex, tmp_age);
             # exac mean
-            total_rate += compute_num_exacerbations(tmp_age, tmp_sex, tmp_cal_year, tmp_control,
+            total_rate += compute_num_exacerbations(tmp_age, sex, tmp_cal_year, tmp_control,
                 sim.exacerbation)
             tmp_cal_year +=1
         end
