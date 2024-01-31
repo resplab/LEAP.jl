@@ -107,7 +107,7 @@ function generate_initial_asthma!(simulation::Simulation)
             simulation.agent, simulation.exacerbation
         )
         # the number of exacerbation by severity
-        @set! simulation.agent.exac_sev_hist.current_year = process_severity(
+        @set! simulation.agent.exac_sev_hist.current_year = compute_distribution_exac_severity(
             simulation.exacerbation_severity, simulation.agent.exac_hist.num_current_year,
             (simulation.agent.total_hosp>0), simulation.agent.age
         )
@@ -312,12 +312,13 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         )
 
                         if simulation.agent.exac_hist.num_current_year != 0
-                            @set! simulation.agent.exac_sev_hist.current_year = process_severity(
+                            @set! simulation.agent.exac_sev_hist.current_year = (
+                            compute_distribution_exac_severity(
                                 simulation.exacerbation_severity,
                                 simulation.agent.exac_hist.num_current_year,
                                 (simulation.agent.total_hosp>0),
                                 simulation.agent.age
-                            )
+                            ))
                             @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
                             increment_field_in_outcome_matrix!(
                                 outcome_matrix,
@@ -366,12 +367,13 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         )
 
                         if simulation.agent.exac_hist.num_current_year != 0
-                            @set! simulation.agent.exac_sev_hist.current_year = process_severity(
+                            @set! simulation.agent.exac_sev_hist.current_year = (
+                            compute_distribution_exac_severity(
                                 simulation.exacerbation_severity,
                                 simulation.agent.exac_hist.num_current_year,
                                 (simulation.agent.total_hosp>0),
                                 simulation.agent.age
-                            )
+                            ))
                             @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
                             increment_field_in_outcome_matrix!(
                                 outcome_matrix,

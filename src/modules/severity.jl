@@ -29,26 +29,57 @@ struct ExacerbationSeverityHist <: ExacerbationSeverityHistModule
     prev_year::Array{Integer, 1}
 end
 
-function process_severity(exac_severity::ExacerbationSeverity, num::Integer, prev_hosp::Bool,
-    age::Integer)
-    tmp_p = copy(exac_severity.parameters[:p])
-    len_p = length(tmp_p)
 
-    if isnothing(num) || num==0
-        return zeros(len_p)
+"""
+    compute_distribution_exac_severity(exac_severity, num_current_year, prev_hosp, age)
+
+Compute the exacerbation severity distribution for a patient in a given year using the
+Dirichlet probability vector `p` in the Multinomial distribution. See:
+https://juliastats.org/Distributions.jl/stable/multivariate/#Distributions.Multinomial.
+
+For example, if the patient has `num_current_year` = 10 exacerbations in the current year,
+then the output might be:
+
+mild | moderate | severe | very severe
+2    | 1        | 6      | 1
+
+# Arguments
+- `exac_severity::ExacerbationSeverity`: Exacerbation severity parameters, see
+    [`ExacerbationSeverity`](@ref).
+- `num_current_year`: the number of asthma exacerbations the patient has had this year. Will be used
+    as the number of trials in the Multinomial distribution.
+- `prev_hosp::Bool`: has patient been previously hospitalized for asthma?
+- `age::Integer`: the age of the person in years.
+
+# Returns
+- `Array{Integer, 1}`: the distribution of asthma exacerbations by exacerbation type for the
+    current year.
+"""
+function compute_distribution_exac_severity(exac_severity::ExacerbationSeverity,
+    num_current_year::Integer, prev_hosp::Bool, age::Integer)::Array{Integer, 1}
+
+    p = copy(exac_severity.parameters[:p])
+    index_very_severe = 4
+    index_max = index_very_severe
+
+    if n == 0
+        return zeros(index_max)
     else
-
         if prev_hosp
-            tmp_weight = copy(tmp_p[1:3])
-            tmp_weight = tmp_weight / sum(tmp_weight)
-            tmp_p[len_p] = tmp_p[len_p]*(
-                age < 14 ? exac_severity.parameters[:βprev_hosp_ped] : exac_severity.parameters[:βprev_hosp_adult])
-            tmp_p[1:(len_p-1)] .= tmp_weight * (1-tmp_p[len_p])
+            weight = copy(p[1:3])
+            weight = weight / sum(weight)
+            p[index_very_severe] = p[index_very_severe] * (
+                age < 14
+                ? exac_severity.parameters[:βprev_hosp_ped]
+                : exac_severity.parameters[:βprev_hosp_adult]
+            )
+            p[1:3] .= weight * (1 - p[index_very_severe])
         end
 
-        return rand(Multinomial(num,tmp_p))
+        return rand(Multinomial(n, p))
     end
-    # rescale p
+end
+
 
 function process_ctl(age,sex, ctl::ControlModule)
     age_scaled = age / 100
