@@ -4,9 +4,9 @@
 A struct containing information about asthma control. This refers to how well the condition is
 managed.
 There are three levels of asthma control:
-    uncontrolled = 1
+    fully-controlled = 1
     partially-controlled = 2
-    fully-controlled = 3
+    uncontrolled = 3
 
 # Fields
 - `hyperparameters::Union{AbstractDict, Nothing}`: A dictionary containing the hyperparameters used
@@ -32,7 +32,7 @@ end
 
 
 """
-    compute_control_levels_prob(control, sex, age, initial)
+    compute_control_levels(control, sex, age, initial)
 
 Compute the probability that the control level = k for each value of k.
 The probability is given by ordinal regression, where y = control level:
@@ -47,14 +47,16 @@ The probability is given by ordinal regression, where y = control level:
 - `initial::Bool`: if this is the initial computation.
 
 # Returns
-- `Vector{Float64}`: a vector with the probability of each control level.
+- `AbstractDict`: a dictionary with the probability of each control level.
     For example:
-
-    uncontrolled | partial | full
-    0.2          | 0.75    | 0.05
+    {
+        "fully_controlled": 0.2,
+        "partially_controlled": 0.75,
+        "uncontrolled": 0.05
+    }
 """
-function compute_control_levels_prob(control::Control, sex::Bool, age::Integer,
-    initial::Bool=false)::Vector{Float64}
+function compute_control_levels(control::Control, sex::Bool, age::Integer,
+    initial::Bool=false)::AbstractDict
 
     if initial
         age_scaled = (age - 1) / 100
@@ -71,7 +73,12 @@ function compute_control_levels_prob(control::Control, sex::Bool, age::Integer,
         age_scaled^2 * control.parameters[:βage2]
     )
     control_levels_prob = compute_ordinal_regression(η, control.parameters[:θ])
-    return control_levels_prob
+    control_levels = Dict(
+        :fully_controlled => control_levels_prob[1],
+        :partially_controlled => control_levels_prob[2],
+        :uncontrolled => control_levels_prob[3],
+    )
+    return control_levels
 end
 
 
