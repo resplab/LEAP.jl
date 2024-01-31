@@ -141,6 +141,18 @@ function compute_hospitalization_prob(exac_severity::ExacerbationSeverity, asthm
 end
 
 
+"""
+    random_parameter_initialization!(exac_severity)
+
+Compute the probability vector `p` from the Dirichlet distribution. See:
+https://juliastats.org/Distributions.jl/stable/multivariate/#Distributions.Dirichlet.
+
+Mutates the exac_severity object.
+
+# Arguments
+- `exac_severity::ExacerbationSeverity`: Exacerbation severity parameters, see
+    [`ExacerbationSeverity`](@ref).
+"""
 function random_parameter_initialization!(exac_severity::ExacerbationSeverity)
     exac_severity.parameters[:p] = rand(
         Dirichlet(exac_severity.hyperparameters[:α] * exac_severity.hyperparameters[:k])
