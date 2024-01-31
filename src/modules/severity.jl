@@ -1,8 +1,27 @@
 using SpecialFunctions
 
+
+"""
+    ExacerbationSeverity
+
+A struct containing information about asthma exacerbation severity.
+There are four levels of asthma exacerbation severity: mild, moderate, severe, and very severe.
+
+# Fields
+- `hyperparameters::Union{AbstractDict, Nothing}`: A dictionary containing the hyperparameters used
+    in the Dirichlet-multinomial distribution. See
+    https://juliastats.org/Distributions.jl/stable/multivariate/#Distributions.Dirichlet.
+    `k`: integer, number of trials.
+    `α`: parameter vector, length 4.
+- `parameters::Union{AbstractDict, Nothing}`: A dictionary containing the following keys:
+    `p`: a probability vector giving the probability of each exacerbation type, using the
+        Dirichlet-multinomial distribution.
+    `βprev_hosp_ped`: Float64, parameter for previous hospitalizations due to asthma in childhood.
+    `βprev_hosp_adult`: Float64, parameter for previous hospitalizations due to asthma in adulthood.
+"""
 struct ExacerbationSeverity <: ExacerbationSeverityModule
-    hyperparameters::Union{AbstractDict,Nothing}
-    parameters::Union{AbstractDict,Nothing}
+    hyperparameters::Union{AbstractDict, Nothing}
+    parameters::Union{AbstractDict, Nothing}
 end
 
 struct ExacerbationSeverityHist <: ExacerbationSeverityHistModule
@@ -92,5 +111,7 @@ end
 
 
 function random_parameter_initialization!(exac_severity::ExacerbationSeverity)
-    exac_severity.parameters[:p] = rand(Dirichlet(exac_severity.hyperparameters[:p0_μ]*exac_severity.hyperparameters[:p0_σ]))
+    exac_severity.parameters[:p] = rand(
+        Dirichlet(exac_severity.hyperparameters[:α] * exac_severity.hyperparameters[:k])
+    )
 end

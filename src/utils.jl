@@ -223,11 +223,11 @@ end
 
 function set_up_exacerbation_severity()
     exacerbation_severity = ExacerbationSeverity(
-        dict_initializer([:p0_μ, :p0_σ]),
+        dict_initializer([:α, :k]),
         dict_initializer([:p, :βprev_hosp_ped, :βprev_hosp_adult])
     )
-    @set! exacerbation_severity.hyperparameters[:p0_μ] = [0.495, 0.195, 0.283, 0.026];
-    @set! exacerbation_severity.hyperparameters[:p0_σ] = 100;
+    @set! exacerbation_severity.hyperparameters[:α] = [0.495, 0.195, 0.283, 0.026];
+    @set! exacerbation_severity.hyperparameters[:k] = 100;
     @set! exacerbation_severity.parameters[:p] = ones(4) / 4;
     @set! exacerbation_severity.parameters[:βprev_hosp_ped] = 1.79
     @set! exacerbation_severity.parameters[:βprev_hosp_adult] = 2.88
