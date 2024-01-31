@@ -98,7 +98,8 @@ function generate_initial_asthma!(simulation::Simulation)
             simulation.agent, simulation.incidence, simulation.agent.age
         )
         @set! simulation.agent.total_hosp = compute_hospitalization_prob(
-            simulation.exacerbation_severity, simulation.agent.asthma_age, simulation
+            simulation.agent, simulation.exacerbation_severity, simulation.control,
+            simulation.exacerbation
         )
         @set! simulation.agent.control_levels = compute_control_levels(
             simulation.control, simulation.agent.sex, simulation.agent.age, true
