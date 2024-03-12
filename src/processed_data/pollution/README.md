@@ -31,3 +31,23 @@ SSP5-8.5:
   Very likely range of warming: 3.3 - 5.7 degrees Celsius by 2081-2100
   Very high greenhouse gas emissions
   CO2 emissions triple by 2075
+
+## Data Columns
+
+The baseline projections are obtained from the ECCC using their GEM-MACH model, which gives us a
+prediction for background PM2.5 levels and wildfire PM2.5 levels for the years 2026, 2031, and 2036.
+All other years are calculated using linear interpolation:
+
+`background_pm25`: the average background PM2.5 levels for a given month.
+`wildfire_pm25`: the average PM2.5 levels due to wildfires for a given month.
+
+To compute the added effect of different IPCC climate change scenarios, we use a climate scaling
+factor to predict the increase in wildfires:
+
+`factor`: the future climate scaling factor.
+`wildfire_pm25_scaled`: `wildfire_pm25` * `factor`.
+
+Finally, the total PM2.5 levels are calculated:
+
+`total_pm25`: the total average PM2.5 levels for a given month:
+  `wildfire_pm25_scaled` + `background_pm25`
