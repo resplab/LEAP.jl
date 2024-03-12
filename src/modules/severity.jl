@@ -1,57 +1,104 @@
 using SpecialFunctions
 
+
+"""
+    ExacerbationSeverity
+
+A struct containing information about asthma exacerbation severity.
+There are four levels of asthma exacerbation severity:
+    1 = mild
+    2 = moderate
+    3 = severe
+    4 = very severe
+
+# Fields
+- `hyperparameters::Union{AbstractDict, Nothing}`: A dictionary containing the hyperparameters used
+    in the Dirichlet-multinomial distribution. See
+    https://juliastats.org/Distributions.jl/stable/multivariate/#Distributions.Dirichlet.
+    `k`: integer, number of trials.
+    `α`: parameter vector, length 4.
+- `parameters::Union{AbstractDict, Nothing}`: A dictionary containing the following keys:
+    `p`: a probability vector giving the probability of each exacerbation type, using the
+        Dirichlet-multinomial distribution.
+    `βprev_hosp_ped`: Float64, parameter for previous hospitalizations due to asthma in childhood.
+    `βprev_hosp_adult`: Float64, parameter for previous hospitalizations due to asthma in adulthood.
+"""
 struct ExacerbationSeverity <: ExacerbationSeverityModule
-    hyperparameters::Union{AbstractDict,Nothing}
-    parameters::Union{AbstractDict,Nothing}
+    hyperparameters::Union{AbstractDict, Nothing}
+    parameters::Union{AbstractDict, Nothing}
 end
 
+
+"""
+    ExacerbationSeverityHist
+
+A struct containing information about the history of asthma exacerbations by severity.
+There are four levels of asthma exacerbation severity:
+    1 = mild
+    2 = moderate
+    3 = severe
+    4 = very severe
+
+# Fields
+- `current_year::Array{Integer, 1}`: An array of 4 integers indicating the number of
+    exacerbations for that severity level in the current year.
+- `prev_year::Array{Integer, 1}`: An array of 4 integers indicating the number of
+    exacerbations for that severity level in the previous year.
+"""
 struct ExacerbationSeverityHist <: ExacerbationSeverityHistModule
     current_year::Array{Integer, 1}
     prev_year::Array{Integer, 1}
 end
 
-function process_severity(exac_severity::ExacerbationSeverity, num::Integer, prev_hosp::Bool,
-    age::Integer)
-    tmp_p = copy(exac_severity.parameters[:p])
-    len_p = length(tmp_p)
 
-    if isnothing(num) || num==0
-        return zeros(len_p)
+"""
+    compute_distribution_exac_severity(exac_severity, num_current_year, prev_hosp, age)
+
+Compute the exacerbation severity distribution for a patient in a given year using the
+Dirichlet probability vector `p` in the Multinomial distribution. See:
+https://juliastats.org/Distributions.jl/stable/multivariate/#Distributions.Multinomial.
+
+For example, if the patient has `num_current_year` = 10 exacerbations in the current year,
+then the output might be:
+
+mild | moderate | severe | very severe
+2    | 1        | 6      | 1
+
+# Arguments
+- `exac_severity::ExacerbationSeverity`: Exacerbation severity parameters, see
+    [`ExacerbationSeverity`](@ref).
+- `num_current_year`: the number of asthma exacerbations the patient has had this year. Will be used
+    as the number of trials in the Multinomial distribution.
+- `prev_hosp::Bool`: has patient been previously hospitalized for asthma?
+- `age::Integer`: the age of the person in years.
+
+# Returns
+- `Array{Integer, 1}`: the distribution of asthma exacerbations by exacerbation type for the
+    current year.
+"""
+function compute_distribution_exac_severity(exac_severity::ExacerbationSeverity,
+    num_current_year::Integer, prev_hosp::Bool, age::Integer)::Array{Integer, 1}
+
+    p = copy(exac_severity.parameters[:p])
+    index_very_severe = 4
+    index_max = index_very_severe
+
+    if num_current_year == 0
+        return zeros(index_max)
     else
-
         if prev_hosp
-            tmp_weight = copy(tmp_p[1:3])
-            tmp_weight = tmp_weight / sum(tmp_weight)
-            tmp_p[len_p] = tmp_p[len_p]*(
-                age < 14 ? exac_severity.parameters[:βprev_hosp_ped] : exac_severity.parameters[:βprev_hosp_adult])
-            tmp_p[1:(len_p-1)] .= tmp_weight * (1-tmp_p[len_p])
+            weight = copy(p[1:3])
+            weight = weight / sum(weight)
+            p[index_very_severe] = p[index_very_severe] * (
+                age < 14
+                ? exac_severity.parameters[:βprev_hosp_ped]
+                : exac_severity.parameters[:βprev_hosp_adult]
+            )
+            p[1:3] .= weight * (1 - p[index_very_severe])
         end
 
-        return rand(Multinomial(num,tmp_p))
+        return rand(Multinomial(num_current_year, p))
     end
-    # rescale p
-end
-
-# CIHI Data on Quebec:
-
-# 1) Impute the fraction of admissions due to asthma for Quebec (based on trend analysis) for prior to April 2001 and re-do the analyses;
-# 2) Re-do the analyses excluding Quebec before 2002;
-# 3) Re-do the analyses for a suitable period during which Quebec reported the primary diagnosis type (from April 2001 onwards).
-
-
-function process_ctl(age,sex, ctl::ControlModule)
-    age_scaled = age / 100
-    function control_prediction_here(eta::Float64,theta::Union{Float64,Vector{Float64}};inv_link::Function=StatsFuns.logistic)::Union{Float64,Vector{Float64}}
-        theta = [-1e5;theta;1e5]
-        [inv_link(theta[j+1] - eta) - inv_link(theta[j] - eta) for j in 1:(length(theta)-1)]
-    end
-
-    control_prediction_here(ctl.parameters[:β0]+
-    age_scaled*ctl.parameters[:βage]+
-    sex*ctl.parameters[:βsex]+
-    age_scaled * sex * ctl.parameters[:βsexage] +
-    age_scaled^2 * sex * ctl.parameters[:βsexage2] +
-    age_scaled^2 * ctl.parameters[:βage2], ctl.parameters[:θ])
 end
 
 
@@ -63,35 +110,42 @@ Determine whether a person (agent) has been hospitalized due to an asthma exacer
 https://stats.stackexchange.com/questions/174952/marginal-probability-function-of-the-dirichlet-multinomial-distribution
 
 # Arguments
-- `exac_severity::ExacerbationSeverity`: Exacerbation severity module, see  [`ExacerbationSeverity`](@ref).
-- `asthma_age::Integer`: The age when the person (agent) was first diagnosed with asthma.
+- `agent::AgentModule`:: A person in the simulation, see [`Agent`](@ref).
+- `exac_severity::ExacerbationSeverity`: Exacerbation severity module, see
+    [`ExacerbationSeverity`](@ref).
+- `control::ControlModule`: Asthma control module, see
+    [`Control`](@ref).
+- `exacerbation::ExacerbationModule`: Asthma exacerbation module, see
+    [`Exacerbation`](@ref).
 
 # Returns
-- `Bool`: the binary probability of a hospitalization.
+- `Integer`: the binary probability of a hospitalization.
 """
-function compute_hospitalization_prob(exac_severity::ExacerbationSeverity, asthma_age::Integer, sim)
-    max_age = sim.agent.age - 2
-    tmp_sex = sim.agent.sex
+function compute_hospitalization_prob(agent::AgentModule, exac_severity::ExacerbationSeverity,
+    control::ControlModule, exacerbation::ExacerbationModule)::Integer
+
+    max_age = agent.age - 2
+    sex = agent.sex
 
     if max_age < 3
         return 0
     else
         # extract all the mean parameters
         # control => exac =>  sum up all the mean parameters for each tmp age
-        tmp_cal_year = sim.agent.cal_year - (sim.agent.age - asthma_age)
+        cal_year = agent.cal_year - (agent.age - agent.asthma_age)
         total_rate = 0
-        for tmp_age in asthma_age:max_age
-            tmp_control = process_ctl(tmp_age,tmp_sex,sim.control);
+        for age in agent.asthma_age:max_age
+            control_levels = compute_control_levels(control, sex, age)
             # exac mean
-            total_rate += compute_num_exacerbations(tmp_age, tmp_sex, tmp_cal_year, tmp_control,
-                sim.exacerbation)
-            tmp_cal_year +=1
+            total_rate += compute_num_exacerbations(age, sex, cal_year, control_levels,
+                exacerbation)
+            cal_year += 1
         end
         # toss a coin: avg chance of having at least one hosp
         zero_prob = (
-            1 / SpecialFunctions.gamma(total_rate+1) *
-            (SpecialFunctions.gamma(total_rate+1-exac_severity.parameters[:p][4]) /
-             SpecialFunctions.gamma(1-exac_severity.parameters[:p][4]))
+            1 / SpecialFunctions.gamma(total_rate + 1) *
+            (SpecialFunctions.gamma(total_rate + 1 - exac_severity.parameters[:p][4]) /
+             SpecialFunctions.gamma(1 - exac_severity.parameters[:p][4]))
         )
         p = 1 - min(max(zero_prob, 0), 1)
         return Int(rand(Bernoulli(p)))
@@ -99,6 +153,20 @@ function compute_hospitalization_prob(exac_severity::ExacerbationSeverity, asthm
 end
 
 
+"""
+    random_parameter_initialization!(exac_severity)
+
+Compute the probability vector `p` from the Dirichlet distribution. See:
+https://juliastats.org/Distributions.jl/stable/multivariate/#Distributions.Dirichlet.
+
+Mutates the exac_severity object.
+
+# Arguments
+- `exac_severity::ExacerbationSeverity`: Exacerbation severity parameters, see
+    [`ExacerbationSeverity`](@ref).
+"""
 function random_parameter_initialization!(exac_severity::ExacerbationSeverity)
-    exac_severity.parameters[:p] = rand(Dirichlet(exac_severity.hyperparameters[:p0_μ]*exac_severity.hyperparameters[:p0_σ]))
+    exac_severity.parameters[:p] = rand(
+        Dirichlet(exac_severity.hyperparameters[:α] * exac_severity.hyperparameters[:k])
+    )
 end

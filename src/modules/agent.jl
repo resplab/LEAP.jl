@@ -16,8 +16,8 @@ A person in the model.
 - `has_asthma::Bool`: Whether the person has astham, true = has asthma.
 - `asthma_age::Union{Nothing, Int}`: Age at which the person was diagnosed with asthma.
 - `severity::Union{Nothing, Int}`: Asthma severity level: 1 = mild, 2 = severe, 3 = very severe.
-- `control::Union{Nothing,Vector{Float64}}`: Asthma control level: 1 = uncontrolled,
-    2 = partially controlled, 3 = fully controlled.
+- `control_levels::Union{Nothing, AbstractDict}`: Asthma control level: 1 = fully controlled,
+    2 = partially controlled, 3 = uncontrolled.
 - `exac_hist::Union{Nothing, ExacerbationHistModule}`: Total number of exacerbations.
 - `exac_sev_hist::Union{Nothing, ExacerbationSeverityHistModule}`: Number of exacerbations by severity.
 - `total_hosp::Integer`: Total number of very severe asthma exacerbations leading to hospitalization.
@@ -35,7 +35,7 @@ A person in the model.
     has_asthma::Bool
     asthma_age::Union{Nothing, Integer}
     severity::Union{Nothing, Integer}
-    control::Union{Nothing, Vector{Float64}}
+    control_levels::Union{Nothing, AbstractDict}
     exac_hist::Union{Nothing, ExacerbationHistModule}
     exac_sev_hist::Union{Nothing, ExacerbationSeverityHistModule}
     total_hosp::Integer
@@ -82,7 +82,7 @@ function create_agent(; cal_year::Integer, cal_year_index::Integer, sex::Bool, a
     agent = Agent(
         sex=sex, age=age, cal_year=cal_year, cal_year_index=cal_year_index, alive=true,
         num_antibiotic_use=0, has_asthma=false, asthma_age=nothing, severity=nothing,
-        control=nothing, exac_hist=ExacerbationHist(0, 0),
+        control_levels=nothing, exac_hist=ExacerbationHist(0, 0),
         exac_sev_hist=ExacerbationSeverityHist(zeros(4),zeros(4)), total_hosp=0,
         family_hist=false, asthma_status=false, census_division=census_division
     )

@@ -1,32 +1,120 @@
+"""
+    Control
+
+A struct containing information about asthma control. This refers to how well the condition is
+managed.
+There are three levels of asthma control:
+    fully-controlled = 1
+    partially-controlled = 2
+    uncontrolled = 3
+
+# Fields
+- `hyperparameters::Union{AbstractDict, Nothing}`: A dictionary containing the hyperparameters used
+    to compute `β0` from a normal distribution:
+    `β0_μ`: Float64, the mean of the normal distribution.
+    `β0_σ`: Float64, the standard deviation of the normal distribution.
+- `parameters::Union{AbstractDict, Nothing}`: A dictionary containing the following keys:
+    `β0`: Float64, a constant parameter. See `hyperparameters`.
+    `βage`: Float64, the parameter for the age term.
+    `βsex`: Float64, the parameter for the sex term.
+    `βsexage`: Float64, the parameter for the sex * age term.
+    `βsexage2`: Float64, the parameter for the sex * age^2 term.
+    `βage2`: Float64, the parameter for the age^2 term.
+    `βDx2`: Float64, unused?
+    `βDx3`: Float64, unused?
+    `θ`: An array of two numbers, which are used as the thresholds to compute the ordinal
+        regression.
+"""
 struct Control <: ControlModule
-    hyperparameters::Union{AbstractDict,Nothing}
-    parameters::Union{AbstractDict,Nothing}
+    hyperparameters::Union{AbstractDict, Nothing}
+    parameters::Union{AbstractDict, Nothing}
 end
 
 
-function process_control(agent::Agent, ctl::Control, initial::Bool=false)
+"""
+    compute_control_levels(control, sex, age, initial)
+
+Compute the probability that the control level = k for each value of k.
+The probability is given by ordinal regression, where y = control level:
+    P(y <= k) = σ(θ_k - η)
+    P(y == k) = P(y <= k) - P(y < k + 1)
+              = σ(θ_k - η) - σ(θ_(k+1) - η)
+
+# Arguments
+- `control:Control`: Control module, see [`Control`](@ref).
+- `sex::Bool`: Sex of person, true = male, false = female.
+- `age::Integer`: The age of the person (agent) in years.
+- `initial::Bool`: if this is the initial computation.
+
+# Returns
+- `AbstractDict`: a dictionary with the probability of each control level.
+    For example:
+    {
+        "fully_controlled": 0.2,
+        "partially_controlled": 0.75,
+        "uncontrolled": 0.05
+    }
+"""
+function compute_control_levels(control::Control, sex::Bool, age::Integer,
+    initial::Bool=false)::AbstractDict
+
     if initial
-        age_scaled = (agent.age - 1) / 100
+        age_scaled = (age - 1) / 100
     else
-        age_scaled = agent.age / 100
+        age_scaled = age / 100
     end
 
-    return control_prediction(
-        (ctl.parameters[:β0] +
-        age_scaled * ctl.parameters[:βage] +
-        agent.sex*ctl.parameters[:βsex] +
-        age_scaled * agent.sex * ctl.parameters[:βsexage] +
-        age_scaled^2 * agent.sex * ctl.parameters[:βsexage2] +
-        age_scaled^2 * ctl.parameters[:βage2]),
-        ctl.parameters[:θ]
+    η = (
+        control.parameters[:β0] +
+        age_scaled * control.parameters[:βage] +
+        sex * control.parameters[:βsex] +
+        age_scaled * sex * control.parameters[:βsexage] +
+        age_scaled^2 * sex * control.parameters[:βsexage2] +
+        age_scaled^2 * control.parameters[:βage2]
     )
+    control_levels_prob = compute_ordinal_regression(η, control.parameters[:θ])
+    control_levels = Dict(
+        :fully_controlled => control_levels_prob[1],
+        :partially_controlled => control_levels_prob[2],
+        :uncontrolled => control_levels_prob[3],
+        :as_array => control_levels_prob
+    )
+    return control_levels
 end
 
-# pred function
-function control_prediction(eta::Float64, theta::Union{Float64,Vector{Float64}};
-    inv_link::Function=StatsFuns.logistic)::Union{Float64,Vector{Float64}}
-    theta = [-1e5;theta;1e5]
-    [inv_link(theta[j+1] - eta) - inv_link(theta[j] - eta) for j in 1:(length(theta)-1)]
+
+"""
+    compute_ordinal_regression(η, θ, prob_function)
+
+Compute the probability that y = k for each value of k.
+The probability is given by ordinal regression:
+    P(y <= k) = σ(θ_k - η)
+    P(y == k) = P(y <= k) - P(y < k + 1)
+              = σ(θ_k - η) - σ(θ_(k+1) - η)
+
+# Arguments
+
+- `η::Float64`: the weight for the regression.
+- `θ::Union{Float64, Vector{Float64}}`: either a single value or an array of values for the
+    threshold parameter.
+- `prob_function::Function: A function to apply, default is the StatsFuns.logistic sigmoid function.
+
+# Returns
+- `Vector{Float64}`: a vector with the probability of each value of k.
+    For example:
+
+    k=1 | k=2  | k=2
+    0.2 | 0.75 | 0.05
+"""
+function compute_ordinal_regression(η::Float64, θ::Union{Float64, Vector{Float64}};
+    prob_function::Function=StatsFuns.logistic)::Vector{Float64}
+
+    θ = [-1e5; θ; 1e5]
+    return [
+        prob_function(θ[k + 1] - η) -
+        prob_function(θ[k] - η)
+        for k in 1:(length(θ) - 1)
+    ]
 end
 
 

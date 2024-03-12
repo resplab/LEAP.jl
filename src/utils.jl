@@ -149,14 +149,14 @@ end
 
 function set_up_diagnosis(starting_year::Integer, province::String)
     diagnosis = Diagnosis(nothing, nothing)
-    @set! diagnosis.table =  groupby(
+    @set! diagnosis.true_positive_rates =  groupby(
         filter(
             [:year, :province] => (x, y) -> x >= starting_year && y == province,
             master_dx
         ),
         :year
     )
-    @set! diagnosis.table_mis = groupby(
+    @set! diagnosis.false_negative_rates = groupby(
         filter(
             [:year, :province] => (x, y) -> x >= starting_year && y == province,
             master_mis_dx
@@ -223,11 +223,11 @@ end
 
 function set_up_exacerbation_severity()
     exacerbation_severity = ExacerbationSeverity(
-        dict_initializer([:p0_μ, :p0_σ]),
+        dict_initializer([:α, :k]),
         dict_initializer([:p, :βprev_hosp_ped, :βprev_hosp_adult])
     )
-    @set! exacerbation_severity.hyperparameters[:p0_μ] = [0.495, 0.195, 0.283, 0.026];
-    @set! exacerbation_severity.hyperparameters[:p0_σ] = 100;
+    @set! exacerbation_severity.hyperparameters[:α] = [0.495, 0.195, 0.283, 0.026];
+    @set! exacerbation_severity.hyperparameters[:k] = 100;
     @set! exacerbation_severity.parameters[:p] = ones(4) / 4;
     @set! exacerbation_severity.parameters[:βprev_hosp_ped] = 1.79
     @set! exacerbation_severity.parameters[:βprev_hosp_adult] = 2.88
@@ -305,7 +305,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             has_asthma=false,
             asthma_age=0,
             severity=0,
-            control=nothing,
+            control_levels=nothing,
             exac_hist=ExacerbationHist(0, 0),
             exac_sev_hist=ExacerbationSeverityHist(zeros(4), zeros(4)),
             total_hosp=0,

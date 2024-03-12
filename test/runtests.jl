@@ -7,7 +7,7 @@ using LEAP
 include("test_simulation.jl")
 include("test_incidence.jl")
 include("test_birth.jl")
-include("test_censusDivision.jl")
-include("TestOutcomeMatrix.jl")
+include("test_censusdivision.jl")
+include("test_outcomematrix.jl")
 
 end

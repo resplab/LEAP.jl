@@ -178,7 +178,6 @@ function get_census_division_from_lat_lon(; longitude::Float64, latitude::Float6
     for row_index in 1:size(census_boundaries.shapefile_data)[1]
         row = census_boundaries.shapefile_data[row_index, :]
         polygon = row.geometry
-        println(row_index)
         if point_in_polygon(point, polygon)
             @set! census_division.federal_census_division = row.FEDENAME
             is_point_in_polygon = true

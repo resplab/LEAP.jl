@@ -7,17 +7,17 @@ using TimerOutputs, Printf
 using GRIB, PolygonOps, Shapefile, JSON, GeoInterface
 
 # using Plots
-include("global_variables.jl")
-include("modules/abstractModule.jl")
+include("globalvariables.jl")
+include("modules/abstractmodule.jl")
 include("modules/birth.jl")
-include("modules/familyHistory.jl")
-include("modules/antibioticExposure.jl")
+include("modules/familyhistory.jl")
+include("modules/antibioticexposure.jl")
 include("modules/agent.jl")
 include("modules/exacerbation.jl")
 include("modules/severity.jl")
 include.(filter(contains(r".jl$"), readdir(joinpath(dirname(pathof(LEAP)),"modules/"); join=true)))
 include("utils.jl")
-include("OutcomeMatrix.jl")
+include("outcomematrix.jl")
 include("simulation.jl")
 
 

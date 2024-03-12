@@ -36,9 +36,9 @@ A struct containing information about asthma incidence.
         `age`: integer age.
         `prob`: Float64.
         `OR`: Float64.
-        `calibrated_prev`: Float64.
+        `calibrated_prev`: Float64, the calibrated asthma prevalence.
         `prev`: Float64.
-        `calibrated_inc`: Float64.
+        `calibrated_inc`: Float64, the calibrated asthma incidence.
         `province`: A string indicating the province abbreviation, e.g. "BC".
     See `M3_calibrated_asthma_prev_inc`.
 """
@@ -54,34 +54,8 @@ struct Incidence <: IncidenceModule
 end
 
 
-function agent_has_asthma(agent::Agent, incidence::Incidence, abx)
-    tmp_age = min(agent.age, 95)
-    # max_year = length(inc.incidence_table)
-    tmp_year = min(agent.cal_year, incidence.max_year)
-    if tmp_age < 3
-        has_asthma = false
-    elseif tmp_age < 7
-        try
-            has_asthma = rand(Bernoulli(
-                incidence.calibration_table[(
-                    tmp_year, Int(agent.sex), Int(agent.family_hist),
-                    min(agent.num_antibiotic_use,3)
-                )][tmp_age - 2, "calibrated_inc"]))
-        catch
-            println(tmp_year, " ", agent.sex, " ", agent.family_hist, " ",
-                agent.num_antibiotic_use, " ", tmp_age)
-        end
-    else # no effect of Abx beyond 7 years of age
-        has_asthma = rand(Bernoulli(incidence.calibration_table[(
-            tmp_year, Int(agent.sex), Int(agent.family_hist), 0
-        )][tmp_age - 2, "calibrated_inc"]))
-    end
-    return has_asthma
-end
-
-
 """
-    agent_has_asthma(agent, incidence)
+    agent_has_asthma(agent, incidence, inc_or_prev)
 
 Determine whether the agent obtains a new asthma diagnosis based on age and sex.
 
@@ -89,22 +63,34 @@ Determine whether the agent obtains a new asthma diagnosis based on age and sex.
 
 - `agent::Agent`: Agent module, see [`Agent`](@ref).
 - `incidence::Incidence`: Incidence module, see [`Incidence`](@ref).
+- `inc_or_prev::String`: One of "prevalence" or "incidence"
 """
-function agent_has_asthma(agent::Agent, incidence::Incidence)
+function agent_has_asthma(agent::Agent, incidence::Incidence, inc_or_prev::String)
     tmp_age = min(agent.age, 95) - 1
     max_year = incidence.max_year
     tmp_year = min(agent.cal_year, max_year) - 1
+
+    if inc_or_prev == "prevalence"
+        inc_or_prev_cal = "calibrated_prev"
+    elseif inc_or_prev == "incidence"
+        inc_or_prev_cal = "calibrated_inc"
+    else
+        throw(ArgumentError(
+            "inc_or_prev must be either 'prevalence' or 'incidence', received $inc_or_prev."
+        ))
+    end
+
     # assume no asthma if age < 3
     if tmp_age < 3
         has_asthma = false
     elseif tmp_age < 7
         has_asthma = rand(Bernoulli(incidence.calibration_table[(
             tmp_year, Int(agent.sex), Int(agent.family_hist), min(agent.num_antibiotic_use, 3)
-            )][tmp_age - 2, "calibrated_prev"]))
+            )][tmp_age - 2, inc_or_prev_cal]))
     else # no effect of Abx beyond 7 years of age
         has_asthma = rand(Bernoulli(incidence.calibration_table[(
             tmp_year, Int(agent.sex), Int(agent.family_hist), 0
-            )][tmp_age - 2, "calibrated_prev"]))
+            )][tmp_age - 2, inc_or_prev_cal]))
     end
     return has_asthma
 end

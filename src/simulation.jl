@@ -90,7 +90,7 @@ end
 
 function generate_initial_asthma!(simulation::Simulation)
     @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.incidence
+        simulation.agent, simulation.incidence, "prevalence"
     )
     if simulation.agent.has_asthma
         @set! simulation.agent.asthma_status = true
@@ -98,16 +98,17 @@ function generate_initial_asthma!(simulation::Simulation)
             simulation.agent, simulation.incidence, simulation.agent.age
         )
         @set! simulation.agent.total_hosp = compute_hospitalization_prob(
-            simulation.exacerbation_severity, simulation.agent.asthma_age, simulation
+            simulation.agent, simulation.exacerbation_severity, simulation.control,
+            simulation.exacerbation
         )
-        @set! simulation.agent.control = process_control(
-            simulation.agent, simulation.control, true
+        @set! simulation.agent.control_levels = compute_control_levels(
+            simulation.control, simulation.agent.sex, simulation.agent.age, true
         )
         @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations_initial(
             simulation.agent, simulation.exacerbation
         )
         # the number of exacerbation by severity
-        @set! simulation.agent.exac_sev_hist.current_year = process_severity(
+        @set! simulation.agent.exac_sev_hist.current_year = compute_distribution_exac_severity(
             simulation.exacerbation_severity, simulation.agent.exac_hist.num_current_year,
             (simulation.agent.total_hosp>0), simulation.agent.age
         )
@@ -128,7 +129,7 @@ TODO.
 - `until_all_die::Bool`: TODO.
 - `verbose::Bool`: If true, print out updates during simulation. Default true.
 """
-function process(simulation::Simulation, seed=missing, until_all_die::Bool=false, verbose::Bool=true)
+function process(simulation::Simulation, seed=missing, until_all_die::Bool=false, verbose::Bool=false)
     # reproducibility
     if !ismissing(seed)
         Random.seed!(seed)
@@ -152,12 +153,12 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
 
     # loop by year
     for cal_year in cal_years
+        # time stamp
+        @timeit timer_output "calendar year $cal_year" begin
+
         if verbose
             println(cal_year)
         end
-
-        # time stamp
-        @timeit timer_output "calendar year $cal_year" begin
 
         # index for cal_year
         tmp_cal_year_index = cal_year - min_cal_year + 1
@@ -249,7 +250,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 simulation.agent.num_antibiotic_use
             )
 
-            n_list[tmp_cal_year_index, simulation.agent.sex+1] +=1
+            n_list[tmp_cal_year_index, simulation.agent.sex+1] += 1
 
             # if age >4, we need to generate the initial distribution of asthma related events
             if simulation.agent.age > 3
@@ -261,9 +262,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 simulation.agent.cal_year_index <= max_time_horizon)
                 # no asthma
                 if !simulation.agent.has_asthma
-                    # asthma inc
+                    # asthma incidence
                     @set! simulation.agent.has_asthma = agent_has_asthma(
-                        simulation.agent, simulation.incidence, simulation.antibioticExposure.AbxOR
+                        simulation.agent, simulation.incidence, "incidence"
                     )
                     # crude incidence record
                     if simulation.agent.has_asthma
@@ -276,19 +277,15 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                                 simulation.agent.cal_year_index
                             )
                         end
-                        add_asthma_to_asthma_incidence_contingency_table!(outcome_matrix,
-                            simulation.agent.age, simulation.agent.sex,
-                            simulation.agent.cal_year, simulation.agent.family_hist,
-                            simulation.agent.num_antibiotic_use
-                        )
-
-                    else
-                        add_asthma_to_asthma_incidence_contingency_table!(outcome_matrix,
-                            simulation.agent.age, simulation.agent.sex,
-                            simulation.agent.cal_year, simulation.agent.family_hist,
-                            simulation.agent.num_antibiotic_use
-                        )
                     end
+
+                    update_asthma_in_contingency_table!(outcome_matrix,
+                        simulation.agent.age, simulation.agent.sex,
+                        simulation.agent.cal_year, simulation.agent.family_hist,
+                        simulation.agent.num_antibiotic_use,
+                        simulation.agent.has_asthma,
+                        "incidence"
+                    )
 
                     # asthma Dx
                     @set! simulation.agent.has_asthma = agent_has_asthma(
@@ -303,12 +300,12 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                             simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
                         )
 
-                        @set! simulation.agent.control = process_control(
-                            simulation.agent, simulation.control
+                        @set! simulation.agent.control_levels = compute_control_levels(
+                            simulation.control, simulation.agent.sex, simulation.agent.age
                         )
                         add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
                             simulation.agent.sex, simulation.agent.cal_year_index,
-                            simulation.agent.control
+                            simulation.agent.control_levels
                         )
 
                         @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations(
@@ -316,12 +313,13 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         )
 
                         if simulation.agent.exac_hist.num_current_year != 0
-                            @set! simulation.agent.exac_sev_hist.current_year = process_severity(
+                            @set! simulation.agent.exac_sev_hist.current_year = (
+                            compute_distribution_exac_severity(
                                 simulation.exacerbation_severity,
                                 simulation.agent.exac_hist.num_current_year,
                                 (simulation.agent.total_hosp>0),
                                 simulation.agent.age
-                            )
+                            ))
                             @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
                             increment_field_in_outcome_matrix!(
                                 outcome_matrix,
@@ -350,12 +348,12 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     # if still dxed with asthma
                     if simulation.agent.has_asthma
                         #  update control
-                        @set! simulation.agent.control = process_control(
-                            simulation.agent, simulation.control
+                        @set! simulation.agent.control_levels = compute_control_levels(
+                            simulation.control, simulation.agent.sex, simulation.agent.age
                         )
                         add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
                             simulation.agent.sex, simulation.agent.cal_year_index,
-                            simulation.agent.control
+                            simulation.agent.control_levels
                         )
 
                         # update exacerbation
@@ -370,12 +368,13 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                         )
 
                         if simulation.agent.exac_hist.num_current_year != 0
-                            @set! simulation.agent.exac_sev_hist.current_year = process_severity(
+                            @set! simulation.agent.exac_sev_hist.current_year = (
+                            compute_distribution_exac_severity(
                                 simulation.exacerbation_severity,
                                 simulation.agent.exac_hist.num_current_year,
                                 (simulation.agent.total_hosp>0),
                                 simulation.agent.age
-                            )
+                            ))
                             @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
                             increment_field_in_outcome_matrix!(
                                 outcome_matrix,
@@ -406,18 +405,14 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     increment_field_in_outcome_matrix!(outcome_matrix, "asthma_prevalence",
                         simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
                     )
-                    add_asthma_to_asthma_prevalence_contingency_table!(outcome_matrix,
-                        simulation.agent.age, simulation.agent.sex,
-                        simulation.agent.cal_year, simulation.agent.family_hist,
-                        simulation.agent.num_antibiotic_use
-                    )
-                else
-                    add_no_asthma_to_asthma_prevalence_contingency_table!(outcome_matrix,
-                        simulation.agent.age, simulation.agent.sex,
-                        simulation.agent.cal_year, simulation.agent.family_hist,
-                        simulation.agent.num_antibiotic_use
-                    )
                 end
+                update_asthma_in_contingency_table!(outcome_matrix,
+                    simulation.agent.age, simulation.agent.sex,
+                    simulation.agent.cal_year, simulation.agent.family_hist,
+                    simulation.agent.num_antibiotic_use,
+                    simulation.agent.has_asthma,
+                    "prevalence"
+                )
 
                 # util and cost
                 increment_field_in_outcome_matrix!(outcome_matrix, "util",

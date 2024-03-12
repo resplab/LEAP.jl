@@ -185,8 +185,8 @@ end
 
 
 function add_control_to_outcome_matrix!(outcome_matrix::OutcomeMatrix, age::Integer, sex::Bool,
-    cal_year_index::Integer, control::Any)
-    outcome_matrix.control[cal_year_index, age+1, sex+1, :] += control
+    cal_year_index::Integer, control_levels::AbstractDict)
+    outcome_matrix.control[cal_year_index, age+1, sex+1, :] += control_levels[:as_array]
 end
 
 function add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix::OutcomeMatrix, age::Integer,
@@ -195,47 +195,35 @@ function add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix::Outcome
     outcome_matrix.exacerbation_by_severity[cal_year_index, age + 1, sex + 1, :] .+= exac_sev_hist_current_year
 end
 
-
-
-function add_no_asthma_to_asthma_incidence_contingency_table!(outcome_matrix::OutcomeMatrix,
-    age::Integer, sex::Bool, cal_year::Integer, family_hist::Any, num_antibiotic_use::Integer
+function update_asthma_in_contingency_table!(outcome_matrix::OutcomeMatrix,
+    age::Integer, sex::Bool, cal_year::Integer, family_hist::Any, num_antibiotic_use::Integer,
+    has_asthma::Bool, inc_or_prev::String
 )
-    outcome_matrix.asthma_incidence_contingency_table[(
-        cal_year, Int(sex),
-        Int(family_hist),
-        min(num_antibiotic_use, 3)
-        )][age + 1, "n_no_asthma"] += 1
+    if has_asthma
+        column = "n_asthma"
+    else
+        column = "n_no_asthma"
+    end
+
+    if inc_or_prev == "incidence"
+        outcome_matrix.asthma_incidence_contingency_table[(
+            cal_year, Int(sex),
+            Int(family_hist),
+            min(num_antibiotic_use, 3)
+            )][age + 1, column] += 1
+    elseif inc_or_prev == "prevalence"
+        outcome_matrix.asthma_prevalence_contingency_table[(
+            cal_year, Int(sex),
+            Int(family_hist),
+            min(num_antibiotic_use, 3)
+            )][age + 1, column] += 1
+    else
+        throw(ArgumentError(
+            "inc_or_prev must be either 'prevalence' or 'incidence', received $inc_or_prev."
+        ))
+    end
 end
 
-function add_asthma_to_asthma_prevalence_contingency_table!(outcome_matrix::OutcomeMatrix,
-    age::Integer, sex::Bool, cal_year::Integer, family_hist::Any, num_antibiotic_use::Integer
-)
-    outcome_matrix.asthma_prevalence_contingency_table[(
-        cal_year, Int(sex),
-        Int(family_hist),
-        min(num_antibiotic_use, 3)
-        )][age + 1, "n_asthma"] += 1
-end
-
-function add_no_asthma_to_asthma_prevalence_contingency_table!(outcome_matrix::OutcomeMatrix,
-    age::Integer, sex::Bool, cal_year::Integer, family_hist::Any, num_antibiotic_use::Integer
-)
-    outcome_matrix.asthma_prevalence_contingency_table[(
-        cal_year, Int(sex),
-        Int(family_hist),
-        min(num_antibiotic_use, 3)
-        )][age + 1, "n_no_asthma"] += 1
-end
-
-function add_asthma_to_asthma_incidence_contingency_table!(outcome_matrix::OutcomeMatrix,
-    age::Integer, sex::Bool, cal_year::Integer, family_hist::Any, num_antibiotic_use::Integer
-)
-    outcome_matrix.asthma_incidence_contingency_table[(
-        cal_year, Int(sex),
-        Int(family_hist),
-        min(num_antibiotic_use, 3)
-        )][age + 1, "n_asthma"] += 1
-end
 
 
 function increment_field_in_outcome_matrix!(outcome_matrix::OutcomeMatrix, field::String,
