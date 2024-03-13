@@ -7,12 +7,7 @@ using CSV
 """
     PollutionTable
 
-A struct containing information about Canadian census divisions.
-
-Please see: Statistics Canada. Table 98-10-0007-01
-Population and dwelling counts: Canada and census divisions
-
-https://www150.statcan.gc.ca/t1/tbl1/en/cv.action?pid=9810000701
+A struct containing information about PM2.5 pollution in Canada.
 
 # Fields
 - `data::Union{GroupedDataFrame, Nothing}`: A data frame grouped by the SSP scenario, with the
