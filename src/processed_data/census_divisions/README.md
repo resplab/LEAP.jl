@@ -52,7 +52,7 @@ https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites
 
 with the following selections:
 
-1. `Type`: `Digital Boundary Files (DBF)`
+1. `Type`: `Cartographic Boundary Files (CBF)`
 2. `Administrative boundaries`: `Census divisions`
 3. `Format`: `Shapefile (.shp)`
 
