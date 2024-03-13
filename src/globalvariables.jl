@@ -22,7 +22,7 @@ master_population_initial_distribution = CSV.read(
 
 # Census Divisions
 master_census_data = CSV.read(
-    joinpath(PROCESSED_DATA_PATH, "master_census_data_2021.csv"),
+    joinpath(PROCESSED_DATA_PATH, "census_divisions/master_census_data_2021.csv"),
     DataFrame
 )
 

@@ -25,10 +25,10 @@ The database loading data includes the `DGUID`, which was needed to generate the
 This data was reformatted into the `master_census_data_2021.csv` file, with the following columns:
 
 1. `year`: the year that the census data was collected.
-2. `geographic_name`: the name of the census division.
-3. `DGUID`: the geographic unique identifier, in the format:
+2. `census_division_name`: the name of the census division.
+3. `DGUID`: the dissemination geography unique identifier, in the format:
 
-  2021 | A | 0003 | CGUID
+  2021 | A | 0003 | CDUID
 
   2021 - year the data was collected
   A - administrative (not important, a StatsCan identifier)

@@ -1,4 +1,4 @@
-year,geographic_name,DGUID,CDUID,geographic_area_type,province,population,area_km2,population_density_per_km2
+year,census_division_name,DGUID,CDUID,geographic_area_type,province,population,area_km2,population_density_per_km2
 2021,Division No. 1,2021A00031001,1001,CDR,NL,271878,9104.58,29.9
 2021,Division No. 2,2021A00031002,1002,CDR,NL,19392,5915.57,3.3
 2021,Division No. 3,2021A00031003,1003,CDR,NL,13920,19272.11,0.7
