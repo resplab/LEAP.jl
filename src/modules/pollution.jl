@@ -5,6 +5,88 @@ using CSV
 
 
 """
+    PollutionTable
+
+A struct containing information about Canadian census divisions.
+
+Please see: Statistics Canada. Table 98-10-0007-01
+Population and dwelling counts: Canada and census divisions
+
+https://www150.statcan.gc.ca/t1/tbl1/en/cv.action?pid=9810000701
+
+# Fields
+- `data::Union{GroupedDataFrame, Nothing}`: A data frame grouped by the SSP scenario, with the
+    following columns:
+    `CDUID`: the census division identifier.
+    `year`: the year for the pollution data projection.
+    `month`: the month for the pollution data projection.
+    `date`: the data for the pollution data projection, first of the month.
+    `background_pm25`: the average background PM2.5 levels for a given month.
+    `wildfire_pm25`: the average PM2.5 levels due to wildfires for a given month.
+    `factor`: the future climate scaling factor, based on the SSP scenario.
+    `wildfire_pm25_scaled`: `wildfire_pm25` * `factor`.
+    `total_pm25`: the total average PM2.5 levels for a given month:
+      `wildfire_pm25_scaled` + `background_pm25`
+    `SSP`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
+"""
+struct PollutionTable <: PollutionTableModule
+    data::Union{GroupedDataFrame{DataFrame}, Nothing}
+end
+
+
+"""
+    Pollution
+
+A struct containing information about PM2.5 pollution for a given census division, date, and
+SSP scenario.
+
+# Fields
+- `cduid::Union{Integer, Nothing}`: the census division identifier.
+- `year`: the year for the pollution data projection.
+- `month`: the month for the pollution data projection.
+- `wildfire_pm25_scaled`: `wildfire_pm25` * `factor`.
+- `total_pm25`: the total average PM2.5 levels for a given month:
+  `wildfire_pm25_scaled` + `background_pm25`
+- `SSP`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
+"""
+@kwdef struct Pollution <: PollutionModule
+    cduid::Union{Integer, Nothing}
+    year::Union{Integer, Nothing}
+    month::Union{Integer, Nothing}
+    wildfire_pm25_scaled::Union{Float64, Nothing}
+    total_pm25::Union{Float64, Nothing}
+    SSP::Union{String, Nothing}
+end
+
+
+"""
+    load_pollution_table(pm25_data_path)
+
+Load the data from the PM2.5 SSP *.csv files.
+
+# Arguments
+- `pm25_data_path::String`: full directory path for the PM2.5 *.csv files.
+
+# Returns
+- `PollutionTable`: an object containing the PM2.5 pollution data for various SSP scenarios.
+"""
+function load_pollution_table(pm25_data_path::String)
+    files = readdir(pm25_data_path)
+    pollution_data = DataFrame()
+    for file in files
+        if splitext(file)[2] == ".csv"
+            df = CSV.read(joinpath(pm25_data_path, file), DataFrame)
+            pollution_data = [pollution_data;df]
+        end
+    end
+    pollution_table = PollutionTable(
+        pollution_data = groupby(pollution_data, :SSP)
+    )
+    return pollution_table
+end
+
+
+"""
     GribData
 
 A struct containing GRIB data on air pollution.
