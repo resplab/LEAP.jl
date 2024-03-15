@@ -32,9 +32,9 @@ TODO.
     control::ControlModule
     exacerbation::ExacerbationModule
     exacerbation_severity::ExacerbationSeverityModule
-    antibioticExposure::AntibioticExposureModule
-    familyHistory::FamilyHistoryModule
-    util::UtilityModule
+    antibiotic_exposure::AntibioticExposureModule
+    family_history::FamilyHistoryModule
+    utility::UtilityModule
     cost::CostModule
     census_table::CensusTableModule
     initial_distribution
@@ -209,8 +209,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     sex=sex,
                     age=age,
                     province=simulation.province,
-                    antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory,
+                    antibiotic_exposure=simulation.antibiotic_exposure,
+                    family_hist=simulation.family_history,
                     census_table=simulation.census_table
                 )
             elseif new_born_indicator[i]
@@ -220,8 +220,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     sex=rand(Bernoulli(simulation.birth.estimate.prop_male[tmp_cal_year_index])),
                     age=0,
                     province=simulation.province,
-                    antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory,
+                    antibiotic_exposure=simulation.antibiotic_exposure,
+                    family_hist=simulation.family_history,
                     census_table=simulation.census_table
                 )
             else
@@ -231,8 +231,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     sex=Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrant_indices[i]]),
                     age=simulation.immigration.table[tmp_cal_year_index].age[immigrant_indices[i]],
                     province=simulation.province,
-                    antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory,
+                    antibiotic_exposure=simulation.antibiotic_exposure,
+                    family_hist=simulation.family_history,
                     census_table=simulation.census_table
                 )
                 increment_field_in_outcome_matrix!(outcome_matrix, "immigration",
@@ -417,7 +417,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 # util and cost
                 increment_field_in_outcome_matrix!(outcome_matrix, "util",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                    compute_utility(simulation.agent, simulation.util)
+                    compute_utility(simulation.agent, simulation.utility)
                 )
                 increment_field_in_outcome_matrix!(outcome_matrix, "cost",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
