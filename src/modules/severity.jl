@@ -26,6 +26,18 @@ There are four levels of asthma exacerbation severity:
 struct ExacerbationSeverity <: ExacerbationSeverityModule
     hyperparameters::Union{AbstractDict, Nothing}
     parameters::Union{AbstractDict, Nothing}
+    function ExacerbationSeverity(config::Union{AbstractDict, Nothing})
+        hyperparameters = string_to_symbols_dict(config["hyperparameters"])
+        parameters = string_to_symbols_dict(config["parameters"])
+        hyperparameters[:α] = Array{Float64, 1}(hyperparameters[:α])
+        parameters[:p] = Array{Float64, 1}(parameters[:p])
+        new(hyperparameters, parameters)
+    end
+    function ExacerbationSeverity(
+        hyperparameters::Union{AbstractDict, Nothing}, parameters::Union{AbstractDict, Nothing}
+    )
+        new(hyperparameters, parameters)
+    end
 end
 
 

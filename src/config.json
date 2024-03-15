@@ -58,6 +58,17 @@
     },
     "initial_rate": 0.347
   },
+  "exacerbation_severity": {
+    "hyperparameters": {
+      "α": [0.495, 0.195, 0.283, 0.026],
+      "k": 100
+    },
+    "parameters": {
+      "p": [0.25, 0.25, 0.25, 0.25],
+      "βprev_hosp_ped": 1.79,
+      "βprev_hosp_adult": 2.88
+    }
+  },
   "family_history": {
     "parameters": {
       "p": 0.2927242
