@@ -13,9 +13,6 @@ master_census_data = CSV.read(
     DataFrame
 )
 
-# Death
-master_life_table = CSV.read(joinpath(PROCESSED_DATA_PATH, "master_life_table.csv"), DataFrame)
-
 # Diagnosis
 master_dx = CSV.read(
     joinpath(PROCESSED_DATA_PATH, "master_asthma_dx.csv"),

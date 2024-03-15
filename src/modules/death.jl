@@ -15,8 +15,34 @@ A struct containing information about the probability of death for a given agent
 - `life_table`: TODO.
 """
 struct Death <: DeathModule
-    parameters::Union{AbstractDict, Nothing}
+    parameters::AbstractDict
     life_table
+    function Death(config::AbstractDict, province::String, starting_year::Integer)
+        parameters = string_to_symbols_dict(config["parameters"])
+        master_life_table = load_life_table()
+        life_table = groupby(select(unstack(
+            select(
+                select(
+                    filter((
+                        [:year, :province] => (x, y) -> x >= starting_year
+                        && y == province
+                        ),
+                        master_life_table
+                    ),
+                Not(:se)),
+            Not(:province)),
+        :sex, :prob_death), :F, :M, :year), :year)
+        new(parameters, life_table)
+    end
+    function Death(parameters::AbstractDict, life_table)
+        new(parameters, life_table)
+    end
+end
+
+
+function load_life_table()
+    master_life_table = CSV.read(joinpath(PROCESSED_DATA_PATH, "master_life_table.csv"), DataFrame)
+    return master_life_table
 end
 
 

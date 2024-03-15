@@ -19,26 +19,6 @@ function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
     return new_dict
 end
 
-function set_up_death(starting_year::Integer, province::String)
-    death = Death(dict_initializer([:β0,:β1,:β2]), nothing)
-    @set! death.parameters[:β0] = 0;
-    @set! death.parameters[:β1] = 0;
-    @set! death.parameters[:β2] = 0;
-    @set! death.life_table = groupby(select(unstack(
-        select(
-            select(
-                filter((
-                    [:year, :province] => (x, y) -> x >= starting_year
-                    && y == province
-                    ),
-                    master_life_table
-                ),
-            Not(:se)),
-        Not(:province)),
-    :sex,:prob_death),:F,:M,:year),:year)
-    return death
-end
-
 function set_up_emigration(starting_year::Integer, population_growth_type::String,
     province::String)
 
@@ -192,7 +172,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             census_division=nothing
         )
 
-        death = set_up_death(starting_year, province)
         emigration = set_up_emigration(starting_year, population_growth_type, province)
         immigration = set_up_immigration(starting_year, population_growth_type, province)
         incidence = set_up_incidence(starting_year, province)
@@ -211,7 +190,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             birth=Birth(starting_year, province, population_growth_type),
             emigration=emigration,
             immigration=immigration,
-            death=death,
+            death=Death(config["death"], province, starting_year),
             incidence=incidence,
             reassessment=reassessment,
             diagnosis=diagnosis,
