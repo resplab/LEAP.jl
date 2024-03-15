@@ -39,7 +39,6 @@ export
     # global datasets
     PROCESSED_DATA_PATH,
     CONFIG_PATH,
-    master_life_table,
     master_immigration_table,
     master_emigration_table,
     master_reassessment,
