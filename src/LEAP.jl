@@ -38,6 +38,7 @@ export
     point_in_polygon,
     # global datasets
     PROCESSED_DATA_PATH,
+    CONFIG_PATH,
     master_birth_estimate,
     master_life_table,
     master_population_initial_distribution,

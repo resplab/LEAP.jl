@@ -25,9 +25,18 @@ There are three levels of asthma control:
     `θ`: An array of two numbers, which are used as the thresholds to compute the ordinal
         regression.
 """
-struct Control <: ControlModule
+@kwdef struct Control <: ControlModule
     hyperparameters::Union{AbstractDict, Nothing}
     parameters::Union{AbstractDict, Nothing}
+    function Control(config::Union{AbstractDict, Nothing})
+        hyperparameters = string_to_symbols_dict(config["hyperparameters"])
+        parameters = string_to_symbols_dict(config["parameters"])
+        parameters[:θ] = Array{Float64, 1}(parameters[:θ])
+        new(hyperparameters, parameters)
+    end
+    function Control(hyperparameters::Union{AbstractDict, Nothing}, parameters::Union{AbstractDict, Nothing})
+        new(hyperparameters, parameters)
+    end
 end
 
 

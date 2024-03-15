@@ -10,6 +10,16 @@ function vec_to_dict(v::AbstractArray, ll::AbstractVector)::AbstractDict
     return d
 end
 
+
+function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
+    new_dict = Dict()
+    for (key, value) in dict
+        new_dict[Symbol(key)] = value
+    end
+    return new_dict
+end
+
+
 function set_up_birth(starting_year::Integer, population_growth_type::String, province::String)
     birth = Birth(nothing, nothing)
     @set! birth.estimate = filter(
@@ -166,22 +176,6 @@ function set_up_diagnosis(starting_year::Integer, province::String)
     return diagnosis
 end
 
-function set_up_control()
-    control = Control(
-        dict_initializer([:β0_μ, :β0_σ]),
-        dict_initializer([:β0, :βage, :βsex,:βsexage, :βsexage2, :βage2, :βDx2, :βDx3, :θ])
-    )
-    @set! control.hyperparameters[:β0_μ] = 0;
-    @set! control.hyperparameters[:β0_σ] = 1.678728;
-    @set! control.parameters[:βage] = 3.5430381;
-    @set! control.parameters[:βage2] =-3.4980710;
-    @set! control.parameters[:βsexage] = -0.8161495;
-    @set! control.parameters[:βsexage2] = -1.1654264;
-    @set! control.parameters[:βsex] = 0.2347807;
-    @set! control.parameters[:θ] = [-0.3950; 2.754];
-    return control
-end
-
 
 function set_up_exacerbation(province::String)
     exacerbation = Exacerbation(
@@ -295,6 +289,8 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
     num_births_initial=100, population_growth_type="LG")
     if province=="BC" || province=="CA"
 
+        config = JSON.parsefile(CONFIG_PATH)
+
         agent = Agent(
             sex=false,
             age=0,
@@ -321,7 +317,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         incidence = set_up_incidence(starting_year, province)
         reassessment = set_up_reassessment(starting_year, province)
         diagnosis = set_up_diagnosis(starting_year, province)
-        control = set_up_control()
         exacerbation = set_up_exacerbation(province)
         exacerbation_severity = set_up_exacerbation_severity()
         antibiotic_exposure = set_up_antibiotic_exposure()
@@ -331,30 +326,30 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         census_table = set_up_census_table()
 
         simulation = Simulation(
-            max_age,
-            province,
-            starting_year,
-            time_horizon,
-            num_births_initial,
-            population_growth_type,
-            agent,
-            birth,
-            emigration,
-            immigration,
-            death,
-            incidence,
-            reassessment,
-            diagnosis,
-            control,
-            exacerbation,
-            exacerbation_severity,
             antibiotic_exposure,
-            family_history,
-            utility,
-            cost,
-            census_table,
-            nothing,
-            (;)
+            max_age=max_age,
+            province=province,
+            starting_calendar_year=starting_year,
+            time_horizon=time_horizon,
+            num_births_initial=num_births_initial,
+            population_growth_type=population_growth_type,
+            agent=agent,
+            birth=birth,
+            emigration=emigration,
+            immigration=immigration,
+            death=death,
+            incidence=incidence,
+            reassessment=reassessment,
+            diagnosis=diagnosis,
+            control=Control(config["control"]),
+            exacerbation=exacerbation,
+            exacerbation_severity=exacerbation_severity,
+            family_history=family_history,
+            utility=utility,
+            cost=cost,
+            census_table=census_table,
+            initial_distribution=nothing,
+            outcome_matrix=(;)
         )
 
         return simulation
