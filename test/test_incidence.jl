@@ -13,9 +13,7 @@ using JSON
     config = JSON.parsefile(LEAP.CONFIG_PATH)
     incidence = LEAP.Incidence(config["incidence"], starting_year, province)
     birth = LEAP.Birth(starting_year, province, population_growth_type)
-    antibiotic_exposure = LEAP.AntibioticExposure(
-        config["antibiotic_exposure"], LEAP.abx_mid_trends, nothing
-    )
+    antibiotic_exposure = LEAP.AntibioticExposure(config["antibiotic_exposure"])
     family_history = LEAP.FamilyHistory(config["family_history"])
     census_table = LEAP.CensusTable(config["census_table"])
     cal_year = 2002
@@ -45,9 +43,7 @@ end
     config = JSON.parsefile(LEAP.CONFIG_PATH)
     incidence = LEAP.Incidence(config["incidence"], starting_year, province)
     birth = LEAP.Birth(starting_year, province, population_growth_type)
-    antibiotic_exposure = LEAP.AntibioticExposure(
-        config["antibiotic_exposure"], LEAP.abx_mid_trends, nothing
-    )
+    antibiotic_exposure = LEAP.AntibioticExposure(config["antibiotic_exposure"])
     family_history = LEAP.FamilyHistory(config["family_history"])
     census_table = LEAP.CensusTable(config["census_table"])
     cal_year = 2002
