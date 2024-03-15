@@ -48,6 +48,4 @@ export
     master_dx,
     master_mis_dx,
     M3_calibrated_asthma_prev_inc
-    exacerbation_calibration
-    eq5d
 end # module

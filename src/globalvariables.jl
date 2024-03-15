@@ -7,10 +7,6 @@ abx_mid_trends = groupby(CSV.read(
     DataFrame
 ),[:year,:sex])
 
-# Asthma Utility
-eq5d = CSV.read(joinpath(PROCESSED_DATA_PATH, "eq5d_canada.csv"), DataFrame)
-eq5d = groupby(eq5d,[:age,:sex])
-
 # Birth
 master_birth_estimate = CSV.read(
     joinpath(PROCESSED_DATA_PATH, "master_birth_estimate.csv"),

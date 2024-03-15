@@ -190,17 +190,6 @@ function set_up_exacerbation_severity()
     return exacerbation_severity
 end
 
-
-function set_up_utility()
-    utility = Utility(dict_initializer([:eq5d, :control, :exac]))
-    @set! utility.parameters[:eq5d] = eq5d
-    # disutil
-    @set! utility.parameters[:control] = [0.06, 0.09, 0.10]
-    # disutil: duration 1 week for mild and two weeks for the rest
-    @set! utility.parameters[:exac] = [0.32 * 1,  0.44 * 2, 0.50 * 2, 0.56 * 2 ] / 52
-    return utility
-end
-
 function set_up_census_table()
     census_table = CensusTable(
         nothing, 2021
@@ -243,7 +232,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         reassessment = set_up_reassessment(starting_year, province)
         diagnosis = set_up_diagnosis(starting_year, province)
         exacerbation_severity = set_up_exacerbation_severity()
-        utility = set_up_utility()
         census_table = set_up_census_table()
 
         simulation = Simulation(
@@ -266,7 +254,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             exacerbation_severity=exacerbation_severity,
             antibiotic_exposure=AntibioticExposure(config["antibiotic_exposure"], abx_mid_trends, nothing),
             family_history=FamilyHistory(config["family_history"]),
-            utility=utility,
+            utility=Utility(config["utility"]),
             cost=AsthmaCost(config["cost"]),
             census_table=census_table,
             initial_distribution=nothing,
