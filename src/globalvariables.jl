@@ -17,10 +17,3 @@ master_mis_dx = CSV.read(
     joinpath(PROCESSED_DATA_PATH, "master_asthma_mis_dx.csv"),
     DataFrame
 )
-
-
-# Reassessment
-master_reassessment = CSV.read(
-    joinpath(PROCESSED_DATA_PATH, "master_asthma_assessment.csv"),
-    DataFrame
-)

@@ -39,7 +39,6 @@ export
     # global datasets
     PROCESSED_DATA_PATH,
     CONFIG_PATH,
-    master_reassessment,
     master_dx,
     master_mis_dx
 end # module

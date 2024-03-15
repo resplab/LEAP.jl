@@ -20,19 +20,6 @@ function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
 end
 
 
-function set_up_reassessment(starting_year::Integer, province::String)
-    reassessment = Reassessment(nothing)
-    @set! reassessment.table = groupby(
-        filter(
-            [:year, :province] => (x, y) -> x >= starting_year && y == province,
-            master_reassessment
-        ),
-        :year
-    )
-    return reassessment
-end
-
-
 function set_up_diagnosis(starting_year::Integer, province::String)
     diagnosis = Diagnosis(nothing, nothing)
     @set! diagnosis.true_positive_rates =  groupby(
@@ -78,7 +65,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             census_division=nothing
         )
 
-        reassessment = set_up_reassessment(starting_year, province)
         diagnosis = set_up_diagnosis(starting_year, province)
 
         simulation = Simulation(
@@ -94,7 +80,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             immigration=Immigration(starting_year, province, population_growth_type),
             death=Death(config["death"], province, starting_year),
             incidence=Incidence(config["incidence"], starting_year, province),
-            reassessment=reassessment,
+            reassessment=Reassessment(starting_year, province),
             diagnosis=diagnosis,
             control=Control(config["control"]),
             exacerbation=Exacerbation(config["exacerbation"], province),
