@@ -23,12 +23,6 @@ master_mis_dx = CSV.read(
     DataFrame
 )
 
-# Immigration
-master_immigration_table = CSV.read(
-    joinpath(PROCESSED_DATA_PATH, "master_immigration_table_modified.csv"),
-    DataFrame
-)
-
 # Incidence
 master_incidence_rate = CSV.read(
     joinpath(PROCESSED_DATA_PATH, "master_asthma_inc_interpolated.csv"),

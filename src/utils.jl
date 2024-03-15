@@ -19,27 +19,6 @@ function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
     return new_dict
 end
 
-function set_up_immigration(starting_year::Integer, population_growth_type::String,
-    province::String)
-    immigration = Immigration(nothing, nothing, nothing, nothing, nothing)
-    @set! immigration.table = groupby(
-        select(
-            select(
-                filter(
-                    ([:year, :province, :proj_scenario] => (x, y,z) -> x > starting_year
-                    && y == province
-                    && z == population_growth_type),
-                    master_immigration_table
-                ),
-                Not(:province)
-            ),
-            Not(:proj_scenario)
-        ),
-        :year
-    )
-    return immigration
-end
-
 
 function set_up_incidence(starting_year::Integer, province::String)::Incidence
     incidence = Incidence(
@@ -150,7 +129,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             census_division=nothing
         )
 
-        immigration = set_up_immigration(starting_year, population_growth_type, province)
         incidence = set_up_incidence(starting_year, province)
         reassessment = set_up_reassessment(starting_year, province)
         diagnosis = set_up_diagnosis(starting_year, province)
@@ -166,7 +144,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             agent=agent,
             birth=Birth(starting_year, province, population_growth_type),
             emigration=Emigration(starting_year, province, population_growth_type),
-            immigration=immigration,
+            immigration=Immigration(starting_year, province, population_growth_type),
             death=Death(config["death"], province, starting_year),
             incidence=incidence,
             reassessment=reassessment,
