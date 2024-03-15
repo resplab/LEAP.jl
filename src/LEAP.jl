@@ -40,7 +40,6 @@ export
     PROCESSED_DATA_PATH,
     CONFIG_PATH,
     master_immigration_table,
-    master_emigration_table,
     master_reassessment,
     master_dx,
     master_mis_dx,

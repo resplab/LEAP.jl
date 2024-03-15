@@ -19,28 +19,6 @@ function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
     return new_dict
 end
 
-function set_up_emigration(starting_year::Integer, population_growth_type::String,
-    province::String)
-
-    emigration = Emigration(nothing, nothing, nothing)
-    @set! emigration.table = groupby(
-        select(
-            select(
-                filter(
-                    ([:year, :province, :proj_scenario] => (x, y,z) -> x > starting_year
-                    && y == province
-                    && z==population_growth_type),
-                    master_emigration_table
-                ),
-                Not(:province)
-            ),
-            Not(:proj_scenario)
-        ),
-        :year
-    )
-    return emigration
-end
-
 function set_up_immigration(starting_year::Integer, population_growth_type::String,
     province::String)
     immigration = Immigration(nothing, nothing, nothing, nothing, nothing)
@@ -172,7 +150,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             census_division=nothing
         )
 
-        emigration = set_up_emigration(starting_year, population_growth_type, province)
         immigration = set_up_immigration(starting_year, population_growth_type, province)
         incidence = set_up_incidence(starting_year, province)
         reassessment = set_up_reassessment(starting_year, province)
@@ -188,7 +165,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             population_growth_type=population_growth_type,
             agent=agent,
             birth=Birth(starting_year, province, population_growth_type),
-            emigration=emigration,
+            emigration=Emigration(starting_year, province, population_growth_type),
             immigration=immigration,
             death=Death(config["death"], province, starting_year),
             incidence=incidence,

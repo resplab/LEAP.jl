@@ -23,12 +23,6 @@ master_mis_dx = CSV.read(
     DataFrame
 )
 
-# Emigration
-master_emigration_table = CSV.read(
-    joinpath(PROCESSED_DATA_PATH, "master_emigration_table.csv"),
-    DataFrame
-)
-
 # Immigration
 master_immigration_table = CSV.read(
     joinpath(PROCESSED_DATA_PATH, "master_immigration_table_modified.csv"),
