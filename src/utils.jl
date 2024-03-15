@@ -177,44 +177,6 @@ function set_up_diagnosis(starting_year::Integer, province::String)
 end
 
 
-function set_up_exacerbation(province::String)
-    exacerbation = Exacerbation(
-        dict_initializer([:β0_μ, :β0_σ]),
-        dict_initializer([:β0, :βage, :βsex, :βasthmaDx, :βprev_exac1, :βprev_exac2,
-            :βcontrol_C, :βcontrol_PC, :βcontrol_UC, :calibration, :min_year]
-        ),
-        0
-    )
-    @set! exacerbation.initial_rate = 0.347;
-    @set! exacerbation.hyperparameters[:β0_μ] = 0;
-    @set! exacerbation.hyperparameters[:β0_σ] = 0.0000001;
-    @set! exacerbation.parameters[:β0_calibration] = 0.0; # 0.056
-    @set! exacerbation.parameters[:βage] = 0;
-    @set! exacerbation.parameters[:βsex] = 0;
-    @set! exacerbation.parameters[:βasthmaDx] = 0;
-    @set! exacerbation.parameters[:βprev_exac1] = 0;
-    @set! exacerbation.parameters[:βprev_exac2] = 0;
-    @set! exacerbation.parameters[:βcontrol_C] =  log(0.1880058);
-    @set! exacerbation.parameters[:βcontrol_PC] =  log(0.3760116);
-    @set! exacerbation.parameters[:βcontrol_UC] =  log(0.5640174);
-    @set! exacerbation.parameters[:βcontrol] =  0;
-    @set! exacerbation.parameters[:calibration] = groupby(
-        select(
-            filter(
-                [:province] => (x) -> x == province,
-                exacerbation_calibration
-            ),
-            Not([:province])
-        ),
-        [:year,:sex]
-    );
-    @set! exacerbation.parameters[:min_year] = collect(
-        keys(exacerbation.parameters[:calibration])[1]
-    )[1]+1
-    return exacerbation
-end
-
-
 function set_up_exacerbation_severity()
     exacerbation_severity = ExacerbationSeverity(
         dict_initializer([:α, :k]),
@@ -280,7 +242,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         incidence = set_up_incidence(starting_year, province)
         reassessment = set_up_reassessment(starting_year, province)
         diagnosis = set_up_diagnosis(starting_year, province)
-        exacerbation = set_up_exacerbation(province)
         exacerbation_severity = set_up_exacerbation_severity()
         utility = set_up_utility()
         census_table = set_up_census_table()
@@ -301,7 +262,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             reassessment=reassessment,
             diagnosis=diagnosis,
             control=Control(config["control"]),
-            exacerbation=exacerbation,
+            exacerbation=Exacerbation(config["exacerbation"], province),
             exacerbation_severity=exacerbation_severity,
             antibiotic_exposure=AntibioticExposure(config["antibiotic_exposure"], abx_mid_trends, nothing),
             family_history=FamilyHistory(config["family_history"]),

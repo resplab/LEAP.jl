@@ -46,12 +46,6 @@ master_emigration_table = CSV.read(
     DataFrame
 )
 
-# Exacerbation
-exacerbation_calibration  = CSV.read(
-    joinpath(PROCESSED_DATA_PATH,"master_calibrated_exac.csv"),
-    DataFrame
-)
-
 # Immigration
 master_immigration_table = CSV.read(
     joinpath(PROCESSED_DATA_PATH, "master_immigration_table_modified.csv"),
