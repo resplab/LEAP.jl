@@ -11,7 +11,7 @@ Population and dwelling counts: Canada, provinces and territories, and federal e
 https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001002
 
 # Fields
-- `data::Union{DataFrame, Nothing}`: A data frame with the following columns:
+- `data::GroupedDataFrame{DataFrame}`: A grouped data frame with the following columns:
     `federal_census_division`: the federal census division name.
     `province`: the two-letter province identifier.
     `population`: the number of residents living in the census division.
@@ -20,8 +20,26 @@ https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001002
 - `year::Integer`: the year the census population data was collected.
 """
 struct CensusTable <: CensusTableModule
-    data::Union{GroupedDataFrame{DataFrame}, Nothing}
-    year::Union{Integer, Nothing}
+    data::GroupedDataFrame{DataFrame}
+    year::Integer
+    function CensusTable(config::AbstractDict)
+        data = load_census_data()
+        year = config["year"]
+        new(data, year)
+    end
+    function CensusTable(data::GroupedDataFrame{DataFrame}, year::Integer)
+        new(data, year)
+    end
+end
+
+
+function load_census_data()
+    master_census_data = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_census_data_2021.csv"),
+        DataFrame
+    )
+    census_data = groupby(master_census_data, :province)
+    return census_data
 end
 
 

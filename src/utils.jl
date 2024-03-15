@@ -95,14 +95,6 @@ function set_up_diagnosis(starting_year::Integer, province::String)
     return diagnosis
 end
 
-function set_up_census_table()
-    census_table = CensusTable(
-        nothing, 2021
-    )
-    @set! census_table.data = groupby(master_census_data, :province)
-    return census_table
-end
-
 
 function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
     num_births_initial=100, population_growth_type="LG")
@@ -132,7 +124,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         incidence = set_up_incidence(starting_year, province)
         reassessment = set_up_reassessment(starting_year, province)
         diagnosis = set_up_diagnosis(starting_year, province)
-        census_table = set_up_census_table()
 
         simulation = Simulation(
             max_age=max_age,
@@ -156,7 +147,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             family_history=FamilyHistory(config["family_history"]),
             utility=Utility(config["utility"]),
             cost=AsthmaCost(config["cost"]),
-            census_table=census_table,
+            census_table=CensusTable(config["census_table"]),
             initial_distribution=nothing,
             outcome_matrix=(;)
         )

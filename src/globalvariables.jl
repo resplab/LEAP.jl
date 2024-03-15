@@ -7,11 +7,6 @@ abx_mid_trends = groupby(CSV.read(
     DataFrame
 ),[:year,:sex])
 
-# Census Divisions
-master_census_data = CSV.read(
-    joinpath(PROCESSED_DATA_PATH, "master_census_data_2021.csv"),
-    DataFrame
-)
 
 # Diagnosis
 master_dx = CSV.read(

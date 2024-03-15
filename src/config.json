@@ -16,6 +16,9 @@
       "βfloor": 0.05
     }
   },
+  "census_table": {
+    "year": 2021
+  },
   "control": {
     "hyperparameters": {
       "β0_μ": 0,

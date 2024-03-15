@@ -17,7 +17,7 @@ using JSON
         config["antibiotic_exposure"], LEAP.abx_mid_trends, nothing
     )
     family_history = LEAP.FamilyHistory(config["family_history"])
-    census_table = LEAP.set_up_census_table()
+    census_table = LEAP.CensusTable(config["census_table"])
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
     agent = create_agent(
@@ -49,7 +49,7 @@ end
         config["antibiotic_exposure"], LEAP.abx_mid_trends, nothing
     )
     family_history = LEAP.FamilyHistory(config["family_history"])
-    census_table = LEAP.set_up_census_table()
+    census_table = LEAP.CensusTable(config["census_table"])
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
     agent = create_agent(
