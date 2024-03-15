@@ -31,5 +31,12 @@
       "βDx2": null,
       "βDx3": null
     }
+  },
+  "cost": {
+    "parameters": {
+      "control": [2372, 2965, 3127],
+      "exac": [130, 594, 2425, 9900]
+    },
+    "exchange_rate_usd_cad": 1.66
   }
 }

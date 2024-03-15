@@ -245,16 +245,6 @@ function set_up_utility()
     return utility
 end
 
-
-function set_up_cost()
-    # exchange rate btw 2018 USD and 2023 CAD Sept
-    exchange_rate_usd_cad = 1.66
-    asthma_cost = AsthmaCost(dict_initializer([:control, :exac]))
-    @set! asthma_cost.parameters[:control] = [2372, 2965, 3127] * exchange_rate_usd_cad;
-    @set! asthma_cost.parameters[:exac] = [130, 594, 2425, 9900] * exchange_rate_usd_cad;
-    return asthma_cost
-end
-
 function set_up_census_table()
     census_table = CensusTable(
         nothing, 2021
@@ -300,7 +290,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         exacerbation_severity = set_up_exacerbation_severity()
         family_history = set_up_family_history()
         utility = set_up_utility()
-        cost = set_up_cost()
         census_table = set_up_census_table()
 
         simulation = Simulation(
@@ -324,7 +313,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             antibiotic_exposure=AntibioticExposure(config["antibiotic_exposure"], abx_mid_trends, nothing),
             family_history=family_history,
             utility=utility,
-            cost=cost,
+            cost=AsthmaCost(config["cost"]),
             census_table=census_table,
             initial_distribution=nothing,
             outcome_matrix=(;)
