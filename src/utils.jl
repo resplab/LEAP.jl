@@ -229,27 +229,6 @@ function set_up_exacerbation_severity()
 end
 
 
-function set_up_antibiotic_exposure()
-    antibiotic_exposure = AntibioticExposure(
-        dict_initializer([:β0_μ, :β0_σ]),
-        dict_initializer([:θ, :β0, :βage,:βsex, :βcal_year, :β2005, :β2005_cal_year,
-            :fix2000, :βfloor, :midtrends]),
-        nothing
-    )
-    @set! antibiotic_exposure.parameters[:θ] = 727.383;
-    @set! antibiotic_exposure.parameters[:β0] = 110.000442;
-    @set! antibiotic_exposure.parameters[:βage] = 0.0;
-    @set! antibiotic_exposure.parameters[:βsex] = 0.249033;
-    @set! antibiotic_exposure.parameters[:βcal_year] = -0.055100;
-    @set! antibiotic_exposure.parameters[:β2005] = 55.033675;
-    @set! antibiotic_exposure.parameters[:β2005_cal_year] = -0.027437;
-    @set! antibiotic_exposure.parameters[:fixyear] = nothing;
-    @set! antibiotic_exposure.parameters[:βfloor] = 50/1000;
-    @set! antibiotic_exposure.parameters[:midtrends] = abx_mid_trends;
-    return antibiotic_exposure
-end
-
-
 function set_up_family_history()
     family_history = FamilyHistory(nothing, dict_initializer([:p]))
     @set! family_history.parameters[:p] = 0.2927242;
@@ -319,14 +298,12 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         diagnosis = set_up_diagnosis(starting_year, province)
         exacerbation = set_up_exacerbation(province)
         exacerbation_severity = set_up_exacerbation_severity()
-        antibiotic_exposure = set_up_antibiotic_exposure()
         family_history = set_up_family_history()
         utility = set_up_utility()
         cost = set_up_cost()
         census_table = set_up_census_table()
 
         simulation = Simulation(
-            antibiotic_exposure,
             max_age=max_age,
             province=province,
             starting_calendar_year=starting_year,
@@ -344,6 +321,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             control=Control(config["control"]),
             exacerbation=exacerbation,
             exacerbation_severity=exacerbation_severity,
+            antibiotic_exposure=AntibioticExposure(config["antibiotic_exposure"], abx_mid_trends, nothing),
             family_history=family_history,
             utility=utility,
             cost=cost,

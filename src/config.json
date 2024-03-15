@@ -1,4 +1,21 @@
 {
+  "antibiotic_exposure": {
+    "hyperparameters": {
+      "β0_μ": null,
+      "β0_σ": null
+    },
+    "parameters": {
+      "β0": 110.000442,
+      "βage": 0.0,
+      "βcal_year": -0.055100,
+      "β2005": 55.033675,
+      "βsex": 0.249033,
+      "θ": 727.383,
+      "β2005_cal_year": -0.027437,
+      "fixyear": null,
+      "βfloor": 0.05
+    }
+  },
   "control": {
     "hyperparameters": {
       "β0_μ": 0,

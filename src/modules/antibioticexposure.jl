@@ -4,7 +4,18 @@
 struct AntibioticExposure <: AntibioticExposureModule
     hyperparameters::AbstractDict
     parameters::AbstractDict
+    mid_trends::GroupedDataFrame
     AbxOR
+    function AntibioticExposure(config::Union{AbstractDict, Nothing}, mid_trends::GroupedDataFrame,
+        AbxOR)
+        hyperparameters = string_to_symbols_dict(config["hyperparameters"])
+        parameters = string_to_symbols_dict(config["parameters"])
+        new(hyperparameters, parameters, mid_trends, AbxOR)
+    end
+    function AntibioticExposure(hyperparameters::Union{AbstractDict, Nothing}, parameters::Union{AbstractDict, Nothing},
+        mid_trends::GroupedDataFrame, AbxOR)
+        new(hyperparameters, parameters, mid_trends, AbxOR)
+    end
 end
 
 function process_antibiotic_exposure(antibiotic_exposure::AntibioticExposure, sex::Bool, cal_year::Integer)
