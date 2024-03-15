@@ -38,5 +38,10 @@
       "exac": [130, 594, 2425, 9900]
     },
     "exchange_rate_usd_cad": 1.66
+  },
+  "family_history": {
+    "parameters": {
+      "p": 0.2927242
+    }
   }
 }

@@ -229,12 +229,6 @@ function set_up_exacerbation_severity()
 end
 
 
-function set_up_family_history()
-    family_history = FamilyHistory(nothing, dict_initializer([:p]))
-    @set! family_history.parameters[:p] = 0.2927242;
-    return family_history
-end
-
 function set_up_utility()
     utility = Utility(dict_initializer([:eq5d, :control, :exac]))
     @set! utility.parameters[:eq5d] = eq5d
@@ -288,7 +282,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         diagnosis = set_up_diagnosis(starting_year, province)
         exacerbation = set_up_exacerbation(province)
         exacerbation_severity = set_up_exacerbation_severity()
-        family_history = set_up_family_history()
         utility = set_up_utility()
         census_table = set_up_census_table()
 
@@ -311,7 +304,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             exacerbation=exacerbation,
             exacerbation_severity=exacerbation_severity,
             antibiotic_exposure=AntibioticExposure(config["antibiotic_exposure"], abx_mid_trends, nothing),
-            family_history=family_history,
+            family_history=FamilyHistory(config["family_history"]),
             utility=utility,
             cost=AsthmaCost(config["cost"]),
             census_table=census_table,

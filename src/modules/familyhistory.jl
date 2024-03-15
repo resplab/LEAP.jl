@@ -1,6 +1,12 @@
 struct FamilyHistory <: FamilyHistoryModule
-    hyperparameters
     parameters::AbstractDict
+    function FamilyHistory(config::Union{AbstractDict, Nothing})
+        parameters = string_to_symbols_dict(config["parameters"])
+        new(parameters)
+    end
+    function FamilyHistory(parameters::Union{AbstractDict, Nothing})
+        new(parameters)
+    end
 end
 
 function process_family_history(family_history::FamilyHistory)

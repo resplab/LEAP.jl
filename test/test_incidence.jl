@@ -16,7 +16,7 @@ using JSON
     antibiotic_exposure = LEAP.AntibioticExposure(
         config["antibiotic_exposure"], LEAP.abx_mid_trends, nothing
     )
-    family_history = LEAP.set_up_family_history()
+    family_history = LEAP.FamilyHistory(config["family_history"])
     census_table = LEAP.set_up_census_table()
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
@@ -48,7 +48,7 @@ end
     antibiotic_exposure = LEAP.AntibioticExposure(
         config["antibiotic_exposure"], LEAP.abx_mid_trends, nothing
     )
-    family_history = LEAP.set_up_family_history()
+    family_history = LEAP.FamilyHistory(config["family_history"])
     census_table = LEAP.set_up_census_table()
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
