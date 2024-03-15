@@ -20,26 +20,6 @@ function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
 end
 
 
-function set_up_diagnosis(starting_year::Integer, province::String)
-    diagnosis = Diagnosis(nothing, nothing)
-    @set! diagnosis.true_positive_rates =  groupby(
-        filter(
-            [:year, :province] => (x, y) -> x >= starting_year && y == province,
-            master_dx
-        ),
-        :year
-    )
-    @set! diagnosis.false_negative_rates = groupby(
-        filter(
-            [:year, :province] => (x, y) -> x >= starting_year && y == province,
-            master_mis_dx
-        ),
-        :year
-    )
-    return diagnosis
-end
-
-
 function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
     num_births_initial=100, population_growth_type="LG")
     if province=="BC" || province=="CA"
@@ -65,8 +45,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             census_division=nothing
         )
 
-        diagnosis = set_up_diagnosis(starting_year, province)
-
         simulation = Simulation(
             max_age=max_age,
             province=province,
@@ -81,7 +59,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             death=Death(config["death"], province, starting_year),
             incidence=Incidence(config["incidence"], starting_year, province),
             reassessment=Reassessment(starting_year, province),
-            diagnosis=diagnosis,
+            diagnosis=Diagnosis(starting_year, province),
             control=Control(config["control"]),
             exacerbation=Exacerbation(config["exacerbation"], province),
             exacerbation_severity=ExacerbationSeverity(config["exacerbation_severity"]),

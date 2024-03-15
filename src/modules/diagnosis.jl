@@ -4,7 +4,7 @@
 A struct containing information about asthma diagnosis and misdiagnosis.
 
 # Fields
-- `true_positive_rates::Union{GroupedDataFrame{DataFrame}, Nothing}`: A data frame grouped
+- `true_positive_rates::GroupedDataFrame{DataFrame}`: A data frame grouped
     by year. Gives the probability of having asthma given that you have been diagnosed with
     asthma. Each data frame contains the following columns:
         `year`: integer year.
@@ -13,7 +13,7 @@ A struct containing information about asthma diagnosis and misdiagnosis.
         `M`: Float64 - probability of having asthma given being diagnosed with asthma, male.
         `province`: A string indicating the province abbreviation, e.g. "BC".
     See `master_dx`.
-- `false_negative_rates::Union{GroupedDataFrame{DataFrame}, Nothing}`: A data frame grouped
+- `false_negative_rates::GroupedDataFrame{DataFrame}`: A data frame grouped
     by year. Gives the probability of having asthma given that you have not been diagnosed with
     asthma. Each data frame contains the following columns:
         `year`: integer year.
@@ -24,8 +24,51 @@ A struct containing information about asthma diagnosis and misdiagnosis.
     See `master_mis_dx`.
 """
 struct Diagnosis <: DiagnosisModule
-    true_positive_rates::Union{GroupedDataFrame{DataFrame}, Nothing}
-    false_negative_rates::Union{GroupedDataFrame{DataFrame}, Nothing}
+    true_positive_rates::GroupedDataFrame{DataFrame}
+    false_negative_rates::GroupedDataFrame{DataFrame}
+    function Diagnosis(starting_year::Integer, province::String)
+        true_positive_rates = load_true_positive_rates(starting_year, province)
+        false_negative_rates = load_false_negative_rates(starting_year, province)
+        new(true_positive_rates, false_negative_rates)
+    end
+    function Diagnosis(
+        true_positive_rates::GroupedDataFrame{DataFrame},
+        false_negative_rates::GroupedDataFrame{DataFrame}
+    )
+        new(true_positive_rates, false_negative_rates)
+    end
+end
+
+
+function load_true_positive_rates(starting_year::Integer, province::String)
+    master_dx = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_asthma_dx.csv"),
+        DataFrame
+    )
+    true_positive_rates =  groupby(
+        filter(
+            [:year, :province] => (x, y) -> x >= starting_year && y == province,
+            master_dx
+        ),
+        :year
+    )
+    return true_positive_rates
+end
+
+
+function load_false_negative_rates(starting_year::Integer, province::String)
+    master_mis_dx = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_asthma_mis_dx.csv"),
+        DataFrame
+    )
+    false_negative_rates = groupby(
+        filter(
+            [:year, :province] => (x, y) -> x >= starting_year && y == province,
+            master_mis_dx
+        ),
+        :year
+    )
+    return false_negative_rates
 end
 
 

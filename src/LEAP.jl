@@ -38,7 +38,5 @@ export
     point_in_polygon,
     # global datasets
     PROCESSED_DATA_PATH,
-    CONFIG_PATH,
-    master_dx,
-    master_mis_dx
+    CONFIG_PATH
 end # module
