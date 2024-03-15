@@ -42,6 +42,7 @@ A person in the model.
     family_hist::Bool
     asthma_status::Bool
     census_division::Union{Nothing, CensusDivisionModule}
+    pollution::Union{Nothing, PollutionModule}
 end
 
 
@@ -75,16 +76,19 @@ Creates a new agent (person).
 """
 function create_agent(; cal_year::Integer, cal_year_index::Integer, sex::Bool, age::Integer,
     province::String, antibiotic_exposure::AntibioticExposureModule=nothing,
-    family_hist::FamilyHistory=nothing, census_table::CensusTableModule)
+    family_hist::FamilyHistory=nothing, census_table::CensusTableModule,
+    pollution_table::PollutionTableModule, SSP::String="SSP1_2.6")
 
     census_division = assign_census_division(census_table, province)
+    pollution = assign_pollution(census_division.cduid, cal_year, SSP, pollution_table)
 
     agent = Agent(
         sex=sex, age=age, cal_year=cal_year, cal_year_index=cal_year_index, alive=true,
         num_antibiotic_use=0, has_asthma=false, asthma_age=nothing, severity=nothing,
         control_levels=nothing, exac_hist=ExacerbationHist(0, 0),
         exac_sev_hist=ExacerbationSeverityHist(zeros(4),zeros(4)), total_hosp=0,
-        family_hist=false, asthma_status=false, census_division=census_division
+        family_hist=false, asthma_status=false, census_division=census_division,
+        pollution=pollution
     )
 
     if antibiotic_exposure !== nothing && family_hist !== nothing

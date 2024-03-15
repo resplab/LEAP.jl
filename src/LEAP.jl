@@ -36,6 +36,7 @@ export
     compute_num_exacerbations,
     load_census_boundaries,
     point_in_polygon,
+    load_pollution_table,
     # global datasets
     PROCESSED_DATA_PATH,
     master_birth_estimate,

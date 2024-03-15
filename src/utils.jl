@@ -292,7 +292,8 @@ end
 
 
 function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
-    num_births_initial=100, population_growth_type="LG")
+    num_births_initial=100, population_growth_type="LG", SSP="SSP1_2.6")
+
     if province=="BC" || province=="CA"
 
         agent = Agent(
@@ -311,7 +312,8 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             total_hosp=0,
             family_hist=false,
             asthma_status=false,
-            census_division=nothing
+            census_division=nothing,
+            pollution=nothing
         )
 
         birth = set_up_birth(starting_year, population_growth_type, province)
@@ -329,6 +331,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
         utility = set_up_utility()
         cost = set_up_cost()
         census_table = set_up_census_table()
+        pollution_table = load_pollution_table(joinpath(PROCESSED_DATA_PATH, "pollution"))
 
         simulation = Simulation(
             max_age,
@@ -353,6 +356,8 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             utility,
             cost,
             census_table,
+            pollution_table,
+            SSP,
             nothing,
             (;)
         )

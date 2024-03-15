@@ -37,6 +37,8 @@ TODO.
     util::UtilityModule
     cost::CostModule
     census_table::CensusTableModule
+    pollution_table::PollutionTableModule
+    SSP::String
     initial_distribution
     outcome_matrix
 end
@@ -211,7 +213,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     province=simulation.province,
                     antibiotic_exposure=simulation.antibioticExposure,
                     family_hist=simulation.familyHistory,
-                    census_table=simulation.census_table
+                    census_table=simulation.census_table,
+                    pollution_table=simulation.pollution_table,
+                    SSP=simulation.SSP
                 )
             elseif new_born_indicator[i]
                 simulation.agent = create_agent(
@@ -222,7 +226,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     province=simulation.province,
                     antibiotic_exposure=simulation.antibioticExposure,
                     family_hist=simulation.familyHistory,
-                    census_table=simulation.census_table
+                    census_table=simulation.census_table,
+                    pollution_table=simulation.pollution_table,
+                    SSP=simulation.SSP
                 )
             else
                 simulation.agent = create_agent(
@@ -233,7 +239,9 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     province=simulation.province,
                     antibiotic_exposure=simulation.antibioticExposure,
                     family_hist=simulation.familyHistory,
-                    census_table=simulation.census_table
+                    census_table=simulation.census_table,
+                    pollution_table=simulation.pollution_table,
+                    SSP=simulation.SSP
                 )
                 increment_field_in_outcome_matrix!(outcome_matrix, "immigration",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index

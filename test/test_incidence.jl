@@ -14,6 +14,7 @@ using DataFrames
     antibiotic_exposure = LEAP.set_up_antibiotic_exposure()
     family_history = LEAP.set_up_family_history()
     census_table = LEAP.set_up_census_table()
+    pollution_table = load_pollution_table(joinpath(PROCESSED_DATA_PATH, "pollution"))
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
     agent = create_agent(
@@ -24,7 +25,8 @@ using DataFrames
         family_hist=family_history,
         sex=false,
         province=province,
-        census_table=census_table
+        census_table=census_table,
+        pollution_table=pollution_table
     )
     @test agent.has_asthma == false
     agent_has_asthma(agent, incidence, "prevalence")
@@ -43,6 +45,7 @@ end
     antibiotic_exposure = LEAP.set_up_antibiotic_exposure()
     family_history = LEAP.set_up_family_history()
     census_table = LEAP.set_up_census_table()
+    pollution_table = load_pollution_table(joinpath(PROCESSED_DATA_PATH, "pollution"))
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
     agent = create_agent(
@@ -53,7 +56,8 @@ end
         family_hist=family_history,
         sex=false,
         province=province,
-        census_table=census_table
+        census_table=census_table,
+        pollution_table=pollution_table
     )
 
     @test_throws ArgumentError(

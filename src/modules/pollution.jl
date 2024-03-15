@@ -24,7 +24,7 @@ A struct containing information about PM2.5 pollution in Canada.
       `wildfire_pm25_scaled` + `background_pm25`
     `SSP`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
 """
-struct PollutionTable <: PollutionTableModule
+@kwdef struct PollutionTable <: PollutionTableModule
     data::Union{GroupedDataFrame{DataFrame}, Nothing}
 end
 
@@ -47,9 +47,8 @@ SSP scenario.
 @kwdef struct Pollution <: PollutionModule
     cduid::Union{Integer, Nothing}
     year::Union{Integer, Nothing}
-    month::Union{Integer, Nothing}
-    wildfire_pm25_scaled::Union{Float64, Nothing}
-    total_pm25::Union{Float64, Nothing}
+    wildfire_pm25_scaled_mean::Union{Float64, Nothing}
+    total_pm25_mean::Union{Float64, Nothing}
     SSP::Union{String, Nothing}
 end
 
@@ -75,9 +74,42 @@ function load_pollution_table(pm25_data_path::String)
         end
     end
     pollution_table = PollutionTable(
-        pollution_data = groupby(pollution_data, :SSP)
+        data = groupby(pollution_data, :SSP)
     )
     return pollution_table
+end
+
+
+"""
+    assign_pollution(cduid, year, SSP, pollution_table)
+
+Get the pollution data for a specific year and SSP scenario.
+
+# Arguments
+- `cduid::Integer`: the census division identifier.
+- `year::Integer`: the year for the pollution data projection.
+- `SSP::String`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
+- `pollution_table::PollutionTable`: an object containing the PM2.5 pollution data for various
+    SSP scenarios.
+
+# Returns
+- `Pollution`: an object containing the PM2.5 pollution data for a specific year and SSP scenario.
+"""
+function assign_pollution(cduid::Integer, year::Integer, SSP::String,
+    pollution_table::PollutionTable)
+
+    df = filter(
+        [:CDUID, :year] => (x, y) -> x == cduid && y == year, pollution_table.data[(SSP,)]
+    )
+
+    pollution = Pollution(
+        cduid=cduid,
+        year=year,
+        wildfire_pm25_scaled_mean=mean(df.wildfire_pm25_scaled),
+        total_pm25_mean=mean(df.total_pm25),
+        SSP=SSP
+    )
+    return pollution
 end
 
 
