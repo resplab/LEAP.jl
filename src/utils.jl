@@ -19,24 +19,6 @@ function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
     return new_dict
 end
 
-
-function set_up_birth(starting_year::Integer, population_growth_type::String, province::String)
-    birth = Birth(nothing, nothing)
-    @set! birth.estimate = filter(
-        ([:year, :province, :projection_scenario] => (x, y, z) -> x >= starting_year
-        && y == province && (z == population_growth_type || z == "past")),
-        master_birth_estimate
-    )
-    relative(x) = x / birth.estimate.N[1]
-    @set! birth.estimate = transform(birth.estimate, :N => relative)
-    @set! birth.initial_population =  filter(
-        ([:year, :province, :projection_scenario] => (x, y, z) -> x == starting_year
-        && y == province && (z == population_growth_type || z == "past")),
-        master_population_initial_distribution
-    )
-    return birth
-end
-
 function set_up_death(starting_year::Integer, province::String)
     death = Death(dict_initializer([:β0,:β1,:β2]), nothing)
     @set! death.parameters[:β0] = 0;
@@ -210,7 +192,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             census_division=nothing
         )
 
-        birth = set_up_birth(starting_year, population_growth_type, province)
         death = set_up_death(starting_year, province)
         emigration = set_up_emigration(starting_year, population_growth_type, province)
         immigration = set_up_immigration(starting_year, population_growth_type, province)
@@ -227,7 +208,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             num_births_initial=num_births_initial,
             population_growth_type=population_growth_type,
             agent=agent,
-            birth=birth,
+            birth=Birth(starting_year, province, population_growth_type),
             emigration=emigration,
             immigration=immigration,
             death=death,
