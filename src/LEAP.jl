@@ -41,6 +41,5 @@ export
     CONFIG_PATH,
     master_reassessment,
     master_dx,
-    master_mis_dx,
-    M3_calibrated_asthma_prev_inc
+    master_mis_dx
 end # module

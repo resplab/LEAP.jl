@@ -20,49 +20,6 @@ function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
 end
 
 
-function set_up_incidence(starting_year::Integer, province::String)::Incidence
-    incidence = Incidence(
-        dict_initializer([:β0_μ, :β0_σ]),
-        dict_initializer([:β0]),
-        nothing,
-        nothing,
-        nothing,
-        nothing,
-        nothing,
-        nothing
-    )
-
-    @set! incidence.hyperparameters[:β0_μ] = 0;
-    @set! incidence.hyperparameters[:β0_σ] = 0.00000001;
-    @set! incidence.incidence_table = groupby(
-        filter([:year,:province] => (x,y) -> x >= min(
-            starting_year, master_incidence_rate.year[nrow(master_incidence_rate)]
-            ) && y==province, master_incidence_rate
-            ),
-        :year
-    );
-    @set! incidence.prevalence_table = groupby(
-        filter([:year, :province] => (x,y) -> x >= min(
-            starting_year-1, master_prevalence_rate.year[nrow(master_prevalence_rate)]
-            ) && y==province, master_prevalence_rate),
-        :year
-    );
-    @set! incidence.parameters[:β0] = 0;
-
-    @set! incidence.calibration_table = groupby(
-        select(
-            filter([:province] => (x) -> x == province, M3_calibrated_asthma_prev_inc),
-            Not([:province])
-        ),
-        [:year, :sex, :fam_history, :abx_exposure]
-    );
-    @set! incidence.min_year = collect(keys(incidence.calibration_table)[1])[1]+1
-    @set! incidence.max_year = collect(
-        keys(incidence.calibration_table)[length(incidence.calibration_table)]
-        )[1]
-    return incidence
-end
-
 function set_up_reassessment(starting_year::Integer, province::String)
     reassessment = Reassessment(nothing)
     @set! reassessment.table = groupby(
@@ -121,7 +78,6 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             census_division=nothing
         )
 
-        incidence = set_up_incidence(starting_year, province)
         reassessment = set_up_reassessment(starting_year, province)
         diagnosis = set_up_diagnosis(starting_year, province)
 
@@ -137,7 +93,7 @@ function set_up(max_age=111, province="BC", starting_year=2000, time_horizon=19,
             emigration=Emigration(starting_year, province, population_growth_type),
             immigration=Immigration(starting_year, province, population_growth_type),
             death=Death(config["death"], province, starting_year),
-            incidence=incidence,
+            incidence=Incidence(config["incidence"], starting_year, province),
             reassessment=reassessment,
             diagnosis=diagnosis,
             control=Control(config["control"]),

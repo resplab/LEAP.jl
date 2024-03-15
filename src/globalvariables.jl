@@ -18,19 +18,6 @@ master_mis_dx = CSV.read(
     DataFrame
 )
 
-# Incidence
-master_incidence_rate = CSV.read(
-    joinpath(PROCESSED_DATA_PATH, "master_asthma_inc_interpolated.csv"),
-    DataFrame
-)
-master_prevalence_rate = CSV.read(
-    joinpath(PROCESSED_DATA_PATH, "master_asthma_prev_interpolated.csv"),
-    DataFrame
-)
-M3_calibrated_asthma_prev_inc = CSV.read(
-    joinpath(PROCESSED_DATA_PATH,"master_calibrated_asthma_prev_inc_M3.csv"),
-    DataFrame
-)
 
 # Reassessment
 master_reassessment = CSV.read(

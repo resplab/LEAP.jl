@@ -84,6 +84,15 @@
       "p": 0.2927242
     }
   },
+  "incidence": {
+    "hyperparameters": {
+      "β0_μ": 0,
+      "β0_σ": 0.00000001
+    },
+    "parameters": {
+      "β0": 0
+    }
+  },
   "utility": {
     "parameters": {
       "control": [0.06, 0.09, 0.10],

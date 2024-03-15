@@ -11,7 +11,7 @@ using JSON
     n = 10
     population_growth_type = "M3"
     config = JSON.parsefile(LEAP.CONFIG_PATH)
-    incidence = LEAP.set_up_incidence(starting_year, province)
+    incidence = LEAP.Incidence(config["incidence"], starting_year, province)
     birth = LEAP.Birth(starting_year, province, population_growth_type)
     antibiotic_exposure = LEAP.AntibioticExposure(
         config["antibiotic_exposure"], LEAP.abx_mid_trends, nothing
@@ -43,7 +43,7 @@ end
     n = 10
     population_growth_type = "M3"
     config = JSON.parsefile(LEAP.CONFIG_PATH)
-    incidence = LEAP.set_up_incidence(starting_year, province)
+    incidence = LEAP.Incidence(config["incidence"], starting_year, province)
     birth = LEAP.Birth(starting_year, province, population_growth_type)
     antibiotic_exposure = LEAP.AntibioticExposure(
         config["antibiotic_exposure"], LEAP.abx_mid_trends, nothing

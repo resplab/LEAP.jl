@@ -43,14 +43,79 @@ A struct containing information about asthma incidence.
     See `M3_calibrated_asthma_prev_inc`.
 """
 struct Incidence <: IncidenceModule
-    hyperparameters::Union{AbstractDict,Nothing}
-    parameters::Union{AbstractDict,Nothing}
-    incidence_table::Union{GroupedDataFrame{DataFrame}, Nothing}
-    prevalence_table::Union{GroupedDataFrame{DataFrame}, Nothing}
-    calibration_table::Union{GroupedDataFrame{DataFrame}, Nothing}
-    min_year::Union{Integer, Nothing}
-    max_year::Union{Integer, Nothing}
+    hyperparameters::AbstractDict
+    parameters::AbstractDict
+    incidence_table::GroupedDataFrame{DataFrame}
+    prevalence_table::GroupedDataFrame{DataFrame}
+    calibration_table::GroupedDataFrame{DataFrame}
+    min_year::Integer
+    max_year::Integer
     initial_distribution
+    function Incidence(config::AbstractDict, starting_year::Integer, province::String)
+        hyperparameters = string_to_symbols_dict(config["hyperparameters"])
+        parameters = string_to_symbols_dict(config["parameters"])
+        incidence_table = load_incidence_table(starting_year, province)
+        prevalence_table = load_prevalence_table(starting_year, province)
+        calibration_table = load_calibration_table(province)
+        min_year = collect(keys(calibration_table)[1])[1]+1
+        max_year = collect(keys(calibration_table)[length(calibration_table)])[1]
+        new(hyperparameters, parameters, incidence_table, prevalence_table, calibration_table,
+            min_year, max_year, nothing)
+    end
+    function Incidence(hyperparameters::AbstractDict, parameters::AbstractDict,
+        incidence_table::GroupedDataFrame{DataFrame}, prevalence_table::GroupedDataFrame{DataFrame},
+        calibration_table::GroupedDataFrame{DataFrame}, min_year::Integer,
+        max_year::Integer, initial_distribution)
+        new(hyperparameters, parameters, incidence_table, prevalence_table, calibration_table,
+            min_year, max_year, initial_distribution)
+    end
+end
+
+
+function load_incidence_table(starting_year::Integer, province::String)
+    master_incidence_rate = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_asthma_inc_interpolated.csv"),
+        DataFrame
+    )
+    incidence_table = groupby(
+        filter([:year,:province] => (x,y) -> x >= min(
+            starting_year, master_incidence_rate.year[nrow(master_incidence_rate)]
+            ) && y==province, master_incidence_rate
+            ),
+        :year
+    )
+    return incidence_table
+end
+
+
+function load_prevalence_table(starting_year::Integer, province::String)
+    master_prevalence_rate = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_asthma_prev_interpolated.csv"),
+        DataFrame
+    )
+    prevalence_table = groupby(
+        filter([:year, :province] => (x,y) -> x >= min(
+            starting_year-1, master_prevalence_rate.year[nrow(master_prevalence_rate)]
+            ) && y==province, master_prevalence_rate),
+        :year
+    )
+    return prevalence_table
+end
+
+
+function load_calibration_table(province::String)
+    M3_calibrated_asthma_prev_inc = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_calibrated_asthma_prev_inc_M3.csv"),
+        DataFrame
+    )
+    calibration_table = groupby(
+        select(
+            filter([:province] => (x) -> x == province, M3_calibrated_asthma_prev_inc),
+            Not([:province])
+        ),
+        [:year, :sex, :fam_history, :abx_exposure]
+    )
+    return calibration_table
 end
 
 
