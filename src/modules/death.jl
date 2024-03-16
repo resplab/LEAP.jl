@@ -10,7 +10,7 @@
 A struct containing information about the probability of death for a given agent in a given year.
 
 # Fields
-- `parameters::Union{AbstractDict, Nothing}`: A dictionary containing three keys,
+- `parameters::AbstractDict`: A dictionary containing three keys,
     `:β0`, `:β1`, `:β2`.
 - `life_table`: TODO.
 """

@@ -1,8 +1,8 @@
 struct Exacerbation <: ExacerbationModule
-    hyperparameters::Union{AbstractDict,Nothing}
-    parameters::Union{AbstractDict,Nothing}
+    hyperparameters::AbstractDict
+    parameters::AbstractDict
     initial_rate::Float64
-    function Exacerbation(config::Union{AbstractDict, Nothing}, province::String)
+    function Exacerbation(config::AbstractDict, province::String)
         hyperparameters = string_to_symbols_dict(config["hyperparameters"])
         parameters = string_to_symbols_dict(config["parameters"])
         initial_rate = config["initial_rate"]
@@ -21,7 +21,7 @@ struct Exacerbation <: ExacerbationModule
         new(hyperparameters, parameters, initial_rate)
     end
     function Exacerbation(
-        hyperparameters::Union{AbstractDict, Nothing}, parameters::Union{AbstractDict, Nothing},
+        hyperparameters::AbstractDict, parameters::AbstractDict,
         initial_rate::Float64
     )
         new(hyperparameters, parameters, initial_rate)

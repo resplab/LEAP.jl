@@ -10,8 +10,8 @@ struct AntibioticExposure <: AntibioticExposureModule
         mid_trends = load_abx_mid_trends()
         new(hyperparameters, parameters, mid_trends, nothing)
     end
-    function AntibioticExposure(hyperparameters::Union{AbstractDict, Nothing},
-        parameters::Union{AbstractDict, Nothing}, mid_trends::GroupedDataFrame, AbxOR)
+    function AntibioticExposure(hyperparameters::AbstractDict,
+        parameters::AbstractDict, mid_trends::GroupedDataFrame, AbxOR)
         new(hyperparameters, parameters, mid_trends, AbxOR)
     end
 end

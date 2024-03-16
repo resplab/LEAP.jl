@@ -4,13 +4,13 @@
 A struct containing information about asthma incidence.
 
 # Fields
-- `hyperparameters::Union{AbstractDict,Nothing}`: A dictionary containing two keys,
+- `hyperparameters::AbstractDict`: A dictionary containing two keys,
     `β0_μ` and `β0_σ`.
 - `parameters::Union{AbstractDict,Nothing}`: A dictionary containing the following keys:
     `βage`, `βage2`,`βage3`, `βage4`, `βage5`, `βageM`, `βage2M`, `βage3M`, `βage4M`, `βage5M`,
     `βsex`, `matrix_Abx_risk`, `βcal_year`, `βcal_yearM`, `βCABE`, `β0`, `β0_correction`,
     and `β0_overall_correction`.
-- `incidence_table::Union{GroupedDataFrame{DataFrame}, Nothing}`: A grouped data frame grouped
+- `incidence_table::GroupedDataFrame{DataFrame}`: A grouped data frame grouped
     by year and province. Each data frame contains the following columns:
         `year`: integer year.
         `age`: integer age.
@@ -18,7 +18,7 @@ A struct containing information about asthma incidence.
         `M`: Float64.
         `province`: A string indicating the province abbreviation, e.g. "BC".
     See `master_incidence_rate`.
-- `prevalence_table::Union{GroupedDataFrame{DataFrame}, Nothing}`: A grouped data frame grouped
+- `prevalence_table::GroupedDataFrame{DataFrame}`: A grouped data frame grouped
     by year and province. Each data frame contains the following columns:
         `year`: integer year.
         `age`: integer age.
@@ -26,7 +26,7 @@ A struct containing information about asthma incidence.
         `M`: Float64.
         `province`: A string indicating the province abbreviation, e.g. "BC".
     See `master_prevalence_rate`.
-- `calibration_table::Union{GroupedDataFrame{DataFrame}, Nothing}`: A grouped data frame grouped
+- `calibration_table::GroupedDataFrame{DataFrame}`: A grouped data frame grouped
     by year, sex, fam_history, abx_exposure. Each data frame contains the following columns:
         `fam_history`: integer of 0 or 1, 0 = no family history, 1 = family history.
         `abx_exposure`: integer indicating the number of antibiotic prescriptions during

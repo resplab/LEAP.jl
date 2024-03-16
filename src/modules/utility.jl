@@ -4,21 +4,21 @@
 A struct containing information about the disutility from having asthma.
 
 # Fields
-- `parameters::Union{AbstractDict, Nothing}`: A dictionary containing the following keys:
+- `parameters::AbstractDict`: A dictionary containing the following keys:
     `control`: A vector of numbers.
     `exac`: A vector of numbers.
     `eq5d`: TODO.
 """
 struct Utility <: UtilityModule
-    parameters::Union{AbstractDict, Nothing}
-    function Utility(config::Union{AbstractDict, Nothing})
+    parameters::AbstractDict
+    function Utility(config::AbstractDict)
         parameters = string_to_symbols_dict(config["parameters"])
         parameters[:exac] = Array{Float64, 1}(parameters[:exac])
         parameters[:control] = Array{Float64, 1}(parameters[:control])
         parameters[:eq5d] = load_eq5d()
         new(parameters)
     end
-    function Utility(parameters::Union{AbstractDict, Nothing})
+    function Utility(parameters::AbstractDict)
         new(parameters)
     end
 end

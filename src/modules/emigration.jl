@@ -2,7 +2,7 @@
 struct Emigration <: EmigrationModule
     projected_rate
     age_distribution
-    table
+    table::GroupedDataFrame{DataFrame}
     function Emigration(starting_year::Integer, province::String, population_growth_type::String)
         emigration_table = load_emigration_table(starting_year, province, population_growth_type)
         new(nothing, nothing, emigration_table)

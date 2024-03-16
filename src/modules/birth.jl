@@ -30,8 +30,8 @@ A struct containing information about projected birth rates.
     See `master_population_initial_distribution`.
 """
 struct Birth <: BirthModule
-    estimate::Union{DataFrame, Nothing}
-    initial_population::Union{DataFrame, Nothing}
+    estimate::DataFrame
+    initial_population::DataFrame
     function Birth(starting_year::Integer, province::String, population_growth_type::String)
         master_birth_estimate = load_birth_estimate()
         population_initial_distribution = load_population_initial_distribution()
@@ -49,7 +49,7 @@ struct Birth <: BirthModule
         )
         new(estimate, initial_population)
     end
-    function Birth(estimate::Union{DataFrame, Nothing}, initial_population::Union{DataFrame, Nothing})
+    function Birth(estimate::DataFrame, initial_population::DataFrame)
         new(estimate, initial_population)
     end
 end

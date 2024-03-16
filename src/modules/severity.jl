@@ -12,21 +12,21 @@ There are four levels of asthma exacerbation severity:
     4 = very severe
 
 # Fields
-- `hyperparameters::Union{AbstractDict, Nothing}`: A dictionary containing the hyperparameters used
+- `hyperparameters::AbstractDict`: A dictionary containing the hyperparameters used
     in the Dirichlet-multinomial distribution. See
     https://juliastats.org/Distributions.jl/stable/multivariate/#Distributions.Dirichlet.
     `k`: integer, number of trials.
     `α`: parameter vector, length 4.
-- `parameters::Union{AbstractDict, Nothing}`: A dictionary containing the following keys:
+- `parameters::AbstractDict`: A dictionary containing the following keys:
     `p`: a probability vector giving the probability of each exacerbation type, using the
         Dirichlet-multinomial distribution.
     `βprev_hosp_ped`: Float64, parameter for previous hospitalizations due to asthma in childhood.
     `βprev_hosp_adult`: Float64, parameter for previous hospitalizations due to asthma in adulthood.
 """
 struct ExacerbationSeverity <: ExacerbationSeverityModule
-    hyperparameters::Union{AbstractDict, Nothing}
-    parameters::Union{AbstractDict, Nothing}
-    function ExacerbationSeverity(config::Union{AbstractDict, Nothing})
+    hyperparameters::AbstractDict
+    parameters::AbstractDict
+    function ExacerbationSeverity(config::AbstractDict)
         hyperparameters = string_to_symbols_dict(config["hyperparameters"])
         parameters = string_to_symbols_dict(config["parameters"])
         hyperparameters[:α] = Array{Float64, 1}(hyperparameters[:α])
@@ -34,7 +34,7 @@ struct ExacerbationSeverity <: ExacerbationSeverityModule
         new(hyperparameters, parameters)
     end
     function ExacerbationSeverity(
-        hyperparameters::Union{AbstractDict, Nothing}, parameters::Union{AbstractDict, Nothing}
+        hyperparameters::AbstractDict, parameters::AbstractDict
     )
         new(hyperparameters, parameters)
     end

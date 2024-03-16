@@ -1,10 +1,10 @@
 struct FamilyHistory <: FamilyHistoryModule
     parameters::AbstractDict
-    function FamilyHistory(config::Union{AbstractDict, Nothing})
+    function FamilyHistory(config::AbstractDict)
         parameters = string_to_symbols_dict(config["parameters"])
         new(parameters)
     end
-    function FamilyHistory(parameters::Union{AbstractDict, Nothing})
+    function FamilyHistory(parameters::AbstractDict)
         new(parameters)
     end
 end

@@ -4,7 +4,7 @@ struct Immigration <: ImmigrationModule
     estimate
     age_distribution
     overall_rate
-    table::GroupedDataFrame
+    table::GroupedDataFrame{DataFrame}
     function Immigration(starting_year::Integer, province::String, population_growth_type::String)
         immigration_table = load_immigration_table(starting_year, province, population_growth_type)
         new(nothing, nothing, nothing, nothing, immigration_table)

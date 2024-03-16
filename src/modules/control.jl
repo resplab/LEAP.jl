@@ -9,11 +9,11 @@ There are three levels of asthma control:
     uncontrolled = 3
 
 # Fields
-- `hyperparameters::Union{AbstractDict, Nothing}`: A dictionary containing the hyperparameters used
+- `hyperparameters::AbstractDict`: A dictionary containing the hyperparameters used
     to compute `β0` from a normal distribution:
     `β0_μ`: Float64, the mean of the normal distribution.
     `β0_σ`: Float64, the standard deviation of the normal distribution.
-- `parameters::Union{AbstractDict, Nothing}`: A dictionary containing the following keys:
+- `parameters::AbstractDict`: A dictionary containing the following keys:
     `β0`: Float64, a constant parameter. See `hyperparameters`.
     `βage`: Float64, the parameter for the age term.
     `βsex`: Float64, the parameter for the sex term.
@@ -26,15 +26,15 @@ There are three levels of asthma control:
         regression.
 """
 @kwdef struct Control <: ControlModule
-    hyperparameters::Union{AbstractDict, Nothing}
-    parameters::Union{AbstractDict, Nothing}
-    function Control(config::Union{AbstractDict, Nothing})
+    hyperparameters::AbstractDict
+    parameters::AbstractDict
+    function Control(config::AbstractDict)
         hyperparameters = string_to_symbols_dict(config["hyperparameters"])
         parameters = string_to_symbols_dict(config["parameters"])
         parameters[:θ] = Array{Float64, 1}(parameters[:θ])
         new(hyperparameters, parameters)
     end
-    function Control(hyperparameters::Union{AbstractDict, Nothing}, parameters::Union{AbstractDict, Nothing})
+    function Control(hyperparameters::AbstractDict, parameters::AbstractDict)
         new(hyperparameters, parameters)
     end
 end
