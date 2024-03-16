@@ -30,10 +30,47 @@ A struct containing information about projected birth rates.
     See `master_population_initial_distribution`.
 """
 struct Birth <: BirthModule
-    estimate::Union{DataFrame, Nothing}
-    initial_population::Union{DataFrame, Nothing}
+    estimate::DataFrame
+    initial_population::DataFrame
+    function Birth(starting_year::Integer, province::String, population_growth_type::String)
+        master_birth_estimate = load_birth_estimate()
+        population_initial_distribution = load_population_initial_distribution()
+        estimate = filter(
+            ([:year, :province, :projection_scenario] => (x, y, z) -> x >= starting_year
+            && y == province && (z == population_growth_type || z == "past")),
+            master_birth_estimate
+        )
+        relative(x) = x / estimate.N[1]
+        estimate = transform(estimate, :N => relative)
+        initial_population =  filter(
+            ([:year, :province, :projection_scenario] => (x, y, z) -> x == starting_year
+            && y == province && (z == population_growth_type || z == "past")),
+            population_initial_distribution
+        )
+        new(estimate, initial_population)
+    end
+    function Birth(estimate::DataFrame, initial_population::DataFrame)
+        new(estimate, initial_population)
+    end
 end
 
+
+function load_birth_estimate()
+    master_birth_estimate = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_birth_estimate.csv"),
+        DataFrame
+    )
+    return master_birth_estimate
+end
+
+
+function load_population_initial_distribution()
+    master_population_initial_distribution = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_initial_pop_distribution_prop.csv"),
+        DataFrame
+    )
+    return master_population_initial_distribution
+end
 
 
 """

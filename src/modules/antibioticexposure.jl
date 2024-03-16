@@ -1,11 +1,30 @@
-# include("abstractModule.jl")
-# include("../utils")
 
 struct AntibioticExposure <: AntibioticExposureModule
     hyperparameters::AbstractDict
     parameters::AbstractDict
+    mid_trends::GroupedDataFrame{DataFrame}
     AbxOR
+    function AntibioticExposure(config::AbstractDict)
+        hyperparameters = string_to_symbols_dict(config["hyperparameters"])
+        parameters = string_to_symbols_dict(config["parameters"])
+        mid_trends = load_abx_mid_trends()
+        new(hyperparameters, parameters, mid_trends, nothing)
+    end
+    function AntibioticExposure(hyperparameters::AbstractDict,
+        parameters::AbstractDict, mid_trends::GroupedDataFrame, AbxOR)
+        new(hyperparameters, parameters, mid_trends, AbxOR)
+    end
 end
+
+
+function load_abx_mid_trends()
+    abx_mid_trends = groupby(CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "midtrends.csv"),
+        DataFrame
+    ), [:year, :sex])
+    return abx_mid_trends
+end
+
 
 function process_antibiotic_exposure(antibiotic_exposure::AntibioticExposure, sex::Bool, cal_year::Integer)
     if !isnothing(antibiotic_exposure.parameters[:fixyear])

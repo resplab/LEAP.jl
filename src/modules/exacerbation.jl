@@ -1,13 +1,46 @@
 struct Exacerbation <: ExacerbationModule
-    hyperparameters::Union{AbstractDict,Nothing}
-    parameters::Union{AbstractDict,Nothing}
+    hyperparameters::AbstractDict
+    parameters::AbstractDict
     initial_rate::Float64
+    function Exacerbation(config::AbstractDict, province::String)
+        hyperparameters = string_to_symbols_dict(config["hyperparameters"])
+        parameters = string_to_symbols_dict(config["parameters"])
+        initial_rate = config["initial_rate"]
+        exacerbation_calibration = load_exacerbation_calibration()
+        parameters[:calibration] = groupby(
+            select(
+                filter(
+                    [:province] => (x) -> x == province,
+                    exacerbation_calibration
+                ),
+                Not([:province])
+            ),
+            [:year,:sex]
+        )
+        parameters[:min_year] = collect(keys(parameters[:calibration])[1])[1]+1
+        new(hyperparameters, parameters, initial_rate)
+    end
+    function Exacerbation(
+        hyperparameters::AbstractDict, parameters::AbstractDict,
+        initial_rate::Float64
+    )
+        new(hyperparameters, parameters, initial_rate)
+    end
 end
 
 struct ExacerbationHist <: ExacerbationHistModule
     num_current_year::Integer
     num_prev_year::Integer
 end
+
+function load_exacerbation_calibration()
+    exacerbation_calibration  = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_calibrated_exac.csv"),
+        DataFrame
+    )
+    return exacerbation_calibration
+end
+
 
 """
     compute_num_exacerbations(agent, exacerbation)

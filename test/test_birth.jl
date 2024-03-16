@@ -8,7 +8,7 @@ using Setfield
     province = "BC"
     starting_year = 2001
     population_growth_type = "M3"
-    birth = LEAP.set_up_birth(starting_year, population_growth_type, province)
+    birth = LEAP.Birth(starting_year, province, population_growth_type)
     @set! birth.initial_population = DataFrames.DataFrame(
         [[0, 1, 2], [1.0, 2.0, 0.5]],
         [:age, :prop]

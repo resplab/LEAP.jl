@@ -1,6 +1,7 @@
 using Test
 using LEAP
 using DataFrames
+using JSON
 
 @testset "test agent_has_asthma" begin
     max_age = 111
@@ -9,11 +10,12 @@ using DataFrames
     time_horizon = 40
     n = 10
     population_growth_type = "M3"
-    incidence = LEAP.set_up_incidence(starting_year, province)
-    birth = LEAP.set_up_birth(starting_year, population_growth_type, province)
-    antibiotic_exposure = LEAP.set_up_antibiotic_exposure()
-    family_history = LEAP.set_up_family_history()
-    census_table = LEAP.set_up_census_table()
+    config = JSON.parsefile(LEAP.CONFIG_PATH)
+    incidence = LEAP.Incidence(config["incidence"], starting_year, province)
+    birth = LEAP.Birth(starting_year, province, population_growth_type)
+    antibiotic_exposure = LEAP.AntibioticExposure(config["antibiotic_exposure"])
+    family_history = LEAP.FamilyHistory(config["family_history"])
+    census_table = LEAP.CensusTable(config["census_table"])
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
     agent = create_agent(
@@ -38,11 +40,12 @@ end
     time_horizon = 40
     n = 10
     population_growth_type = "M3"
-    incidence = LEAP.set_up_incidence(starting_year, province)
-    birth = LEAP.set_up_birth(starting_year, population_growth_type, province)
-    antibiotic_exposure = LEAP.set_up_antibiotic_exposure()
-    family_history = LEAP.set_up_family_history()
-    census_table = LEAP.set_up_census_table()
+    config = JSON.parsefile(LEAP.CONFIG_PATH)
+    incidence = LEAP.Incidence(config["incidence"], starting_year, province)
+    birth = LEAP.Birth(starting_year, province, population_growth_type)
+    antibiotic_exposure = LEAP.AntibioticExposure(config["antibiotic_exposure"])
+    family_history = LEAP.FamilyHistory(config["family_history"])
+    census_table = LEAP.CensusTable(config["census_table"])
     cal_year = 2002
     tmp_cal_year_index = cal_year - 2001 + 1
     agent = create_agent(

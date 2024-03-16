@@ -1,13 +1,42 @@
-# include("abstractModule.jl")
-# include("../utils.jl")
-
-# estimated num of newborn + proprotion of male
-# birth_project = CSV.read("../processed_data/brith_projection.csv",DataFrame)
 
 struct Emigration <: EmigrationModule
     projected_rate
     age_distribution
-    table
+    table::GroupedDataFrame{DataFrame}
+    function Emigration(starting_year::Integer, province::String, population_growth_type::String)
+        emigration_table = load_emigration_table(starting_year, province, population_growth_type)
+        new(nothing, nothing, emigration_table)
+    end
+    function Emigration(projected_rate, age_distribution, table)
+        new(projected_rate, age_distribution, table)
+    end
+end
+
+
+function load_emigration_table(
+    starting_year::Integer, province::String, population_growth_type::String
+)
+
+    master_emigration_table = CSV.read(
+        joinpath(PROCESSED_DATA_PATH, "master_emigration_table.csv"),
+        DataFrame
+    )
+    emigration_table = groupby(
+        select(
+            select(
+                filter(
+                    ([:year, :province, :proj_scenario] => (x, y,z) -> x > starting_year
+                    && y == province
+                    && z == population_growth_type),
+                    master_emigration_table
+                ),
+                Not(:province)
+            ),
+            Not(:proj_scenario)
+        ),
+        :year
+    )
+    return emigration_table
 end
 
 

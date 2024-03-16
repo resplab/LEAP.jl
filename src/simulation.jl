@@ -21,7 +21,7 @@ TODO.
     time_horizon::Union{Missing,Int,Vector{Int}}
     num_births_initial::Union{Nothing,Missing,Real,String}
     population_growth_type::Union{Missing,String,Char}
-    agent::AgentModule
+    agent::Union{AgentModule, Nothing}
     birth::BirthModule
     emigration::EmigrationModule
     immigration::ImmigrationModule
@@ -32,14 +32,100 @@ TODO.
     control::ControlModule
     exacerbation::ExacerbationModule
     exacerbation_severity::ExacerbationSeverityModule
-    antibioticExposure::AntibioticExposureModule
-    familyHistory::FamilyHistoryModule
-    util::UtilityModule
+    antibiotic_exposure::AntibioticExposureModule
+    family_history::FamilyHistoryModule
+    utility::UtilityModule
     cost::CostModule
     census_table::CensusTableModule
     initial_distribution
     outcome_matrix
+    function Simulation(config::AbstractDict)
+        starting_year = config["simulation"]["starting_year"]
+        province = config["simulation"]["province"]
+        population_growth_type = config["simulation"]["population_growth_type"]
+
+        new(
+            config["simulation"]["max_age"],
+            province,
+            starting_year,
+            config["simulation"]["time_horizon"],
+            config["simulation"]["num_births_initial"],
+            population_growth_type,
+            nothing,
+            Birth(starting_year, province, population_growth_type),
+            Emigration(starting_year, province, population_growth_type),
+            Immigration(starting_year, province, population_growth_type),
+            Death(config["death"], province, starting_year),
+            Incidence(config["incidence"], starting_year, province),
+            Reassessment(starting_year, province),
+            Diagnosis(starting_year, province),
+            Control(config["control"]),
+            Exacerbation(config["exacerbation"], province),
+            ExacerbationSeverity(config["exacerbation_severity"]),
+            AntibioticExposure(config["antibiotic_exposure"]),
+            FamilyHistory(config["family_history"]),
+            Utility(config["utility"]),
+            AsthmaCost(config["cost"]),
+            CensusTable(config["census_table"]),
+            nothing,
+            (;)
+        )
+    end
+    function Simulation(
+        max_age::Integer,
+        province::Union{String,Char},
+        starting_calendar_year::Integer,
+        time_horizon::Union{Missing,Int,Vector{Int}},
+        num_births_initial::Union{Nothing,Missing,Real,String},
+        population_growth_type::Union{Missing,String,Char},
+        agent::Union{AgentModule, Nothing},
+        birth::BirthModule,
+        emigration::EmigrationModule,
+        immigration::ImmigrationModule,
+        death::DeathModule,
+        incidence::IncidenceModule,
+        reassessment::ReassessmentModule,
+        diagnosis::DiagnosisModule,
+        control::ControlModule,
+        exacerbation::ExacerbationModule,
+        exacerbation_severity::ExacerbationSeverityModule,
+        antibiotic_exposure::AntibioticExposureModule,
+        family_history::FamilyHistoryModule,
+        utility::UtilityModule,
+        cost::CostModule,
+        census_table::CensusTableModule,
+        initial_distribution,
+        outcome_matrix
+    )
+        new(
+            max_age,
+            province,
+            starting_calendar_year,
+            time_horizon,
+            num_births_initial,
+            population_growth_type,
+            agent,
+            birth,
+            emigration,
+            immigration,
+            death,
+            incidence,
+            reassessment,
+            diagnosis,
+            control,
+            exacerbation,
+            exacerbation_severity,
+            antibiotic_exposure,
+            family_history,
+            utility,
+            cost,
+            census_table,
+            initial_distribution,
+            outcome_matrix
+        )
+    end
 end
+
 
 function set_num_births_initial!(simulation::SimulationModule, num_births_initial::Integer=100)
     if num_births_initial == "full"
@@ -118,18 +204,25 @@ function generate_initial_asthma!(simulation::Simulation)
 end
 
 
+
 """
-    process(simulation, seed, until_all_die, verbose)
+    run_simulation(seed, until_all_die, verbose)
 
 TODO.
 
 # Arguments
-- `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
 - `seed:: Union{Missing, Float64}`: TODO.
 - `until_all_die::Bool`: TODO.
 - `verbose::Bool`: If true, print out updates during simulation. Default true.
 """
-function process(simulation::Simulation, seed=missing, until_all_die::Bool=false, verbose::Bool=false)
+function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=false,
+    config::Union{AbstractDict, Nothing}=nothing)
+
+    if isnothing(config)
+        config = JSON.parsefile(CONFIG_PATH)
+    end
+
+    simulation = Simulation(config)
     # reproducibility
     if !ismissing(seed)
         Random.seed!(seed)
@@ -209,8 +302,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     sex=sex,
                     age=age,
                     province=simulation.province,
-                    antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory,
+                    antibiotic_exposure=simulation.antibiotic_exposure,
+                    family_hist=simulation.family_history,
                     census_table=simulation.census_table
                 )
             elseif new_born_indicator[i]
@@ -220,8 +313,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     sex=rand(Bernoulli(simulation.birth.estimate.prop_male[tmp_cal_year_index])),
                     age=0,
                     province=simulation.province,
-                    antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory,
+                    antibiotic_exposure=simulation.antibiotic_exposure,
+                    family_hist=simulation.family_history,
                     census_table=simulation.census_table
                 )
             else
@@ -231,8 +324,8 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                     sex=Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrant_indices[i]]),
                     age=simulation.immigration.table[tmp_cal_year_index].age[immigrant_indices[i]],
                     province=simulation.province,
-                    antibiotic_exposure=simulation.antibioticExposure,
-                    family_hist=simulation.familyHistory,
+                    antibiotic_exposure=simulation.antibiotic_exposure,
+                    family_hist=simulation.family_history,
                     census_table=simulation.census_table
                 )
                 increment_field_in_outcome_matrix!(outcome_matrix, "immigration",
@@ -417,7 +510,7 @@ function process(simulation::Simulation, seed=missing, until_all_die::Bool=false
                 # util and cost
                 increment_field_in_outcome_matrix!(outcome_matrix, "util",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                    compute_utility(simulation.agent, simulation.util)
+                    compute_utility(simulation.agent, simulation.utility)
                 )
                 increment_field_in_outcome_matrix!(outcome_matrix, "cost",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
