@@ -6,8 +6,9 @@ using Setfield, Distributions, StatsFuns, StatsBase, Random, SpecialFunctions
 using TimerOutputs, Printf
 using GRIB, PolygonOps, Shapefile, JSON, GeoInterface
 
-# using Plots
-include("globalvariables.jl")
+PROCESSED_DATA_PATH = joinpath(dirname(pathof(LEAP)), "processed_data")
+CONFIG_PATH = joinpath(dirname(pathof(LEAP)), "config.json")
+
 include("modules/abstractmodule.jl")
 include("modules/birth.jl")
 include("modules/familyhistory.jl")
