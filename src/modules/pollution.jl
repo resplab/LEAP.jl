@@ -25,7 +25,14 @@ A struct containing information about PM2.5 pollution in Canada.
     `SSP`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
 """
 @kwdef struct PollutionTable <: PollutionTableModule
-    data::Union{GroupedDataFrame{DataFrame}, Nothing}
+    data::GroupedDataFrame{DataFrame}
+    function PollutionTable()
+        data = load_pollution_data()
+        new(data)
+    end
+    function PollutionTable(data::GroupedDataFrame{DataFrame})
+        new(data)
+    end
 end
 
 
@@ -54,7 +61,7 @@ end
 
 
 """
-    load_pollution_table(pm25_data_path)
+    load_pollution_data(pm25_data_path)
 
 Load the data from the PM2.5 SSP *.csv files.
 
@@ -64,7 +71,10 @@ Load the data from the PM2.5 SSP *.csv files.
 # Returns
 - `PollutionTable`: an object containing the PM2.5 pollution data for various SSP scenarios.
 """
-function load_pollution_table(pm25_data_path::String)
+function load_pollution_data(pm25_data_path::Union{String, Nothing}=nothing)
+    if isnothing(pm25_data_path)
+        pm25_data_path = joinpath(PROCESSED_DATA_PATH, "pollution")
+    end
     files = readdir(pm25_data_path)
     pollution_data = DataFrame()
     for file in files
@@ -73,10 +83,8 @@ function load_pollution_table(pm25_data_path::String)
             pollution_data = [pollution_data;df]
         end
     end
-    pollution_table = PollutionTable(
-        data = groupby(pollution_data, :SSP)
-    )
-    return pollution_table
+    pollution_data = groupby(pollution_data, :SSP)
+    return pollution_data
 end
 
 

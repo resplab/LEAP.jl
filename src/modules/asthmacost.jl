@@ -10,7 +10,17 @@ A struct containing information about the cost of asthma.
 
 """
 struct AsthmaCost <: CostModule
-    parameters::Union{AbstractDict, Nothing}
+    parameters::AbstractDict
+    function AsthmaCost(config::AbstractDict)
+        parameters = string_to_symbols_dict(config["parameters"])
+        exchange_rate_usd_cad = config["exchange_rate_usd_cad"]
+        parameters[:exac] = Array{Float64, 1}(parameters[:exac]) * exchange_rate_usd_cad
+        parameters[:control] = Array{Float64, 1}(parameters[:control]) * exchange_rate_usd_cad
+        new(parameters)
+    end
+    function AsthmaCost(parameters::AbstractDict)
+        new(parameters)
+    end
 end
 
 

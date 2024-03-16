@@ -1,13 +1,14 @@
 module LEAP
 
 # Write your package code here
-using DataFrames, Query, CSV, JLD, JLD2, FileIO
+using DataFrames, Query, CSV, JLD, JLD2, FileIO, JSON
 using Setfield, Distributions, StatsFuns, StatsBase, Random, SpecialFunctions
 using TimerOutputs, Printf
 using GRIB, PolygonOps, Shapefile, JSON, GeoInterface
 
-# using Plots
-include("globalvariables.jl")
+PROCESSED_DATA_PATH = joinpath(dirname(pathof(LEAP)), "processed_data")
+CONFIG_PATH = joinpath(dirname(pathof(LEAP)), "config.json")
+
 include("modules/abstractmodule.jl")
 include("modules/birth.jl")
 include("modules/familyhistory.jl")
@@ -36,18 +37,7 @@ export
     compute_num_exacerbations,
     load_census_boundaries,
     point_in_polygon,
-    load_pollution_table,
     # global datasets
     PROCESSED_DATA_PATH,
-    master_birth_estimate,
-    master_life_table,
-    master_population_initial_distribution,
-    master_immigration_table,
-    master_emigration_table,
-    master_reassessment,
-    master_dx,
-    master_mis_dx,
-    M3_calibrated_asthma_prev_inc
-    exacerbation_calibration
-    eq5d
+    CONFIG_PATH
 end # module

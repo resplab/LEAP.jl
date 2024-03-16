@@ -1,9 +1,18 @@
 using Test
 using LEAP
-using DataFrames
+using DataFrames, JSON
 
 @testset "test create_outcome_matrix" begin
-    simulation = LEAP.set_up(111, "CA", 2001, 40, 10, "M3");
+    config = JSON.parsefile(CONFIG_PATH)
+    config["simulation"] = Dict(
+        "starting_year" => 2001,
+        "time_horizon" => 40,
+        "province" => "CA",
+        "population_growth_type" => "M3",
+        "num_births_initial" => 10,
+        "max_age" => 111
+    )
+    simulation = LEAP.Simulation(config)
     until_all_die = false
     max_age = simulation.max_age
     min_cal_year = simulation.starting_calendar_year
@@ -19,7 +28,16 @@ end
 
 
 @testset "test add_antibiotic_use_to_outcome_matrix" begin
-    simulation = LEAP.set_up(111, "CA", 2001, 40, 10, "M3");
+    config = JSON.parsefile(CONFIG_PATH)
+    config["simulation"] = Dict(
+        "starting_year" => 2001,
+        "time_horizon" => 40,
+        "province" => "CA",
+        "population_growth_type" => "M3",
+        "num_births_initial" => 10,
+        "max_age" => 111
+    )
+    simulation = LEAP.Simulation(config)
     until_all_die = false
     max_age = simulation.max_age
     min_cal_year = simulation.starting_calendar_year
