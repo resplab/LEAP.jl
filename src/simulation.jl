@@ -373,33 +373,7 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
                     @set! simulation.agent.has_asthma = agent_has_asthma(
                         simulation.agent, simulation.incidence, "incidence"
                     )
-                    # crude incidence record
-                    if simulation.agent.has_asthma
-                        # keep track of patients who got asthma for the first time
-                        if !simulation.agent.asthma_status
-                            @set! simulation.agent.asthma_status = true
-                            @set! simulation.agent.asthma_age = simulation.agent.age
-                            increment_field_in_outcome_matrix!(outcome_matrix, "asthma_status",
-                                simulation.agent.age, simulation.agent.sex,
-                                simulation.agent.cal_year_index
-                            )
-                        end
-                    end
-
-                    update_asthma_in_contingency_table!(outcome_matrix,
-                        simulation.agent.age, simulation.agent.sex,
-                        simulation.agent.cal_year, simulation.agent.family_hist,
-                        simulation.agent.num_antibiotic_use,
-                        simulation.agent.has_asthma,
-                        "incidence"
-                    )
-
-                    # asthma Dx
-                    @set! simulation.agent.has_asthma = agent_has_asthma(
-                        simulation.agent, simulation.diagnosis
-                    )
-
-                    # dx with asthma
+                    # simulate and record asthma related events if they are labeled with asthma
                     if simulation.agent.has_asthma
                         # if they did not have asthma dx in the past, then record it
                         @set! simulation.agent.asthma_age = copy(simulation.agent.age)
@@ -445,6 +419,23 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
                                 simulation.agent.exac_sev_hist.current_year
                             )
                         end
+
+                    update_asthma_in_contingency_table!(outcome_matrix,
+                        simulation.agent.age, simulation.agent.sex,
+                        simulation.agent.cal_year, simulation.agent.family_hist,
+                        simulation.agent.num_antibiotic_use,
+                        simulation.agent.has_asthma,
+                        "incidence"
+                    )
+
+                    # keep track of patients who got asthma for the first time
+                    if simulation.agent.has_asthma && !simulation.agent.asthma_status
+                        @set! simulation.agent.asthma_status = true
+                        @set! simulation.agent.asthma_age = simulation.agent.age
+                        increment_field_in_outcome_matrix!(outcome_matrix, "asthma_status",
+                            simulation.agent.age, simulation.agent.sex,
+                            simulation.agent.cal_year_index
+                        )
                     end
                 # has asthma
                 else
