@@ -38,6 +38,7 @@ abstract type CostModule <: PayoffsModule end
 abstract type CensusDivisionModule <: SimulationModule end
 abstract type CensusTableModule <: SimulationModule end
 abstract type CensusBoundariesModule <: SimulationModule end
+abstract type PollutionModule <: SimulationModule end
+abstract type PollutionTableModule <: SimulationModule end
 
 abstract type OutcomeMatrixModule <: SimulationModule end
-

@@ -6,7 +6,7 @@ using Setfield
 @testset "test get_initial_population_indices" begin
     max_age = 2
     province = "BC"
-    starting_year = 2001
+    starting_year = 2024
     population_growth_type = "M3"
     birth = LEAP.Birth(starting_year, province, population_growth_type)
     @set! birth.initial_population = DataFrames.DataFrame(

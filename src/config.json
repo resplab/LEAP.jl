@@ -101,6 +101,9 @@
       "β0": 0
     }
   },
+  "pollution": {
+    "SSP": "SSP1_2.6"
+  },
   "utility": {
     "parameters": {
       "control": [0.06, 0.09, 0.10],

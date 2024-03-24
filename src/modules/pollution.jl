@@ -5,6 +5,127 @@ using CSV
 
 
 """
+    PollutionTable
+
+A struct containing information about PM2.5 pollution in Canada.
+
+# Fields
+- `data::Union{GroupedDataFrame, Nothing}`: A data frame grouped by the SSP scenario, with the
+    following columns:
+    `CDUID`: the census division identifier.
+    `year`: the year for the pollution data projection.
+    `month`: the month for the pollution data projection.
+    `date`: the data for the pollution data projection, first of the month.
+    `background_pm25`: the average background PM2.5 levels for a given month.
+    `wildfire_pm25`: the average PM2.5 levels due to wildfires for a given month.
+    `factor`: the future climate scaling factor, based on the SSP scenario.
+    `wildfire_pm25_scaled`: `wildfire_pm25` * `factor`.
+    `total_pm25`: the total average PM2.5 levels for a given month:
+      `wildfire_pm25_scaled` + `background_pm25`
+    `SSP`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
+"""
+@kwdef struct PollutionTable <: PollutionTableModule
+    data::GroupedDataFrame{DataFrame}
+    function PollutionTable()
+        data = load_pollution_data()
+        new(data)
+    end
+    function PollutionTable(data::GroupedDataFrame{DataFrame})
+        new(data)
+    end
+end
+
+
+"""
+    Pollution
+
+A struct containing information about PM2.5 pollution for a given census division, date, and
+SSP scenario.
+
+# Fields
+- `cduid::Integer`: the census division identifier.
+- `year::Integer`: the year for the pollution data projection.
+- `month::Integer`: the month for the pollution data projection.
+- `wildfire_pm25_scaled::Float64`: `wildfire_pm25` * `factor`.
+- `total_pm25::Float64`: the total average PM2.5 levels for a given month:
+  `wildfire_pm25_scaled` + `background_pm25`
+- `SSP::String`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
+"""
+@kwdef struct Pollution <: PollutionModule
+    cduid::Integer
+    year::Integer
+    month::Integer
+    wildfire_pm25_scaled::Float64
+    total_pm25::Float64
+    SSP::String
+end
+
+
+"""
+    load_pollution_data(pm25_data_path)
+
+Load the data from the PM2.5 SSP *.csv files.
+
+# Arguments
+- `pm25_data_path::String`: full directory path for the PM2.5 *.csv files.
+
+# Returns
+- `PollutionTable`: an object containing the PM2.5 pollution data for various SSP scenarios.
+"""
+function load_pollution_data(pm25_data_path::Union{String, Nothing}=nothing)
+    if isnothing(pm25_data_path)
+        pm25_data_path = joinpath(PROCESSED_DATA_PATH, "pollution")
+    end
+    files = readdir(pm25_data_path)
+    pollution_data = DataFrame()
+    for file in files
+        if splitext(file)[2] == ".csv"
+            df = CSV.read(joinpath(pm25_data_path, file), DataFrame)
+            pollution_data = [pollution_data;df]
+        end
+    end
+    pollution_data = groupby(pollution_data, :SSP)
+    return pollution_data
+end
+
+
+"""
+    assign_pollution(cduid, year, month, SSP, pollution_table)
+
+Get the pollution data for a specific year and SSP scenario.
+
+# Arguments
+- `cduid::Integer`: the census division identifier.
+- `year::Integer`: the year for the pollution data projection.
+- `month::Integer`: the integer month for the pollution data projection.
+- `SSP::String`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
+- `pollution_table::PollutionTable`: an object containing the PM2.5 pollution data for various
+    SSP scenarios.
+
+# Returns
+- `Pollution`: PM2.5 pollution data for a specific year, month and SSP scenario.
+"""
+function assign_pollution(cduid::Integer, year::Integer, month::Integer, SSP::String,
+    pollution_table::PollutionTable)
+
+    df = filter(
+        [:CDUID, :year, :month] => (x, y, z) ->
+        x == cduid && y == year && z == month, pollution_table.data[(SSP,)]
+    )
+
+    pollution = Pollution(
+        cduid=cduid,
+        year=year,
+        month=month,
+        wildfire_pm25_scaled=df[1, :wildfire_pm25_scaled],
+        total_pm25=df[1, :total_pm25],
+        SSP=SSP
+    )
+    return pollution
+end
+
+
+"""
     GribData
 
 A struct containing GRIB data on air pollution.

@@ -37,6 +37,8 @@ TODO.
     utility::UtilityModule
     cost::CostModule
     census_table::CensusTableModule
+    pollution_table::PollutionTableModule
+    SSP::String
     initial_distribution
     outcome_matrix
     function Simulation(config::AbstractDict)
@@ -67,6 +69,8 @@ TODO.
             Utility(config["utility"]),
             AsthmaCost(config["cost"]),
             CensusTable(config["census_table"]),
+            PollutionTable(),
+            config["pollution"]["SSP"],
             nothing,
             (;)
         )
@@ -94,6 +98,8 @@ TODO.
         utility::UtilityModule,
         cost::CostModule,
         census_table::CensusTableModule,
+        pollution_table::PollutionTableModule,
+        SSP::String,
         initial_distribution,
         outcome_matrix
     )
@@ -120,6 +126,8 @@ TODO.
             utility,
             cost,
             census_table,
+            pollution_table,
+            SSP,
             initial_distribution,
             outcome_matrix
         )
@@ -228,6 +236,7 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
         Random.seed!(seed)
     end
 
+    month = 1
     max_age = simulation.max_age
     min_cal_year = simulation.starting_calendar_year
     max_cal_year = min_cal_year + simulation.time_horizon - 1
@@ -299,34 +308,43 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
                 simulation.agent = create_agent(
                     cal_year=cal_year,
                     cal_year_index=tmp_cal_year_index,
+                    month=month,
                     sex=sex,
                     age=age,
                     province=simulation.province,
                     antibiotic_exposure=simulation.antibiotic_exposure,
                     family_hist=simulation.family_history,
-                    census_table=simulation.census_table
+                    census_table=simulation.census_table,
+                    pollution_table=simulation.pollution_table,
+                    SSP=simulation.SSP
                 )
             elseif new_born_indicator[i]
                 simulation.agent = create_agent(
                     cal_year=cal_year,
                     cal_year_index=tmp_cal_year_index,
+                    month=month,
                     sex=rand(Bernoulli(simulation.birth.estimate.prop_male[tmp_cal_year_index])),
                     age=0,
                     province=simulation.province,
                     antibiotic_exposure=simulation.antibiotic_exposure,
                     family_hist=simulation.family_history,
-                    census_table=simulation.census_table
+                    census_table=simulation.census_table,
+                    pollution_table=simulation.pollution_table,
+                    SSP=simulation.SSP
                 )
             else
                 simulation.agent = create_agent(
                     cal_year=cal_year,
                     cal_year_index=tmp_cal_year_index,
+                    month=month,
                     sex=Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrant_indices[i]]),
                     age=simulation.immigration.table[tmp_cal_year_index].age[immigrant_indices[i]],
                     province=simulation.province,
                     antibiotic_exposure=simulation.antibiotic_exposure,
                     family_hist=simulation.family_history,
-                    census_table=simulation.census_table
+                    census_table=simulation.census_table,
+                    pollution_table=simulation.pollution_table,
+                    SSP=simulation.SSP
                 )
                 increment_field_in_outcome_matrix!(outcome_matrix, "immigration",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index

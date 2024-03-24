@@ -5,14 +5,26 @@ import Base.@kwdef
 
 A struct containing information about Canadian census divisions.
 
-Please see: Statistics Canada. Table 98-10-0010-02 
-Population and dwelling counts: Canada, provinces and territories, and federal electoral districts
-(2013 Representation Order)"
-https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001002
+Please see: Statistics Canada. Table 98-10-0007-01
+Population and dwelling counts: Canada and census divisions
+
+https://www150.statcan.gc.ca/t1/tbl1/en/cv.action?pid=9810000701
 
 # Fields
 - `data::GroupedDataFrame{DataFrame}`: A grouped data frame with the following columns:
-    `federal_census_division`: the federal census division name.
+    `year`: the year the census data was collected.
+    `census_division_name`: the federal census division name.
+    `CDUID`: the census division identifier.
+    `DGUID`: the dissemination geography unique identifier, in the format:
+
+      2021 | A | 0003 | CDUID
+
+      2021 - year the data was collected
+      A - administrative (not important, a StatsCan identifier)
+      0003 - schema indicating census division
+      CDUID - the census division identifier
+
+    `geographic_area_type`: the census division region type.
     `province`: the two-letter province identifier.
     `population`: the number of residents living in the census division.
     `area_km2`: the area of the census division in kilometres squared.
@@ -35,7 +47,7 @@ end
 
 function load_census_data()
     master_census_data = CSV.read(
-        joinpath(PROCESSED_DATA_PATH, "master_census_data_2021.csv"),
+        joinpath(PROCESSED_DATA_PATH, "census_divisions/master_census_data_2021.csv"),
         DataFrame
     )
     census_data = groupby(master_census_data, :province)
@@ -44,13 +56,35 @@ end
 
 
 """
+    CensusDivison
+
+A struct containing information about a Canadian census division.
+
+Please see: Statistics Canada. Table 98-10-0007-01
+Population and dwelling counts: Canada and census divisions
+
+https://www150.statcan.gc.ca/t1/tbl1/en/cv.action?pid=9810000701
+
+# Fields
+- `cduid::Union{Integer, Nothing}`: the census division identifier.
+- `name::Union{String, Nothing}`: the census division name.
+- `year::Integer`: the year the census population data was collected.
+"""
+@kwdef struct CensusDivision <: CensusDivisionModule
+    cduid::Union{Integer, Nothing}
+    name::Union{String, Nothing}
+    year::Union{Integer, Nothing}
+end
+
+
+"""
     CensusBoundaries
 
-A struct containing information about Canadian federal electoral district boundaries.
+A struct containing information about Canadian census division boundaries.
 
 Please see: Statistics Canada. 2021 Census – Boundary file.
 Type: Cartographic Boundary File (CBF)
-Administrative Boundaries: Federal Electoral Districts, 2013 representation order
+Administrative Boundaries: Census divisions
 Downloadable: Shapefile (.shp)
 
 https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
@@ -61,12 +95,19 @@ https://www150.statcan.gc.ca/n1/en/pub/92-160-g/92-160-g2021002-eng.pdf?st=0cwqe
 # Fields
 - `shapefile_data::Union{DataFrame, Nothing}`: A data frame with the following columns:
     `geometry`: the Shapefile.Polygon of the census boundary.
-    `FEDUID`: TODO.
-    `DGUID`: TODO.
-    `FEDNAME`: the federal electoral district name, in French and English.
-    `FEDENAME`: the federal electoral district name, in English.
-    `FEDFNAME`: the federal electoral district name, in French.
-    `LANDAREA`: the area of the electoral district in square kilometres.
+    `CDUID`: the census division identifier.
+    `DGUID`: the dissemination geography unique identifier, in the format:
+
+      2021 | A | 0003 | CDUID
+
+      2021 - year the data was collected
+      A - administrative (not important, a StatsCan identifier)
+      0003 - schema indicating census division
+      CDUID - the census division identifier
+
+    `CDNAME`: the census division name.
+    `CDTYPE`: the census division type.
+    `LANDAREA`: the area of the census division in square kilometres.
     `PRUID`: integer, province id.
 - `year::Integer`: the year the census population data was collected.
 - `reference_longitude::Number`: the reference longitude.
@@ -90,30 +131,25 @@ end
 
 
 """
-    CensusDivison
+    load_census_boundaries(shapefile_path, metadata_path, year)
 
-A struct containing information about a Canadian census division.
+Load the data from the census boundaries shapefile.
 
-Please see: Statistics Canada. Table 98-10-0010-02 
-Population and dwelling counts: Canada, provinces and territories, and federal electoral districts
-(2013 Representation Order)"
-https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001002
+# Arguments
+- `shapefile_path::String`: full path for the shapefile containing the census division boundaries.
+- `metadata_path::String`: full path for the metadata *.json file.
+- `year::Integer`: the year the census was taken (default = 2021).
 
-# Fields
-- `federal_census_division::Union{String, Nothing}`: the federal census division name.
-- `year::Integer`: the year the census population data was collected.
+# Returns
+- `CensusBoundaries`: an object containing the census division boundaries.
 """
-@kwdef struct CensusDivision <: CensusDivisionModule
-    federal_census_division::Union{String, Nothing}
-    year::Union{Integer, Nothing}
-end
-
-
 function load_census_boundaries(shapefile_path::String, metadata_path::String, year::Integer=2021)
     table = Shapefile.Table(shapefile_path)
     metadata = JSON.parsefile(metadata_path)
+    shapefile_data = DataFrame(table)
+    shapefile_data[!, :CDUID] = parse.(Int64, shapefile_data[!, :CDUID])
     census_boundaries = CensusBoundaries(
-        shapefile_data=DataFrame(table),
+        shapefile_data=shapefile_data,
         year=metadata["year"],
         reference_longitude=metadata["reference_longitude"],
         reference_latitude=metadata["reference_latitude"],
@@ -141,19 +177,21 @@ Randomly assign a census division based on population.
 """
 function assign_census_division(census_table::CensusTable, province::String, year::Integer=2021)
     if province == "CA"
-        census_table_all = DataFrames.DataFrame(census_table.data)
-        census_division_name = sample(
-            census_table_all[!, "federal_census_division"],
-            Weights(census_table_all[!, "population"])
-        )
+        census_table_df = DataFrames.DataFrame(census_table.data)
     else
-        census_table_province = census_table.data[(province,)]
-        census_division_name = sample(
-            census_table_province[!, "federal_census_division"],
-            Weights(census_table_province[!, "population"])
-        )
+        census_table_df = census_table.data[(province,)]
     end
+
+    census_division_id = sample(
+        census_table_df[!, "CDUID"],
+        Weights(census_table_df[!, "population"])
+    )
+    census_division_name = filter(
+        :CDUID => isequal(census_division_id), census_table_df
+    )[1, "census_division_name"]
+
     census_division = CensusDivision(
+        census_division_id,
         census_division_name,
         year
     )
@@ -188,7 +226,8 @@ function get_census_division_from_lat_lon(; longitude::Float64, latitude::Float6
     )
 
     census_division = CensusDivision(
-        federal_census_division=nothing,
+        name=nothing,
+        cduid=nothing,
         year=census_boundaries.year
     )
     is_point_in_polygon = false
@@ -197,7 +236,8 @@ function get_census_division_from_lat_lon(; longitude::Float64, latitude::Float6
         row = census_boundaries.shapefile_data[row_index, :]
         polygon = row.geometry
         if point_in_polygon(point, polygon)
-            @set! census_division.federal_census_division = row.FEDENAME
+            @set! census_division.name = row.CDNAME
+            @set! census_division.cduid = row.CDUID
             is_point_in_polygon = true
             break
         end
