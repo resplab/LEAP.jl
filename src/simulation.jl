@@ -236,6 +236,7 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
         Random.seed!(seed)
     end
 
+    month = 1
     max_age = simulation.max_age
     min_cal_year = simulation.starting_calendar_year
     max_cal_year = min_cal_year + simulation.time_horizon - 1
@@ -307,6 +308,7 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
                 simulation.agent = create_agent(
                     cal_year=cal_year,
                     cal_year_index=tmp_cal_year_index,
+                    month=month,
                     sex=sex,
                     age=age,
                     province=simulation.province,
@@ -320,6 +322,7 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
                 simulation.agent = create_agent(
                     cal_year=cal_year,
                     cal_year_index=tmp_cal_year_index,
+                    month=month,
                     sex=rand(Bernoulli(simulation.birth.estimate.prop_male[tmp_cal_year_index])),
                     age=0,
                     province=simulation.province,
@@ -333,6 +336,7 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
                 simulation.agent = create_agent(
                     cal_year=cal_year,
                     cal_year_index=tmp_cal_year_index,
+                    month=month,
                     sex=Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrant_indices[i]]),
                     age=simulation.immigration.table[tmp_cal_year_index].age[immigrant_indices[i]],
                     province=simulation.province,

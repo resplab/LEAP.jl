@@ -7,6 +7,7 @@ using JSON
     max_age = 111
     province = "CA"
     starting_year = 2001
+    month = 1
     time_horizon = 40
     n = 10
     population_growth_type = "M3"
@@ -22,6 +23,7 @@ using JSON
     agent = create_agent(
         cal_year=cal_year,
         cal_year_index=tmp_cal_year_index,
+        month=month,
         age=0,
         antibiotic_exposure=antibiotic_exposure,
         family_hist=family_history,
@@ -39,6 +41,7 @@ end
     max_age = 111
     province = "CA"
     starting_year = 2001
+    month = 1
     time_horizon = 40
     n = 10
     population_growth_type = "M3"
@@ -54,6 +57,7 @@ end
     agent = create_agent(
         cal_year=cal_year,
         cal_year_index=tmp_cal_year_index,
+        month=month,
         age=0,
         antibiotic_exposure=antibiotic_exposure,
         family_hist=family_history,

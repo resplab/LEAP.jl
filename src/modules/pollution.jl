@@ -43,20 +43,21 @@ A struct containing information about PM2.5 pollution for a given census divisio
 SSP scenario.
 
 # Fields
-- `cduid::Union{Integer, Nothing}`: the census division identifier.
-- `year`: the year for the pollution data projection.
-- `month`: the month for the pollution data projection.
-- `wildfire_pm25_scaled`: `wildfire_pm25` * `factor`.
-- `total_pm25`: the total average PM2.5 levels for a given month:
+- `cduid::Integer`: the census division identifier.
+- `year::Integer`: the year for the pollution data projection.
+- `month::Integer`: the month for the pollution data projection.
+- `wildfire_pm25_scaled::Float64`: `wildfire_pm25` * `factor`.
+- `total_pm25::Float64`: the total average PM2.5 levels for a given month:
   `wildfire_pm25_scaled` + `background_pm25`
-- `SSP`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
+- `SSP::String`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
 """
 @kwdef struct Pollution <: PollutionModule
-    cduid::Union{Integer, Nothing}
-    year::Union{Integer, Nothing}
-    wildfire_pm25_scaled_mean::Union{Float64, Nothing}
-    total_pm25_mean::Union{Float64, Nothing}
-    SSP::Union{String, Nothing}
+    cduid::Integer
+    year::Integer
+    month::Integer
+    wildfire_pm25_scaled::Float64
+    total_pm25::Float64
+    SSP::String
 end
 
 
@@ -96,25 +97,28 @@ Get the pollution data for a specific year and SSP scenario.
 # Arguments
 - `cduid::Integer`: the census division identifier.
 - `year::Integer`: the year for the pollution data projection.
+- `month::Integer`: the integer month for the pollution data projection.
 - `SSP::String`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
 - `pollution_table::PollutionTable`: an object containing the PM2.5 pollution data for various
     SSP scenarios.
 
 # Returns
-- `Pollution`: an object containing the PM2.5 pollution data for a specific year and SSP scenario.
+- `Pollution`: PM2.5 pollution data for a specific year, month and SSP scenario.
 """
-function assign_pollution(cduid::Integer, year::Integer, SSP::String,
+function assign_pollution(cduid::Integer, year::Integer, month::Integer, SSP::String,
     pollution_table::PollutionTable)
 
     df = filter(
-        [:CDUID, :year] => (x, y) -> x == cduid && y == year, pollution_table.data[(SSP,)]
+        [:CDUID, :year, :month] => (x, y, z) ->
+        x == cduid && y == year && z == month, pollution_table.data[(SSP,)]
     )
 
     pollution = Pollution(
         cduid=cduid,
         year=year,
-        wildfire_pm25_scaled_mean=mean(df.wildfire_pm25_scaled),
-        total_pm25_mean=mean(df.total_pm25),
+        month=month,
+        wildfire_pm25_scaled=df[1, :wildfire_pm25_scaled],
+        total_pm25=df[1, :total_pm25],
         SSP=SSP
     )
     return pollution
