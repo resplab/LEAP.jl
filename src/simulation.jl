@@ -28,7 +28,6 @@ TODO.
     death::DeathModule
     incidence::IncidenceModule
     reassessment::ReassessmentModule
-    diagnosis::DiagnosisModule
     control::ControlModule
     exacerbation::ExacerbationModule
     exacerbation_severity::ExacerbationSeverityModule
@@ -60,7 +59,6 @@ TODO.
             Death(config["death"], province, starting_year),
             Incidence(config["incidence"], starting_year, province),
             Reassessment(starting_year, province),
-            Diagnosis(starting_year, province),
             Control(config["control"]),
             Exacerbation(config["exacerbation"], province),
             ExacerbationSeverity(config["exacerbation_severity"]),
@@ -89,7 +87,6 @@ TODO.
         death::DeathModule,
         incidence::IncidenceModule,
         reassessment::ReassessmentModule,
-        diagnosis::DiagnosisModule,
         control::ControlModule,
         exacerbation::ExacerbationModule,
         exacerbation_severity::ExacerbationSeverityModule,
@@ -117,7 +114,6 @@ TODO.
             death,
             incidence,
             reassessment,
-            diagnosis,
             control,
             exacerbation,
             exacerbation_severity,
@@ -456,7 +452,7 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
                     @set! simulation.agent.has_asthma = agent_has_asthma(
                         simulation.agent, simulation.reassessment
                     )
-                    # if still dxed with asthma
+                    # if still labeled with asthma
                     if simulation.agent.has_asthma
                         #  update control
                         @set! simulation.agent.control_levels = compute_control_levels(
