@@ -12,7 +12,7 @@ end
 
 function load_reassessment_table(starting_year::Integer, province::String)
     master_reassessment = CSV.read(
-        joinpath(PROCESSED_DATA_PATH, "master_asthma_assessment.csv"),
+        joinpath(PROCESSED_DATA_PATH, "master_asthma_reassessment.csv"),
         DataFrame
     )
     reassessment_table = groupby(
