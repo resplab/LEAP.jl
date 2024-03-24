@@ -90,7 +90,7 @@ end
 
 
 """
-    assign_pollution(cduid, year, SSP, pollution_table)
+    assign_pollution(cduid, year, month, SSP, pollution_table)
 
 Get the pollution data for a specific year and SSP scenario.
 
