@@ -6,7 +6,9 @@ using JSON
 @testset "test agent_has_asthma" begin
     max_age = 111
     province = "CA"
-    starting_year = 2001
+    starting_year = 2024
+    cal_year = 2025
+    tmp_cal_year_index = cal_year - starting_year + 1
     month = 1
     time_horizon = 40
     n = 10
@@ -18,8 +20,7 @@ using JSON
     family_history = LEAP.FamilyHistory(config["family_history"])
     census_table = LEAP.CensusTable(config["census_table"])
     pollution_table = LEAP.PollutionTable()
-    cal_year = 2002
-    tmp_cal_year_index = cal_year - 2001 + 1
+
     agent = create_agent(
         cal_year=cal_year,
         cal_year_index=tmp_cal_year_index,
@@ -40,7 +41,9 @@ end
 @testset "test agent_has_asthma error" begin
     max_age = 111
     province = "CA"
-    starting_year = 2001
+    starting_year = 2024
+    cal_year = 2025
+    tmp_cal_year_index = cal_year - starting_year + 1
     month = 1
     time_horizon = 40
     n = 10
@@ -52,8 +55,6 @@ end
     family_history = LEAP.FamilyHistory(config["family_history"])
     census_table = LEAP.CensusTable(config["census_table"])
     pollution_table = LEAP.PollutionTable()
-    cal_year = 2002
-    tmp_cal_year_index = cal_year - 2001 + 1
     agent = create_agent(
         cal_year=cal_year,
         cal_year_index=tmp_cal_year_index,
