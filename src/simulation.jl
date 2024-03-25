@@ -57,7 +57,7 @@ TODO.
             Emigration(starting_year, province, population_growth_type),
             Immigration(starting_year, province, population_growth_type),
             Death(config["death"], province, starting_year),
-            Incidence(config["incidence"], starting_year, province),
+            Incidence(config["incidence"]),
             Reassessment(starting_year, province),
             Control(config["control"]),
             Exacerbation(config["exacerbation"], province),
@@ -219,7 +219,7 @@ TODO.
 - `until_all_die::Bool`: TODO.
 - `verbose::Bool`: If true, print out updates during simulation. Default true.
 """
-function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=false,
+function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool=false,
     config::Union{AbstractDict, Nothing}=nothing)
 
     if isnothing(config)
@@ -419,6 +419,7 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
                                 simulation.agent.exac_sev_hist.current_year
                             )
                         end
+                    end
 
                     update_asthma_in_contingency_table!(outcome_matrix,
                         simulation.agent.age, simulation.agent.sex,
@@ -545,7 +546,6 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
                     @set! simulation.agent.cal_year += 1
                     @set! simulation.agent.cal_year_index +=1
                 end
-
             end
         end
         end
@@ -564,12 +564,12 @@ function run_simulation(seed=missing, until_all_die::Bool=false, verbose::Bool=f
     )
 
 
-    @set! simulation.outcome_matrix = (; n = n_list, outcome_matrix = outcome_matrix);
+    @set! simulation.outcome_matrix = (; n = n_list, outcome_matrix = outcome_matrix)
 
     if verbose
         print("\n Simulation finished. Check your simulation object for results.")
         print_timer(timer_output::TimerOutput)
     end
 
-    return simulation.outcome_matrix;
+    return simulation.outcome_matrix
 end
