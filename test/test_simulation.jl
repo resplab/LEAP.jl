@@ -13,5 +13,5 @@ using DataFrames, JSON
         "num_births_initial" => 10,
         "max_age" => 111
     )
-    LEAP.run_simulation(seed=1, until_all_die=false, verbose=false, config=config)
+    outcome_matrix = LEAP.run_simulation(seed=1, until_all_die=false, verbose=false, config=config)
 end
