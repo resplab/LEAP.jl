@@ -216,7 +216,8 @@ TODO.
 
 # Arguments
 - `seed:: Union{Missing, Float64}`: TODO.
-- `until_all_die::Bool`: TODO.
+- `until_all_die::Bool`: If true, run the simulation until all the agents have died. If false,
+    use the `time_horizon` parameter and end the simulation after that number of years.
 - `verbose::Bool`: If true, print out updates during simulation. Default true.
 """
 function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool=false,
@@ -259,14 +260,14 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
         end
 
         # index for cal_year
-        tmp_cal_year_index = cal_year - min_cal_year + 1
+        cal_year_index = cal_year - min_cal_year + 1
 
         # num of newborns and immigrants in cal_year
         num_new_born = get_num_newborn(
-            simulation.birth, simulation.num_births_initial, tmp_cal_year_index
+            simulation.birth, simulation.num_births_initial, cal_year_index
         )
         num_immigrants = get_num_new_immigrants(
-            simulation.immigration, num_new_born, tmp_cal_year_index
+            simulation.immigration, num_new_born, cal_year_index
         )
         num_new_agents = get_num_new_agents(cal_year, min_cal_year, num_new_born, num_immigrants,
             simulation)
@@ -277,8 +278,8 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
         # weighted sampling of the immigrant profile
         if cal_year != min_cal_year
             immigrant_indices = sample(
-                1:nrow(simulation.immigration.table[tmp_cal_year_index]),
-                Weights(simulation.immigration.table[tmp_cal_year_index].weights),
+                1:nrow(simulation.immigration.table[cal_year_index]),
+                Weights(simulation.immigration.table[cal_year_index].weights),
                 num_immigrants
             )
         else
@@ -303,7 +304,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 age = simulation.birth.initial_population.age[initial_pop_indices[i]]
                 simulation.agent = create_agent(
                     cal_year=cal_year,
-                    cal_year_index=tmp_cal_year_index,
+                    cal_year_index=cal_year_index,
                     month=month,
                     sex=sex,
                     age=age,
@@ -317,9 +318,9 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
             elseif new_born_indicator[i]
                 simulation.agent = create_agent(
                     cal_year=cal_year,
-                    cal_year_index=tmp_cal_year_index,
+                    cal_year_index=cal_year_index,
                     month=month,
-                    sex=rand(Bernoulli(simulation.birth.estimate.prop_male[tmp_cal_year_index])),
+                    sex=rand(Bernoulli(simulation.birth.estimate.prop_male[cal_year_index])),
                     age=0,
                     province=simulation.province,
                     antibiotic_exposure=simulation.antibiotic_exposure,
@@ -331,10 +332,10 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
             else
                 simulation.agent = create_agent(
                     cal_year=cal_year,
-                    cal_year_index=tmp_cal_year_index,
+                    cal_year_index=cal_year_index,
                     month=month,
-                    sex=Bool(simulation.immigration.table[tmp_cal_year_index].sex[immigrant_indices[i]]),
-                    age=simulation.immigration.table[tmp_cal_year_index].age[immigrant_indices[i]],
+                    sex=Bool(simulation.immigration.table[cal_year_index].sex[immigrant_indices[i]]),
+                    age=simulation.immigration.table[cal_year_index].age[immigrant_indices[i]],
                     province=simulation.province,
                     antibiotic_exposure=simulation.antibiotic_exposure,
                     family_hist=simulation.family_history,
@@ -357,7 +358,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 simulation.agent.num_antibiotic_use
             )
 
-            n_list[tmp_cal_year_index, simulation.agent.sex+1] += 1
+            n_list[cal_year_index, simulation.agent.sex+1] += 1
 
             # if age >4, we need to generate the initial distribution of asthma related events
             if simulation.agent.age > 3
