@@ -10,11 +10,10 @@ using JSON
     cal_year = 2025
     tmp_cal_year_index = cal_year - starting_year + 1
     month = 1
-    time_horizon = 40
     n = 10
     population_growth_type = "M3"
     config = JSON.parsefile(LEAP.CONFIG_PATH)
-    incidence = LEAP.Incidence(config["incidence"], starting_year, province)
+    incidence = LEAP.Incidence(config["incidence"])
     birth = LEAP.Birth(starting_year, province, population_growth_type)
     antibiotic_exposure = LEAP.AntibioticExposure(config["antibiotic_exposure"])
     family_history = LEAP.FamilyHistory(config["family_history"])
@@ -45,11 +44,10 @@ end
     cal_year = 2025
     tmp_cal_year_index = cal_year - starting_year + 1
     month = 1
-    time_horizon = 40
     n = 10
     population_growth_type = "M3"
     config = JSON.parsefile(LEAP.CONFIG_PATH)
-    incidence = LEAP.Incidence(config["incidence"], starting_year, province)
+    incidence = LEAP.Incidence(config["incidence"])
     birth = LEAP.Birth(starting_year, province, population_growth_type)
     antibiotic_exposure = LEAP.AntibioticExposure(config["antibiotic_exposure"])
     family_history = LEAP.FamilyHistory(config["family_history"])

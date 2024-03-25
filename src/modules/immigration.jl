@@ -20,7 +20,7 @@ function load_immigration_table(
 )
 
     master_immigration_table = CSV.read(
-        joinpath(PROCESSED_DATA_PATH, "master_immigration_table_modified.csv"),
+        joinpath(PROCESSED_DATA_PATH, "master_immigration_table.csv"),
         DataFrame
     )
     immigration_table = groupby(
