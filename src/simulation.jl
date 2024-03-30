@@ -410,7 +410,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     end
 
     simulation = Simulation(config)
-    # reproducibility
+
     if !ismissing(seed)
         Random.seed!(seed)
     end
@@ -431,14 +431,12 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
     # loop by year
     for cal_year in cal_years
-        # time stamp
         @timeit timer_output "calendar year $cal_year" begin
 
         if verbose
             println(cal_year)
         end
 
-        # index for cal_year
         cal_year_index = cal_year - min_cal_year + 1
 
         new_agents_df = get_new_agents(
@@ -513,7 +511,6 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                     "prevalence"
                 )
 
-                # util and cost
                 increment_field_in_outcome_matrix!(outcome_matrix, "util",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
                     compute_utility(simulation.agent, simulation.utility)
@@ -553,16 +550,15 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
     outcome_matrix.asthma_prevalence_contingency_table = Matrix(
             combine(outcome_matrix.asthma_prevalence_contingency_table,
-            [:year,:sex,:age,:fam_history,:abx_exposure,:n_asthma,:n_no_asthma]
+            [:year, :sex, :age, :fam_history, :abx_exposure, :n_asthma, :n_no_asthma]
         )
     )
     outcome_matrix.asthma_incidence_contingency_table = Matrix(
         combine(
             outcome_matrix.asthma_incidence_contingency_table,
-            [:year,:sex,:age,:fam_history,:abx_exposure,:n_asthma,:n_no_asthma]
+            [:year, :sex, :age, :fam_history, :abx_exposure, :n_asthma, :n_no_asthma]
         )
     )
-
 
     @set! simulation.outcome_matrix = outcome_matrix
 
