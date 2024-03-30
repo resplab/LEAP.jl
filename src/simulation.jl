@@ -213,6 +213,64 @@ function generate_initial_asthma!(simulation::Simulation)
 end
 
 
+function get_new_agents(; simulation::SimulationModule, cal_year::Integer,
+    cal_year_index::Integer
+)
+    # num of newborns and immigrants in cal_year
+    num_new_born = get_num_newborn(
+        simulation.birth, simulation.num_births_initial, cal_year_index
+    )
+    num_immigrants = get_num_new_immigrants(
+        simulation.immigration, num_new_born, cal_year_index
+    )
+    num_new_agents = get_num_new_agents(cal_year, simulation.min_cal_year, num_new_born,
+        num_immigrants, simulation
+    )
+
+    if cal_year == simulation.min_cal_year
+        initial_pop_indices = get_initial_population_indices(
+            simulation.birth, simulation.num_births_initial
+        )
+        sexes = [
+            rand(
+                Bernoulli(simulation.birth.initial_population.prop_male[index])
+            )
+            for index in initial_pop_indices
+        ]
+        ages = [
+            simulation.birth.initial_population.age[index] for index in initial_pop_indices
+        ]
+        new_agents_df = DataFrame(age=ages, sex=sexes, immigrant=falses(num_new_agents))
+    else
+        immigrant_indices = sample(
+            1:nrow(simulation.immigration.table[cal_year_index]),
+            Weights(simulation.immigration.table[cal_year_index].weights),
+            num_immigrants
+        )
+        sexes_immigrant = [
+            Bool(simulation.immigration.table[cal_year_index].sex[index])
+            for index in immigrant_indices
+        ]
+        sexes_birth = [
+            rand(Bernoulli(simulation.birth.estimate.prop_male[cal_year_index]))
+            for index in (num_immigrants + 1):num_new_agents
+        ]
+        sexes = vcat(sexes_immigrant, sexes_birth)
+        ages_immigrant = [
+            simulation.immigration.table[cal_year_index].age[index]
+            for index in immigrant_indices
+        ]
+        ages_birth = [0 for index in (num_immigrants + 1):num_new_agents]
+        ages = vcat(ages_immigrant, ages_birth)
+        new_agents_df = DataFrame(
+            age=ages, sex=sexes,
+            immigrant=vcat(trues(num_immigrants), falses(num_new_born))
+        )
+    end
+    return new_agents_df
+end
+
+
 
 """
     run_simulation(seed, until_all_die, verbose)
@@ -264,87 +322,34 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
         # index for cal_year
         cal_year_index = cal_year - min_cal_year + 1
 
-        # num of newborns and immigrants in cal_year
-        num_new_born = get_num_newborn(
-            simulation.birth, simulation.num_births_initial, cal_year_index
+        new_agents_df = get_new_agents(
+            simulation=simulation,
+            cal_year=cal_year,
+            cal_year_index=cal_year_index
         )
-        num_immigrants = get_num_new_immigrants(
-            simulation.immigration, num_new_born, cal_year_index
-        )
-        num_new_agents = get_num_new_agents(cal_year, min_cal_year, num_new_born, num_immigrants,
-            simulation)
-
-        # indicator for the new born; otherwise immigrant
-        new_born_indicator = vcat(falses(num_immigrants), trues(num_new_born))
-
-        # weighted sampling of the immigrant profile
-        if cal_year != min_cal_year
-            immigrant_indices = sample(
-                1:nrow(simulation.immigration.table[cal_year_index]),
-                Weights(simulation.immigration.table[cal_year_index].weights),
-                num_immigrants
-            )
-        else
-            initial_pop_indices = get_initial_population_indices(
-                simulation.birth, simulation.num_births_initial
-            )
-        end
-
 
         # for each agent i born/immigrated in cal_year
-        for i in 1:num_new_agents
+        for i in 1:size(new_agents_df)[1]
 
             # simulate an agent
             random_parameter_initialization!(simulation.control)
             random_parameter_initialization!(simulation.exacerbation)
             random_parameter_initialization!(simulation.exacerbation_severity)
 
-            if cal_year == min_cal_year
-                sex = rand(
-                    Bernoulli(simulation.birth.initial_population.prop_male[initial_pop_indices[i]])
-                )
-                age = simulation.birth.initial_population.age[initial_pop_indices[i]]
-                simulation.agent = create_agent(
-                    cal_year=cal_year,
-                    cal_year_index=cal_year_index,
-                    month=month,
-                    sex=sex,
-                    age=age,
-                    province=simulation.province,
-                    antibiotic_exposure=simulation.antibiotic_exposure,
-                    family_hist=simulation.family_history,
-                    census_table=simulation.census_table,
-                    pollution_table=simulation.pollution_table,
-                    SSP=simulation.SSP
-                )
-            elseif new_born_indicator[i]
-                simulation.agent = create_agent(
-                    cal_year=cal_year,
-                    cal_year_index=cal_year_index,
-                    month=month,
-                    sex=rand(Bernoulli(simulation.birth.estimate.prop_male[cal_year_index])),
-                    age=0,
-                    province=simulation.province,
-                    antibiotic_exposure=simulation.antibiotic_exposure,
-                    family_hist=simulation.family_history,
-                    census_table=simulation.census_table,
-                    pollution_table=simulation.pollution_table,
-                    SSP=simulation.SSP
-                )
-            else
-                simulation.agent = create_agent(
-                    cal_year=cal_year,
-                    cal_year_index=cal_year_index,
-                    month=month,
-                    sex=Bool(simulation.immigration.table[cal_year_index].sex[immigrant_indices[i]]),
-                    age=simulation.immigration.table[cal_year_index].age[immigrant_indices[i]],
-                    province=simulation.province,
-                    antibiotic_exposure=simulation.antibiotic_exposure,
-                    family_hist=simulation.family_history,
-                    census_table=simulation.census_table,
-                    pollution_table=simulation.pollution_table,
-                    SSP=simulation.SSP
-                )
+            simulation.agent = create_agent(
+                cal_year=cal_year,
+                cal_year_index=cal_year_index,
+                month=month,
+                sex=new_agents_df.sex[i],
+                age=new_agents_df.age[i],
+                province=simulation.province,
+                antibiotic_exposure=simulation.antibiotic_exposure,
+                family_hist=simulation.family_history,
+                census_table=simulation.census_table,
+                pollution_table=simulation.pollution_table,
+                SSP=simulation.SSP
+            )
+            if new_agents_df.immigrant[i]
                 increment_field_in_outcome_matrix!(outcome_matrix, "immigration",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
                 )
