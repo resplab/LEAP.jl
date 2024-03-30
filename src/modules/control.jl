@@ -32,6 +32,7 @@ There are three levels of asthma control:
         hyperparameters = string_to_symbols_dict(config["hyperparameters"])
         parameters = string_to_symbols_dict(config["parameters"])
         parameters[:θ] = Array{Float64, 1}(parameters[:θ])
+        parameters[:β0] = assign_random_β0(hyperparameters[:β0_μ], hyperparameters[:β0_σ])
         new(hyperparameters, parameters)
     end
     function Control(hyperparameters::AbstractDict, parameters::AbstractDict)
@@ -128,18 +129,17 @@ end
 
 
 """
-    random_parameter_initialization!(control)
+    assign_random_β0(β0_μ, β0_σ)
 
 Assign the parameter β0 a random value from a normal distribution with a mean μ = β0_μ and a
 standard deviation σ = β0_σ.
 
 # Arguments
 
-- `control:Control`: Control module, see [`Control`](@ref).
+- `β0_μ::Float64`: The mean for the normal distribution.
+- `β0_σ::Float64`: The standard deviation for the normal distribution.
 """
-function random_parameter_initialization!(control::Control)
-    control.parameters[:β0] = rand(Normal(
-        control.hyperparameters[:β0_μ],
-        control.hyperparameters[:β0_σ]
-    ))
+function assign_random_β0(β0_μ::Float64, β0_σ::Float64)
+    β0 = rand(Normal(β0_μ, β0_σ))
+    return β0
 end

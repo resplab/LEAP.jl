@@ -449,9 +449,9 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
         for i in 1:size(new_agents_df)[1]
 
             # simulate an agent
-            random_parameter_initialization!(simulation.control)
             random_parameter_initialization!(simulation.exacerbation)
             random_parameter_initialization!(simulation.exacerbation_severity)
+            @set! simulation.control = Control(config["control"])
 
             simulation.agent = create_agent(
                 cal_year=cal_year,

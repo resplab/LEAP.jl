@@ -29,7 +29,7 @@
   },
   "control": {
     "hyperparameters": {
-      "β0_μ": 0,
+      "β0_μ": 0.0,
       "β0_σ": 1.678728
     },
     "parameters": {
