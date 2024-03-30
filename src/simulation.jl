@@ -18,6 +18,7 @@ TODO.
     max_age::Integer
     province::Union{String,Char}
     min_cal_year::Integer
+    max_cal_year::Integer
     time_horizon::Union{Missing,Int,Vector{Int}}
     num_births_initial::Union{Nothing,Missing,Real,String}
     population_growth_type::Union{Missing,String,Char}
@@ -44,11 +45,13 @@ TODO.
         min_cal_year = config["simulation"]["min_cal_year"]
         province = config["simulation"]["province"]
         population_growth_type = config["simulation"]["population_growth_type"]
+        max_cal_year = min_cal_year + config["simulation"]["time_horizon"] - 1
 
         new(
             config["simulation"]["max_age"],
             province,
             min_cal_year,
+            max_cal_year,
             config["simulation"]["time_horizon"],
             config["simulation"]["num_births_initial"],
             population_growth_type,
@@ -77,6 +80,7 @@ TODO.
         max_age::Integer,
         province::Union{String,Char},
         min_cal_year::Integer,
+        max_cal_year::Integer,
         time_horizon::Union{Missing,Int,Vector{Int}},
         num_births_initial::Union{Nothing,Missing,Real,String},
         population_growth_type::Union{Missing,String,Char},
@@ -104,6 +108,7 @@ TODO.
             max_age,
             province,
             min_cal_year,
+            max_cal_year,
             time_horizon,
             num_births_initial,
             population_growth_type,
@@ -236,7 +241,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     month = 1
     max_age = simulation.max_age
     min_cal_year = simulation.min_cal_year
-    max_cal_year = min_cal_year + simulation.time_horizon - 1
+    max_cal_year = simulation.max_cal_year
 
     max_time_horizon = (until_all_die ? typemax(Int) : simulation.time_horizon)
     cal_years = min_cal_year:max_cal_year
