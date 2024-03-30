@@ -17,7 +17,7 @@ TODO.
 @kwdef mutable struct Simulation <: SimulationModule
     max_age::Integer
     province::Union{String,Char}
-    starting_calendar_year::Integer
+    min_cal_year::Integer
     time_horizon::Union{Missing,Int,Vector{Int}}
     num_births_initial::Union{Nothing,Missing,Real,String}
     population_growth_type::Union{Missing,String,Char}
@@ -41,24 +41,24 @@ TODO.
     initial_distribution
     outcome_matrix
     function Simulation(config::AbstractDict)
-        starting_year = config["simulation"]["starting_year"]
+        min_cal_year = config["simulation"]["min_cal_year"]
         province = config["simulation"]["province"]
         population_growth_type = config["simulation"]["population_growth_type"]
 
         new(
             config["simulation"]["max_age"],
             province,
-            starting_year,
+            min_cal_year,
             config["simulation"]["time_horizon"],
             config["simulation"]["num_births_initial"],
             population_growth_type,
             nothing,
-            Birth(starting_year, province, population_growth_type),
-            Emigration(starting_year, province, population_growth_type),
-            Immigration(starting_year, province, population_growth_type),
-            Death(config["death"], province, starting_year),
+            Birth(min_cal_year, province, population_growth_type),
+            Emigration(min_cal_year, province, population_growth_type),
+            Immigration(min_cal_year, province, population_growth_type),
+            Death(config["death"], province, min_cal_year),
             Incidence(config["incidence"]),
-            Reassessment(starting_year, province),
+            Reassessment(min_cal_year, province),
             Control(config["control"]),
             Exacerbation(config["exacerbation"], province),
             ExacerbationSeverity(config["exacerbation_severity"]),
@@ -76,7 +76,7 @@ TODO.
     function Simulation(
         max_age::Integer,
         province::Union{String,Char},
-        starting_calendar_year::Integer,
+        min_cal_year::Integer,
         time_horizon::Union{Missing,Int,Vector{Int}},
         num_births_initial::Union{Nothing,Missing,Real,String},
         population_growth_type::Union{Missing,String,Char},
@@ -103,7 +103,7 @@ TODO.
         new(
             max_age,
             province,
-            starting_calendar_year,
+            min_cal_year,
             time_horizon,
             num_births_initial,
             population_growth_type,
@@ -235,7 +235,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
     month = 1
     max_age = simulation.max_age
-    min_cal_year = simulation.starting_calendar_year
+    min_cal_year = simulation.min_cal_year
     max_cal_year = min_cal_year + simulation.time_horizon - 1
 
     max_time_horizon = (until_all_die ? typemax(Int) : simulation.time_horizon)

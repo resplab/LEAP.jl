@@ -6,7 +6,7 @@ using DataFrames, JSON
 @testset "test simulation" begin
     config = JSON.parsefile(CONFIG_PATH)
     config["simulation"] = Dict(
-        "starting_year" => 2024,
+        "min_cal_year" => 2024,
         "time_horizon" => 3,
         "province" => "CA",
         "population_growth_type" => "M3",
