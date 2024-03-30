@@ -59,7 +59,7 @@
   },
   "exacerbation": {
     "hyperparameters": {
-      "β0_μ": 0,
+      "β0_μ": 0.0,
       "β0_σ": 0.0000001
     },
     "parameters": {

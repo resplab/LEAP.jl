@@ -8,7 +8,7 @@ TODO.
 # Fields
 - `max_age::Integer`: the maximum age to compute in the simulation.
 - `province::Union{String, Char}`: a string indicating the province abbreviation, e.g. "BC".
-- `starting_calendar_year::Integer`: the calendar year to start the simulation at, e.g. 2000.
+- `min_cal_year::Integer`: the calendar year to start the simulation at, e.g. 2000.
 - `time_horizon::Union{Missing,Int,Vector{Int}}`: TODO.
 - `num_births_initial::Union{Nothing,Missing,Real,String}`: the number of births for the initial
     year of the simulation.
@@ -448,7 +448,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
         # for each agent i born/immigrated in cal_year
         for i in 1:size(new_agents_df)[1]
             @set! simulation.control = Control(config["control"])
-            @set! simulation.exacerbation = Exacerbation(config["exacerbation"], province)
+            @set! simulation.exacerbation = Exacerbation(config["exacerbation"], simulation.province)
             @set! simulation.exacerbation_severity = ExacerbationSeverity(config["exacerbation_severity"])
 
             simulation.agent = create_agent(
