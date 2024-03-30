@@ -30,7 +30,7 @@ struct ExacerbationSeverity <: ExacerbationSeverityModule
         hyperparameters = string_to_symbols_dict(config["hyperparameters"])
         parameters = string_to_symbols_dict(config["parameters"])
         hyperparameters[:α] = Array{Float64, 1}(hyperparameters[:α])
-        parameters[:p] = Array{Float64, 1}(parameters[:p])
+        parameters[:p] = assign_random_p(hyperparameters[:α], hyperparameters[:k])
         new(hyperparameters, parameters)
     end
     function ExacerbationSeverity(
@@ -166,19 +166,16 @@ end
 
 
 """
-    random_parameter_initialization!(exac_severity)
+    assign_random_p(α, k)
 
 Compute the probability vector `p` from the Dirichlet distribution. See:
 https://juliastats.org/Distributions.jl/stable/multivariate/#Distributions.Dirichlet.
 
-Mutates the exac_severity object.
-
 # Arguments
-- `exac_severity::ExacerbationSeverity`: Exacerbation severity parameters, see
-    [`ExacerbationSeverity`](@ref).
+- `k::Integer`: number of trials.
+- `α::Vector{Float64}`: parameter vector, length 4.
 """
-function random_parameter_initialization!(exac_severity::ExacerbationSeverity)
-    exac_severity.parameters[:p] = rand(
-        Dirichlet(exac_severity.hyperparameters[:α] * exac_severity.hyperparameters[:k])
-    )
+function assign_random_p(α::Vector{Float64}, k::Integer)
+    p = rand(Dirichlet(α * k))
+    return p
 end

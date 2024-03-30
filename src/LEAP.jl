@@ -33,6 +33,7 @@ export
     get_num_newborn,
     get_initial_population_indices,
     get_num_new_immigrants,
+    get_new_agents,
     agent_has_asthma,
     compute_num_exacerbations,
     load_census_boundaries,

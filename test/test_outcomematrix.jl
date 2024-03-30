@@ -5,7 +5,7 @@ using DataFrames, JSON
 @testset "test create_outcome_matrix" begin
     config = JSON.parsefile(CONFIG_PATH)
     config["simulation"] = Dict(
-        "starting_year" => 2001,
+        "min_cal_year" => 2001,
         "time_horizon" => 40,
         "province" => "CA",
         "population_growth_type" => "M3",
@@ -15,8 +15,8 @@ using DataFrames, JSON
     simulation = LEAP.Simulation(config)
     until_all_die = false
     max_age = simulation.max_age
-    min_cal_year = simulation.starting_calendar_year
-    max_cal_year = min_cal_year + simulation.time_horizon - 1
+    min_cal_year = simulation.min_cal_year
+    max_cal_year = simulation.max_cal_year
     cal_years = min_cal_year:max_cal_year
     outcome_matrix = LEAP.create_outcome_matrix(until_all_die, cal_years, min_cal_year,
        max_cal_year, max_age)
@@ -30,7 +30,7 @@ end
 @testset "test add_antibiotic_use_to_outcome_matrix" begin
     config = JSON.parsefile(CONFIG_PATH)
     config["simulation"] = Dict(
-        "starting_year" => 2001,
+        "min_cal_year" => 2001,
         "time_horizon" => 40,
         "province" => "CA",
         "population_growth_type" => "M3",
@@ -40,8 +40,8 @@ end
     simulation = LEAP.Simulation(config)
     until_all_die = false
     max_age = simulation.max_age
-    min_cal_year = simulation.starting_calendar_year
-    max_cal_year = min_cal_year + simulation.time_horizon - 1
+    min_cal_year = simulation.min_cal_year
+    max_cal_year = simulation.max_cal_year
     cal_years = min_cal_year:max_cal_year
     outcome_matrix = LEAP.create_outcome_matrix(until_all_die, cal_years, min_cal_year,
        max_cal_year, max_age)

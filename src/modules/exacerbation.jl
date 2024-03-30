@@ -5,6 +5,7 @@ struct Exacerbation <: ExacerbationModule
     function Exacerbation(config::AbstractDict, province::String)
         hyperparameters = string_to_symbols_dict(config["hyperparameters"])
         parameters = string_to_symbols_dict(config["parameters"])
+        parameters[:β0] = assign_random_β0(hyperparameters[:β0_μ], hyperparameters[:β0_σ])
         initial_rate = config["initial_rate"]
         exacerbation_calibration = load_exacerbation_calibration()
         parameters[:calibration] = groupby(
@@ -114,8 +115,21 @@ function compute_num_exacerbations_initial(agent::Agent, exacerbation::Exacerbat
     end
 end
 
-function random_parameter_initialization!(exac::Exacerbation)
-    exac.parameters[:β0] = rand(Normal(exac.hyperparameters[:β0_μ], exac.hyperparameters[:β0_σ]))
+
+"""
+    assign_random_β0(β0_μ, β0_σ)
+
+Assign the parameter β0 a random value from a normal distribution with a mean μ = β0_μ and a
+standard deviation σ = β0_σ.
+
+# Arguments
+
+- `β0_μ::Float64`: The mean for the normal distribution.
+- `β0_σ::Float64`: The standard deviation for the normal distribution.
+"""
+function assign_random_β0(β0_μ::Float64, β0_σ::Float64)
+    β0 = rand(Normal(β0_μ, β0_σ))
+    return β0
 end
 
 function exacerbation_prediction(μ::Float64; inv_link::Function=exp)
