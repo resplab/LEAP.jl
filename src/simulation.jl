@@ -246,9 +246,6 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     max_time_horizon = (until_all_die ? typemax(Int) : simulation.time_horizon)
     cal_years = min_cal_year:max_cal_year
 
-    # store events
-    n_list = zeros(Int, simulation.time_horizon, 2)
-
     outcome_matrix = create_outcome_matrix(until_all_die, cal_years, min_cal_year, max_cal_year, max_age)
 
     # time the performance
@@ -362,8 +359,6 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
                 simulation.agent.num_antibiotic_use
             )
-
-            n_list[cal_year_index, simulation.agent.sex+1] += 1
 
             # if age >4, we need to generate the initial distribution of asthma related events
             if simulation.agent.age > 3
@@ -570,7 +565,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     )
 
 
-    @set! simulation.outcome_matrix = (; n = n_list, outcome_matrix = outcome_matrix)
+    @set! simulation.outcome_matrix = outcome_matrix
 
     if verbose
         print("\n Simulation finished. Check your simulation object for results.")
