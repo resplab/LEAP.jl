@@ -271,6 +271,77 @@ function get_new_agents(; simulation::SimulationModule, cal_year::Integer,
 end
 
 
+"""
+    reassess_asthma_diagnosis!(simulation, outcome_matrix)
+
+Reassess if the agent has asthma.
+
+# Arguments
+- `simulation::SimulationModule`: Simulation struct, see [`Simulation`](@ref).
+- `outcome_matrix::OutcomeMatrixModule`: OutcomeMatrix struct, see [`OutcomeMatrix`](@ref).
+"""
+function reassess_asthma_diagnosis!(simulation::SimulationModule,
+    outcome_matrix::OutcomeMatrixModule
+)
+
+    # reassessment
+    @set! simulation.agent.has_asthma = agent_has_asthma(
+        simulation.agent, simulation.reassessment
+    )
+    # if still labeled with asthma
+    if simulation.agent.has_asthma
+        #  update control
+        @set! simulation.agent.control_levels = compute_control_levels(
+            simulation.control, simulation.agent.sex, simulation.agent.age
+        )
+        add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
+            simulation.agent.sex, simulation.agent.cal_year_index,
+            simulation.agent.control_levels
+        )
+
+        # update exacerbation
+        @set! simulation.agent.exac_hist.num_prev_year = copy(
+            simulation.agent.exac_hist.num_current_year
+        )
+        @set! simulation.agent.exac_sev_hist.prev_year = copy(
+            simulation.agent.exac_sev_hist.current_year
+        )
+        @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations(
+            simulation.agent, simulation.exacerbation
+        )
+
+        if simulation.agent.exac_hist.num_current_year != 0
+            @set! simulation.agent.exac_sev_hist.current_year = (
+            compute_distribution_exac_severity(
+                simulation.exacerbation_severity,
+                simulation.agent.exac_hist.num_current_year,
+                (simulation.agent.total_hosp>0),
+                simulation.agent.age
+            ))
+            @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
+            increment_field_in_outcome_matrix!(
+                outcome_matrix,
+                "exacerbation",
+                simulation.agent.age,
+                simulation.agent.sex,
+                simulation.agent.cal_year_index
+            )
+            increment_field_in_outcome_matrix!(
+                outcome_matrix,
+                "exacerbation_hospital",
+                simulation.agent.age,
+                simulation.agent.sex,
+                simulation.agent.cal_year_index,
+                simulation.agent.exac_sev_hist.current_year[4]
+            )
+            add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix,
+                simulation.agent.age,
+                simulation.agent.sex, simulation.agent.cal_year_index,
+                simulation.agent.exac_sev_hist.current_year
+            )
+        end
+    end
+end
 
 """
     run_simulation(seed, until_all_die, verbose)
@@ -446,63 +517,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                     end
                 # has asthma
                 else
-                    # reassessment
-                    @set! simulation.agent.has_asthma = agent_has_asthma(
-                        simulation.agent, simulation.reassessment
-                    )
-                    # if still labeled with asthma
-                    if simulation.agent.has_asthma
-                        #  update control
-                        @set! simulation.agent.control_levels = compute_control_levels(
-                            simulation.control, simulation.agent.sex, simulation.agent.age
-                        )
-                        add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
-                            simulation.agent.sex, simulation.agent.cal_year_index,
-                            simulation.agent.control_levels
-                        )
-
-                        # update exacerbation
-                        @set! simulation.agent.exac_hist.num_prev_year = copy(
-                            simulation.agent.exac_hist.num_current_year
-                        )
-                        @set! simulation.agent.exac_sev_hist.prev_year = copy(
-                            simulation.agent.exac_sev_hist.current_year
-                        )
-                        @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations(
-                            simulation.agent, simulation.exacerbation
-                        )
-
-                        if simulation.agent.exac_hist.num_current_year != 0
-                            @set! simulation.agent.exac_sev_hist.current_year = (
-                            compute_distribution_exac_severity(
-                                simulation.exacerbation_severity,
-                                simulation.agent.exac_hist.num_current_year,
-                                (simulation.agent.total_hosp>0),
-                                simulation.agent.age
-                            ))
-                            @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
-                            increment_field_in_outcome_matrix!(
-                                outcome_matrix,
-                                "exacerbation",
-                                simulation.agent.age,
-                                simulation.agent.sex,
-                                simulation.agent.cal_year_index
-                            )
-                            increment_field_in_outcome_matrix!(
-                                outcome_matrix,
-                                "exacerbation_hospital",
-                                simulation.agent.age,
-                                simulation.agent.sex,
-                                simulation.agent.cal_year_index,
-                                simulation.agent.exac_sev_hist.current_year[4]
-                            )
-                            add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix,
-                                simulation.agent.age,
-                                simulation.agent.sex, simulation.agent.cal_year_index,
-                                simulation.agent.exac_sev_hist.current_year
-                            )
-                        end
-                    end
+                    reassess_asthma_diagnosis!(simulation, outcome_matrix)
                 end
 
                 # if no asthma, record it
