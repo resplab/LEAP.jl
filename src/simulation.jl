@@ -272,6 +272,89 @@ end
 
 
 """
+    check_if_agent_gets_new_asthma_diagnosis!(simulation, outcome_matrix)
+
+If the agent does not have asthma, check to see if they get a new diagnosis this year.
+
+# Arguments
+- `simulation::SimulationModule`: Simulation struct, see [`Simulation`](@ref).
+- `outcome_matrix::OutcomeMatrixModule`: OutcomeMatrix struct, see [`OutcomeMatrix`](@ref).
+"""
+function check_if_agent_gets_new_asthma_diagnosis!(simulation::SimulationModule,
+    outcome_matrix::OutcomeMatrixModule
+)
+    @set! simulation.agent.has_asthma = agent_has_asthma(
+        simulation.agent, simulation.incidence, "incidence"
+    )
+    # simulate and record asthma related events if they are labeled with asthma
+    if simulation.agent.has_asthma
+        # if they did not have asthma dx in the past, then record it
+        @set! simulation.agent.asthma_age = copy(simulation.agent.age)
+        increment_field_in_outcome_matrix!(outcome_matrix, "asthma_incidence",
+            simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
+        )
+
+        @set! simulation.agent.control_levels = compute_control_levels(
+            simulation.control, simulation.agent.sex, simulation.agent.age
+        )
+        add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
+            simulation.agent.sex, simulation.agent.cal_year_index,
+            simulation.agent.control_levels
+        )
+
+        @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations(
+            simulation.agent, simulation.exacerbation
+        )
+
+        if simulation.agent.exac_hist.num_current_year != 0
+            @set! simulation.agent.exac_sev_hist.current_year = (
+            compute_distribution_exac_severity(
+                simulation.exacerbation_severity,
+                simulation.agent.exac_hist.num_current_year,
+                (simulation.agent.total_hosp>0),
+                simulation.agent.age
+            ))
+            @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
+            increment_field_in_outcome_matrix!(
+                outcome_matrix,
+                "exacerbation",
+                simulation.agent.age,
+                simulation.agent.sex,
+                simulation.agent.cal_year_index
+            )
+            increment_field_in_outcome_matrix!(outcome_matrix, "exacerbation_hospital",
+                simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
+                simulation.agent.exac_sev_hist.current_year[4]
+            )
+            add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix,
+                simulation.agent.age,
+                simulation.agent.sex, simulation.agent.cal_year_index,
+                simulation.agent.exac_sev_hist.current_year
+            )
+        end
+    end
+
+    update_asthma_in_contingency_table!(outcome_matrix,
+        simulation.agent.age, simulation.agent.sex,
+        simulation.agent.cal_year, simulation.agent.family_hist,
+        simulation.agent.num_antibiotic_use,
+        simulation.agent.has_asthma,
+        "incidence"
+    )
+
+    # keep track of patients who got asthma for the first time
+    if simulation.agent.has_asthma && !simulation.agent.asthma_status
+        @set! simulation.agent.asthma_status = true
+        @set! simulation.agent.asthma_age = simulation.agent.age
+        increment_field_in_outcome_matrix!(outcome_matrix, "asthma_status",
+            simulation.agent.age, simulation.agent.sex,
+            simulation.agent.cal_year_index
+        )
+    end
+end
+
+
+"""
     reassess_asthma_diagnosis!(simulation, outcome_matrix)
 
 Reassess if the agent has asthma.
@@ -444,78 +527,9 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
             # go through event processes for each agent
             while(simulation.agent.alive && simulation.agent.age <= max_age &&
                 simulation.agent.cal_year_index <= max_time_horizon)
-                # no asthma
+
                 if !simulation.agent.has_asthma
-                    # asthma incidence
-                    @set! simulation.agent.has_asthma = agent_has_asthma(
-                        simulation.agent, simulation.incidence, "incidence"
-                    )
-                    # simulate and record asthma related events if they are labeled with asthma
-                    if simulation.agent.has_asthma
-                        # if they did not have asthma dx in the past, then record it
-                        @set! simulation.agent.asthma_age = copy(simulation.agent.age)
-                        increment_field_in_outcome_matrix!(outcome_matrix, "asthma_incidence",
-                            simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
-                        )
-
-                        @set! simulation.agent.control_levels = compute_control_levels(
-                            simulation.control, simulation.agent.sex, simulation.agent.age
-                        )
-                        add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
-                            simulation.agent.sex, simulation.agent.cal_year_index,
-                            simulation.agent.control_levels
-                        )
-
-                        @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations(
-                            simulation.agent, simulation.exacerbation
-                        )
-
-                        if simulation.agent.exac_hist.num_current_year != 0
-                            @set! simulation.agent.exac_sev_hist.current_year = (
-                            compute_distribution_exac_severity(
-                                simulation.exacerbation_severity,
-                                simulation.agent.exac_hist.num_current_year,
-                                (simulation.agent.total_hosp>0),
-                                simulation.agent.age
-                            ))
-                            @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
-                            increment_field_in_outcome_matrix!(
-                                outcome_matrix,
-                                "exacerbation",
-                                simulation.agent.age,
-                                simulation.agent.sex,
-                                simulation.agent.cal_year_index
-                            )
-                            increment_field_in_outcome_matrix!(outcome_matrix, "exacerbation_hospital",
-                                simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                                simulation.agent.exac_sev_hist.current_year[4]
-                            )
-                            add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix,
-                                simulation.agent.age,
-                                simulation.agent.sex, simulation.agent.cal_year_index,
-                                simulation.agent.exac_sev_hist.current_year
-                            )
-                        end
-                    end
-
-                    update_asthma_in_contingency_table!(outcome_matrix,
-                        simulation.agent.age, simulation.agent.sex,
-                        simulation.agent.cal_year, simulation.agent.family_hist,
-                        simulation.agent.num_antibiotic_use,
-                        simulation.agent.has_asthma,
-                        "incidence"
-                    )
-
-                    # keep track of patients who got asthma for the first time
-                    if simulation.agent.has_asthma && !simulation.agent.asthma_status
-                        @set! simulation.agent.asthma_status = true
-                        @set! simulation.agent.asthma_age = simulation.agent.age
-                        increment_field_in_outcome_matrix!(outcome_matrix, "asthma_status",
-                            simulation.agent.age, simulation.agent.sex,
-                            simulation.agent.cal_year_index
-                        )
-                    end
-                # has asthma
+                    check_if_agent_gets_new_asthma_diagnosis!(simulation, outcome_matrix)
                 else
                     reassess_asthma_diagnosis!(simulation, outcome_matrix)
                 end
