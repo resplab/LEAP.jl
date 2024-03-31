@@ -244,12 +244,13 @@ function incidence_equation(
     correction_year = min(cal_year, incidence.max_year + 1)
     cal_year = min(cal_year, incidence.max_year)
     p0 = crude_incidence(sex, age, cal_year, parameters)
-    return inverse_logit(
+    p = inverse_logit(
         logit(p0) +
-        fam_hist * log_OR_family_history(age, parameters[:βfam_hist]) +
+        has_family_hist * log_OR_family_history(age, parameters[:βfam_hist]) +
         log_OR_abx_exposure(age, dose, parameters[:βabx_exp]) +
         incidence.incidence_correction_table[(correction_year, sex, min(age, 63))].correction[1]
     )
+    return p
 end
 
 
@@ -268,18 +269,19 @@ end
 
 
 function prevalence_equation(
-    sex, age::Integer, cal_year::Integer, family_hist::Bool, dose::Integer, incidence::Incidence
+    sex, age::Integer, cal_year::Integer, has_family_hist::Bool, dose::Integer, incidence::Incidence
 )
     parameters = incidence.parameters_prev
     correction_year = min(cal_year, incidence.max_year + 1)
     cal_year = min(cal_year, incidence.max_year)
     p0 = crude_prevalence(sex, age, cal_year, parameters)
-    return inverse_logit(
+    p = inverse_logit(
         logit(p0) +
-        family_hist * log_OR_family_history(age, parameters[:βfam_hist]) +
+        has_family_hist * log_OR_family_history(age, parameters[:βfam_hist]) +
         log_OR_abx_exposure(age, dose, parameters[:βabx_exp]) +
         incidence.prevalence_correction_table[(correction_year, sex, min(age, 63))].correction[1]
     )
+    return p
 end
 
 
