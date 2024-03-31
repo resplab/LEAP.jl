@@ -26,7 +26,6 @@ export
     # functions
     process,
     process_initial,
-    random_parameter_initialization!,
     create_outcome_matrix,
     set_up,
     get_num_newborn,

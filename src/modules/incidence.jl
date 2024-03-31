@@ -334,10 +334,3 @@ function poly_year_calculator(
     popfirst!(fs)
     fs
 end
-
-
-function random_parameter_initialization!(incidence::Incidence)
-    incidence.parameters[:β0] = rand(
-        Normal(incidence.hyperparameters[:β0_μ], incidence.hyperparameters[:β0_σ])
-    )
-end
