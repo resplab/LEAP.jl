@@ -147,11 +147,11 @@ function agent_has_asthma_incidence(
         has_asthma = false
     elseif age == 3
         has_asthma = rand(Bernoulli(prevalence_equation(
-            agent.sex, age, year, agent.family_hist, agent.num_antibiotic_use, incidence
+            agent.sex, age, year, agent.has_family_hist, agent.num_antibiotic_use, incidence
         )))
     else
         has_asthma = rand(Bernoulli(incidence_equation(
-            agent.sex, age, year, agent.family_hist, agent.num_antibiotic_use, incidence
+            agent.sex, age, year, agent.has_family_hist, agent.num_antibiotic_use, incidence
         )))
     end
     return has_asthma
@@ -175,7 +175,7 @@ function agent_has_asthma_prevalence(
         has_asthma = false
     else
         has_asthma = rand(Bernoulli(prevalence_equation(
-            agent.sex, age, year, agent.family_hist, agent.num_antibiotic_use, incidence
+            agent.sex, age, year, agent.has_family_hist, agent.num_antibiotic_use, incidence
         )))
     end
     return has_asthma
@@ -206,7 +206,6 @@ function compute_asthma_age(agent::Agent, incidence::Incidence, current_age::Int
     else
         find_asthma_age = true
         asthma_age = 3
-        tmp_family_hist = Int(agent.family_hist)
         tmp_sex = Int(agent.sex)
         tmp_abx_num = min(agent.num_antibiotic_use, 3)
         tmp_year = min(max(agent.cal_year - current_age + asthma_age, min_year), max_year)
@@ -239,7 +238,7 @@ end
 
 
 function incidence_equation(
-    sex, age::Integer, cal_year::Integer, fam_hist::Bool, dose::Integer, incidence::Incidence
+    sex, age::Integer, cal_year::Integer, has_family_hist::Bool, dose::Integer, incidence::Incidence
 )
     parameters = incidence.parameters
     correction_year = min(cal_year, incidence.max_year + 1)

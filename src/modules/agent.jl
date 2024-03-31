@@ -22,7 +22,7 @@ A person in the model.
 - `exac_hist::Union{Nothing, ExacerbationHistModule}`: Total number of exacerbations.
 - `exac_sev_hist::Union{Nothing, ExacerbationSeverityHistModule}`: Number of exacerbations by severity.
 - `total_hosp::Integer`: Total number of very severe asthma exacerbations leading to hospitalization.
-- `family_hist::Bool`: Is there a family history of asthma?
+- `has_family_hist::Bool`: Is there a family history of asthma?
 - `asthma_status::Bool`: TODO.
 - `census_division::CensusDivisionModule`: the Canadian census division where the agent resides.
 """
@@ -40,7 +40,7 @@ A person in the model.
     exac_hist::Union{Nothing, ExacerbationHistModule}
     exac_sev_hist::Union{Nothing, ExacerbationSeverityHistModule}
     total_hosp::Integer
-    family_hist::Bool
+    has_family_hist::Bool
     asthma_status::Bool
     census_division::Union{Nothing, CensusDivisionModule}
     pollution::Union{Nothing, PollutionModule}
@@ -63,21 +63,13 @@ A person in the model.
                 sex=sex,
                 birth_year=cal_year - age
             )
-            if age == 0
-                family_hist = process_family_history(
-                    family_hist
-                )
-            else
-                family_hist = process_family_history_initial(
-                    family_hist
-                )
-            end
+            has_family_hist = has_family_history_of_asthma(family_hist)
         end
 
         new(
             sex, age, cal_year, cal_year_index, alive, num_antibiotic_use, has_asthma,
             asthma_age, severity, control_levels, exac_hist, exac_sev_hist, total_hosp,
-            family_hist, asthma_status, census_division, pollution
+            has_family_hist, asthma_status, census_division, pollution
         )
     end
     function Agent(
@@ -94,7 +86,7 @@ A person in the model.
         exac_hist::Union{Nothing, ExacerbationHistModule},
         exac_sev_hist::Union{Nothing, ExacerbationSeverityHistModule},
         total_hosp::Integer,
-        family_hist::Bool,
+        has_family_hist::Bool,
         asthma_status::Bool,
         census_division::Union{Nothing, CensusDivisionModule},
         pollution::Union{Nothing, PollutionModule}
@@ -102,7 +94,7 @@ A person in the model.
         new(
             sex, age, cal_year, cal_year_index, alive, num_antibiotic_use, has_asthma,
             asthma_age, severity, control_levels, exac_hist, exac_sev_hist, total_hosp,
-            family_hist, asthma_status, census_division, pollution
+            has_family_hist, asthma_status, census_division, pollution
         )
     end
 end

@@ -196,7 +196,7 @@ function add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix::Outcome
 end
 
 function update_asthma_in_contingency_table!(outcome_matrix::OutcomeMatrix,
-    age::Integer, sex::Bool, cal_year::Integer, family_hist::Any, num_antibiotic_use::Integer,
+    age::Integer, sex::Bool, cal_year::Integer, has_family_hist::Bool, num_antibiotic_use::Integer,
     has_asthma::Bool, inc_or_prev::String
 )
     if has_asthma
@@ -208,13 +208,13 @@ function update_asthma_in_contingency_table!(outcome_matrix::OutcomeMatrix,
     if inc_or_prev == "incidence"
         outcome_matrix.asthma_incidence_contingency_table[(
             cal_year, Int(sex),
-            Int(family_hist),
+            Int(has_family_hist),
             min(num_antibiotic_use, 3)
             )][age + 1, column] += 1
     elseif inc_or_prev == "prevalence"
         outcome_matrix.asthma_prevalence_contingency_table[(
             cal_year, Int(sex),
-            Int(family_hist),
+            Int(has_family_hist),
             min(num_antibiotic_use, 3)
             )][age + 1, column] += 1
     else

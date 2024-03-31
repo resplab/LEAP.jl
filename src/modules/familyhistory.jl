@@ -9,10 +9,6 @@ struct FamilyHistory <: FamilyHistoryModule
     end
 end
 
-function process_family_history(family_history::FamilyHistory)
-    return rand(Bernoulli(family_history.parameters[:p]))
-end
-
-function process_family_history_initial(family_history::FamilyHistory)
+function has_family_history_of_asthma(family_history::FamilyHistory)
     return rand(Bernoulli(family_history.parameters[:p]))
 end

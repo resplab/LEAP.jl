@@ -341,7 +341,7 @@ function check_if_agent_gets_new_asthma_diagnosis!(simulation::SimulationModule,
 
     update_asthma_in_contingency_table!(outcome_matrix,
         simulation.agent.age, simulation.agent.sex,
-        simulation.agent.cal_year, simulation.agent.family_hist,
+        simulation.agent.cal_year, simulation.agent.has_family_hist,
         simulation.agent.num_antibiotic_use,
         simulation.agent.has_asthma,
         "incidence"
@@ -475,7 +475,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
             increment_field_in_outcome_matrix!(outcome_matrix, "family_history",
                 simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                simulation.agent.family_hist
+                simulation.agent.has_family_hist
             )
 
             # if age >4, we need to generate the initial distribution of asthma related events
@@ -501,7 +501,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 end
                 update_asthma_in_contingency_table!(outcome_matrix,
                     simulation.agent.age, simulation.agent.sex,
-                    simulation.agent.cal_year, simulation.agent.family_hist,
+                    simulation.agent.cal_year, simulation.agent.has_family_hist,
                     simulation.agent.num_antibiotic_use,
                     simulation.agent.has_asthma,
                     "prevalence"
