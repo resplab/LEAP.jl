@@ -3,7 +3,7 @@ module LEAP
 # Write your package code here
 using DataFrames, Query, CSV, JLD, JLD2, FileIO, JSON
 using Setfield, Distributions, StatsFuns, StatsBase, Random, SpecialFunctions
-using TimerOutputs, Printf
+using TimerOutputs, Printf, Logging
 using GRIB, PolygonOps, Shapefile, JSON, GeoInterface
 
 PROCESSED_DATA_PATH = joinpath(dirname(pathof(LEAP)), "processed_data")

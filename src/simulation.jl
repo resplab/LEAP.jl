@@ -405,6 +405,12 @@ TODO.
 function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool=false,
     config::Union{AbstractDict, Nothing}=nothing)
 
+    log_level = Logging.Warn
+    if verbose
+        log_level = Logging.Info
+    end
+    logger = SimpleLogger(stdout, log_level)
+
     if isnothing(config)
         config = JSON.parsefile(CONFIG_PATH)
     end
@@ -422,6 +428,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
     max_time_horizon = (until_all_die ? typemax(Int) : simulation.time_horizon)
     cal_years = min_cal_year:max_cal_year
+    total_years = max_cal_year - min_cal_year + 1
 
     outcome_matrix = create_outcome_matrix(until_all_die, cal_years, min_cal_year, max_cal_year, max_age)
 
@@ -433,23 +440,24 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     for cal_year in cal_years
         @timeit timer_output "calendar year $cal_year" begin
 
-        if verbose
-            println(cal_year)
-        end
+        @info "$cal_year"
 
         cal_year_index = cal_year - min_cal_year + 1
 
+        @timeit timer_output "get_new_agents" begin
         new_agents_df = get_new_agents(
             simulation=simulation,
             cal_year=cal_year,
             cal_year_index=cal_year_index
         )
+        end
 
+        @info "$new_agents_df"
         # for each agent i born/immigrated in cal_year
         for i in 1:size(new_agents_df)[1]
-            @set! simulation.control = Control(config["control"])
+            assign_random_β0!(simulation.control)
             @set! simulation.exacerbation = Exacerbation(config["exacerbation"], simulation.province)
-            @set! simulation.exacerbation_severity = ExacerbationSeverity(config["exacerbation_severity"])
+            assign_random_p!(simulation.exacerbation_severity)
 
             simulation.agent = Agent(
                 sex=new_agents_df.sex[i],
@@ -462,6 +470,9 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 month=month,
                 SSP=simulation.SSP
             )
+            @info "$cal_year, year $cal_year_index of $total_years years:" *
+                  "Agent $i, age $(simulation.agent.age)"
+
             if new_agents_df.immigrant[i]
                 increment_field_in_outcome_matrix!(outcome_matrix, "immigration",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
@@ -558,10 +569,8 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
     @set! simulation.outcome_matrix = outcome_matrix
 
-    if verbose
-        print("\n Simulation finished. Check your simulation object for results.")
-        print_timer(timer_output::TimerOutput)
-    end
+    @info "\n Simulation finished. Check your simulation object for results."
+    print_timer(timer_output::TimerOutput)
 
     return simulation.outcome_matrix
 end
