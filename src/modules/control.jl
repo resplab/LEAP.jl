@@ -139,7 +139,7 @@ standard deviation σ = β0_σ.
 - `β0_μ::Float64`: The mean for the normal distribution.
 - `β0_σ::Float64`: The standard deviation for the normal distribution.
 """
-function assign_random_β0(β0_μ::Float64, β0_σ::Float64)
+function assign_random_β0(β0_μ::Float64, β0_σ::Float64)::Float64
     β0 = rand(Normal(β0_μ, β0_σ))
     return β0
 end
