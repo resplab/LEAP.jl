@@ -409,7 +409,9 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     if verbose
         log_level = Logging.Info
     end
+
     logger = SimpleLogger(stdout, log_level)
+    global_logger(logger)
 
     if isnothing(config)
         config = JSON.parsefile(CONFIG_PATH)
