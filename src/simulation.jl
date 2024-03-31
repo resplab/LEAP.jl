@@ -472,12 +472,12 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
             increment_field_in_outcome_matrix!(outcome_matrix, "antibiotic_exposure",
                 simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                simulation.agent.family_hist
+                simulation.agent.num_antibiotic_use
             )
 
             increment_field_in_outcome_matrix!(outcome_matrix, "family_history",
                 simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                simulation.agent.num_antibiotic_use
+                simulation.agent.family_hist
             )
 
             # if age >4, we need to generate the initial distribution of asthma related events
