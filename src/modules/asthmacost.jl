@@ -25,9 +25,12 @@ end
 
 
 """
-    compute_cost(agent, incidence)
+    compute_cost(agent, asthma_cost)
 
 Compute the cost in dollars (CAD) for the current year due to asthma exacerbations and control.
+
+If `control_levels` are not present, will default to equal probability of fully controlled,
+partially controlled, and uncontrolled asthma.
 
 # Arguments
 
@@ -38,9 +41,19 @@ function compute_cost(agent::Agent, asthma_cost::AsthmaCost)::Float64
     if !agent.has_asthma
         return 0.0
     else
+        control_levels = agent.control_levels
+        if isnothing(control_levels)
+            control_levels = Dict(
+                :fully_controlled => 0.3333,
+                :partially_controlled => 0.3333,
+                :uncontrolled => 0.3333,
+                :as_array => [0.3333, 0.3333, 0.3333]
+            )
+            @warn "Control levels have not been set, default to $control_levels"
+        end
         return (
             sum(agent.exac_sev_hist.current_year .* asthma_cost.parameters[:exac]) +
-            sum(agent.control_levels[:as_array] .* asthma_cost.parameters[:control])
+            sum(control_levels[:as_array] .* asthma_cost.parameters[:control])
         )
     end
 end

@@ -5,6 +5,7 @@ using LEAP
 @testset "All Tests" begin
 
 include("test_antibioticexposure.jl")
+include("test_asthmacost.jl")
 include("test_birth.jl")
 include("test_censusdivision.jl")
 include("test_incidence.jl")
