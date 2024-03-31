@@ -451,17 +451,15 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
             @set! simulation.exacerbation = Exacerbation(config["exacerbation"], simulation.province)
             @set! simulation.exacerbation_severity = ExacerbationSeverity(config["exacerbation_severity"])
 
-            simulation.agent = create_agent(
-                cal_year=cal_year,
-                cal_year_index=cal_year_index,
-                month=month,
+            simulation.agent = Agent(
                 sex=new_agents_df.sex[i],
                 age=new_agents_df.age[i],
-                province=simulation.province,
-                antibiotic_exposure=simulation.antibiotic_exposure,
+                cal_year=cal_year,
+                cal_year_index=cal_year_index,
                 family_hist=simulation.family_history,
-                census_table=simulation.census_table,
-                pollution_table=simulation.pollution_table,
+                antibiotic_exposure=simulation.antibiotic_exposure,
+                province=simulation.province,
+                month=month,
                 SSP=simulation.SSP
             )
             if new_agents_df.immigrant[i]

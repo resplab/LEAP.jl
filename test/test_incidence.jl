@@ -8,29 +8,24 @@ using JSON
     province = "CA"
     starting_year = 2024
     cal_year = 2025
-    tmp_cal_year_index = cal_year - starting_year + 1
+    cal_year_index = cal_year - starting_year + 1
     month = 1
     n = 10
     population_growth_type = "M3"
     config = JSON.parsefile(LEAP.CONFIG_PATH)
     incidence = LEAP.Incidence(config["incidence"])
     birth = LEAP.Birth(starting_year, province, population_growth_type)
-    antibiotic_exposure = LEAP.AntibioticExposure(config["antibiotic_exposure"])
-    family_history = LEAP.FamilyHistory(config["family_history"])
-    census_table = LEAP.CensusTable(config["census_table"])
-    pollution_table = LEAP.PollutionTable()
 
-    agent = create_agent(
-        cal_year=cal_year,
-        cal_year_index=tmp_cal_year_index,
-        month=month,
-        age=0,
-        antibiotic_exposure=antibiotic_exposure,
-        family_hist=family_history,
+    agent = LEAP.Agent(
         sex=false,
+        age=0,
+        cal_year=cal_year,
+        cal_year_index=cal_year_index,
+        family_hist=LEAP.FamilyHistory(config["family_history"]),
+        antibiotic_exposure=LEAP.AntibioticExposure(config["antibiotic_exposure"]),
         province=province,
-        census_table=census_table,
-        pollution_table=pollution_table
+        month=month,
+        SSP=config["pollution"]["SSP"]
     )
     @test agent.has_asthma == false
     agent_has_asthma(agent, incidence, "prevalence")
@@ -42,28 +37,24 @@ end
     province = "CA"
     starting_year = 2024
     cal_year = 2025
-    tmp_cal_year_index = cal_year - starting_year + 1
+    cal_year_index = cal_year - starting_year + 1
     month = 1
     n = 10
     population_growth_type = "M3"
     config = JSON.parsefile(LEAP.CONFIG_PATH)
     incidence = LEAP.Incidence(config["incidence"])
     birth = LEAP.Birth(starting_year, province, population_growth_type)
-    antibiotic_exposure = LEAP.AntibioticExposure(config["antibiotic_exposure"])
-    family_history = LEAP.FamilyHistory(config["family_history"])
-    census_table = LEAP.CensusTable(config["census_table"])
-    pollution_table = LEAP.PollutionTable()
-    agent = create_agent(
-        cal_year=cal_year,
-        cal_year_index=tmp_cal_year_index,
-        month=month,
-        age=0,
-        antibiotic_exposure=antibiotic_exposure,
-        family_hist=family_history,
+
+    agent = LEAP.Agent(
         sex=false,
+        age=0,
+        cal_year=cal_year,
+        cal_year_index=cal_year_index,
+        family_hist=LEAP.FamilyHistory(config["family_history"]),
+        antibiotic_exposure=LEAP.AntibioticExposure(config["antibiotic_exposure"]),
         province=province,
-        census_table=census_table,
-        pollution_table=pollution_table
+        month=month,
+        SSP=config["pollution"]["SSP"]
     )
 
     @test_throws ArgumentError(

@@ -24,7 +24,6 @@ include("simulation.jl")
 
 export
     # functions
-    create_agent,
     process,
     process_initial,
     random_parameter_initialization!,
