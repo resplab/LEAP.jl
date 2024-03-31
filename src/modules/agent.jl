@@ -79,7 +79,7 @@ function create_agent(; cal_year::Integer, cal_year_index::Integer, month::Integ
     family_hist::FamilyHistory=nothing, census_table::CensusTableModule,
     pollution_table::PollutionTableModule, SSP::String="SSP1_2.6")
 
-    census_division = assign_census_division(census_table, province)
+    census_division = CensusDivision(province, cal_year)
     pollution = Pollution(census_division.cduid, cal_year, month, SSP)
 
     agent = Agent(
