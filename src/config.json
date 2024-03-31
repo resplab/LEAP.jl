@@ -8,13 +8,8 @@
     "max_age": 111
   },
   "antibiotic_exposure": {
-    "hyperparameters": {
-      "β0_μ": null,
-      "β0_σ": null
-    },
     "parameters": {
       "β0": 110.000442,
-      "βage": 0.0,
       "βcal_year": -0.055100,
       "β2005": 55.033675,
       "βsex": 0.249033,

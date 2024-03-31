@@ -92,17 +92,16 @@ function create_agent(; cal_year::Integer, cal_year_index::Integer, month::Integ
     )
 
     if antibiotic_exposure !== nothing && family_hist !== nothing
+        @set! agent.num_antibiotic_use = compute_num_antibiotic_use(
+            antibiotic_exposure=antibiotic_exposure,
+            sex=sex,
+            birth_year=cal_year - age
+        )
         if age == 0
-            @set! agent.num_antibiotic_use = process_antibiotic_exposure(
-                antibiotic_exposure, sex, cal_year
-            )
             @set! agent.family_hist = process_family_history(
                 family_hist
             )
         else
-            @set! agent.num_antibiotic_use = process_antibiotic_exposure_initial(
-                antibiotic_exposure, sex, cal_year - age
-            )
             @set! agent.family_hist = process_family_history_initial(
                 family_hist
             )
