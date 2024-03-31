@@ -45,13 +45,12 @@ end
 end
 
 
-@testset "test assign_pollution" begin
-    pollution_table = LEAP.PollutionTable()
+@testset "test Pollution constructor" begin
     cduid = 5915
     year = 2028
     month = 2
     SSP = "SSP2_4.5"
-    pollution = LEAP.assign_pollution(cduid, year, month, SSP, pollution_table)
+    pollution = LEAP.Pollution(cduid, year, month, SSP)
     @test pollution.cduid == cduid
     @test pollution.year == year
     @test pollution.month == month

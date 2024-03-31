@@ -38,7 +38,6 @@ export
     compute_num_exacerbations,
     load_census_boundaries,
     point_in_polygon,
-    assign_pollution,
     # global datasets
     PROCESSED_DATA_PATH,
     CONFIG_PATH
