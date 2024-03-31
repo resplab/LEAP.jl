@@ -4,22 +4,24 @@
 A struct containing information about projected birth rates.
 
 # Fields
-- `estimate::Union{DataFrame, Nothing}`: A data frame giving the projected number of births in
-    Canada with the following columns:
-        `year`: integer year.
-        `province`: A string indicating the province abbreviation, e.g. "BC".
-        `N`: estimated number of births for that year.
+- `estimate::DataFrame`: A data frame giving the projected number of births in a given province
+    with the following columns:
+        `year`: integer year the range 2000 - 2065.
+        `province`: A string indicating the province abbreviation, e.g. "BC". For all of Canada,
+            set province to "CA".
+        `N`: integer, estimated number of births for that year.
         `prop_male`: proportion of births which are male, a number in [0, 1].
         `projection_scenario`: Population growth type, one of:
             ["past", "LG", "HG", "M1", "M2", "M3", "M4", "M5", "M6", FA", "SA"].
             See [Stats Canada](https://www150.statcan.gc.ca/n1/pub/91-520-x/91-520-x2022001-eng.htm).
-        `N_relative`: number of births relative to the previous year.
+        `N_relative`: number of births relative to the first year of the simulation.
     See `master_birth_estimate`.
-- `initial_population::Union{DataFrame, Nothing}`: A data frame giving the population for the
-    first year of the simulation:
-        `year`: integer year.
+- `initial_population::DataFrame`: A data frame giving the population for the first year
+    of the simulation:
+        `year`: integer year the range 2000 - 2065.
         `age`: integer age.
-        `province`: a string indicating the province abbreviation, e.g. "BC".
+        `province`: a string indicating the province abbreviation, e.g. "BC". For all of Canada,
+            set province to "CA".
         `n`: estimated number of people in that age category in a given year.
         `n_birth`: the number of people born that year.
         `prop`: the ratio of that age group to the newborn age group (age = 0).
@@ -55,7 +57,7 @@ struct Birth <: BirthModule
 end
 
 
-function load_birth_estimate()
+function load_birth_estimate()::DataFrame
     master_birth_estimate = CSV.read(
         joinpath(PROCESSED_DATA_PATH, "master_birth_estimate.csv"),
         DataFrame
@@ -64,7 +66,7 @@ function load_birth_estimate()
 end
 
 
-function load_population_initial_distribution()
+function load_population_initial_distribution()::DataFrame
     master_population_initial_distribution = CSV.read(
         joinpath(PROCESSED_DATA_PATH, "master_initial_pop_distribution_prop.csv"),
         DataFrame
@@ -98,7 +100,7 @@ then we will return the following:
 # Returns
 - `Vector{Integer}`: the indices for the initial population table.
 """
-function get_initial_population_indices(birth::Birth, num_births::Integer)
+function get_initial_population_indices(birth::Birth, num_births::Integer)::Vector{Integer}
     num_agents_per_age_group = round.(Int, birth.initial_population.prop*num_births)
     initial_population_indices = Vector{Integer}[]
     for age_index in eachindex(num_agents_per_age_group)
@@ -125,7 +127,10 @@ Get the number of births in a given year.
 # Returns
 - `Integer`: the number of births for the given year.
 """
-function get_num_newborn(birth::Birth, num_births_initial::Integer, cal_year_index::Integer)
+function get_num_newborn(
+    birth::Birth, num_births_initial::Integer, cal_year_index::Integer
+)::Integer
+
     num_new_born = ceil(
         Int,
         num_births_initial * birth.estimate.N_relative[cal_year_index]
