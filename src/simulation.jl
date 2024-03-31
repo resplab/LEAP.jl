@@ -56,7 +56,7 @@ TODO.
             config["simulation"]["num_births_initial"],
             population_growth_type,
             nothing,
-            Birth(min_cal_year, province, population_growth_type),
+            Birth(min_cal_year, province, population_growth_type, config["simulation"]["max_age"]),
             Emigration(min_cal_year, province, population_growth_type),
             Immigration(min_cal_year, province, population_growth_type),
             Death(config["death"], province, min_cal_year),

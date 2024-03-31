@@ -34,19 +34,26 @@ A struct containing information about projected birth rates.
 struct Birth <: BirthModule
     estimate::DataFrame
     initial_population::DataFrame
-    function Birth(starting_year::Integer, province::String, population_growth_type::String)
+    function Birth(starting_year::Integer, province::String, population_growth_type::String,
+        max_age::Integer=111
+    )
         master_birth_estimate = load_birth_estimate()
         population_initial_distribution = load_population_initial_distribution()
         estimate = filter(
-            ([:year, :province, :projection_scenario] => (x, y, z) -> x >= starting_year
-            && y == province && (z == population_growth_type || z == "past")),
+            ([:year, :province, :projection_scenario] => (x, y, z) ->
+            x >= starting_year
+            && y == province
+            && (z == population_growth_type || z == "past")),
             master_birth_estimate
         )
         relative(x) = x / estimate.N[1]
         estimate = transform(estimate, :N => relative)
         initial_population =  filter(
-            ([:year, :province, :projection_scenario] => (x, y, z) -> x == starting_year
-            && y == province && (z == population_growth_type || z == "past")),
+            ([:age, :year, :province, :projection_scenario] => (w, x, y, z) ->
+            w <= max_age
+            && x == starting_year
+            && y == province
+            && (z == population_growth_type || z == "past")),
             population_initial_distribution
         )
         new(estimate, initial_population)
