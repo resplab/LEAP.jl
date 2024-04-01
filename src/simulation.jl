@@ -458,7 +458,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
         # for each agent i born/immigrated in cal_year
         for i in 1:size(new_agents_df)[1]
             assign_random_β0!(simulation.control)
-            @set! simulation.exacerbation = Exacerbation(config["exacerbation"], simulation.province)
+            assign_random_β0!(simulation.exacerbation)
             assign_random_p!(simulation.exacerbation_severity)
 
             simulation.agent = Agent(

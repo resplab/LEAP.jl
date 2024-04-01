@@ -143,3 +143,12 @@ function assign_random_β0(β0_μ::Float64, β0_σ::Float64)::Float64
     β0 = rand(Normal(β0_μ, β0_σ))
     return β0
 end
+
+
+function assign_random_β0!(control::Control)
+    β0 = assign_random_β0(
+        control.hyperparameters[:β0_μ],
+        control.hyperparameters[:β0_σ]
+    )
+    control.parameters[:β0] = β0
+end

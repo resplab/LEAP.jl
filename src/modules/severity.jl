@@ -179,3 +179,12 @@ function assign_random_p(α::Vector{Float64}, k::Integer)
     p = rand(Dirichlet(α * k))
     return p
 end
+
+
+function assign_random_p!(exacerbation_severity::ExacerbationSeverity)
+    p = assign_random_p(
+        exacerbation_severity.hyperparameters[:α],
+        exacerbation_severity.hyperparameters[:k]
+    )
+    exacerbation_severity.parameters[:p] = p
+end

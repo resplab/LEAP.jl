@@ -132,6 +132,14 @@ function assign_random_β0(β0_μ::Float64, β0_σ::Float64)
     return β0
 end
 
+function assign_random_β0!(exacerbation::Exacerbation)
+    β0 = assign_random_β0(
+        exacerbation.hyperparameters[:β0_μ],
+        exacerbation.hyperparameters[:β0_σ]
+    )
+    exacerbation.parameters[:β0] = β0
+end
+
 function exacerbation_prediction(μ::Float64; inv_link::Function=exp)
     rand(Poisson(inv_link(μ)))
 end
