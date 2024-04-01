@@ -411,7 +411,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
         log_level = Logging.Info
     end
 
-    logger = SimpleLogger(stdout, log_level)
+    logger = ConsoleLogger(stdout, log_level)
     global_logger(logger)
 
     if isnothing(config)
