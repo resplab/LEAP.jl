@@ -69,7 +69,7 @@ Compute the number of antibiotics used during the first year of life.
 """
 function compute_num_antibiotic_use(
     ; antibiotic_exposure::AntibioticExposure, sex::Bool, birth_year::Integer
-)
+)::Integer
     if birth_year < 2001
         p = antibiotic_exposure_prob(
             sex=sex, cal_year=2000, parameters=antibiotic_exposure.parameters
@@ -120,7 +120,7 @@ Returns the probability of antibiotic exposure for a given year and sex.
         the probability for the negative binomial distribution.
     `βfloor`: float, the minimum value of μ.
 """
-function antibiotic_exposure_prob(; sex::Bool, cal_year::Integer, parameters::AbstractDict)
+function antibiotic_exposure_prob(; sex::Bool, cal_year::Integer, parameters::AbstractDict)::Float64
     μ = exp(
         parameters[:β0] +
         parameters[:βsex] * sex +

@@ -403,7 +403,8 @@ TODO.
 - `verbose::Bool`: If true, print out updates during simulation. Default true.
 """
 function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool=false,
-    config::Union{AbstractDict, Nothing}=nothing)
+    config::Union{AbstractDict, Nothing}=nothing
+)
 
     log_level = Logging.Warn
     if verbose
@@ -432,7 +433,9 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     cal_years = min_cal_year:max_cal_year
     total_years = max_cal_year - min_cal_year + 1
 
-    outcome_matrix = create_outcome_matrix(until_all_die, cal_years, min_cal_year, max_cal_year, max_age)
+    outcome_matrix = create_outcome_matrix(
+        until_all_die, cal_years, min_cal_year, max_cal_year, max_age
+    )
 
     # time the performance
     timer_output = TimerOutput()

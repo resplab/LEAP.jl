@@ -39,4 +39,5 @@ end
 
 @testset "test control" begin
     test_control()
+    test_compute_control_levels()
 end
