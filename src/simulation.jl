@@ -530,7 +530,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 )
 
                 # death or emigration, assume death occurs first
-                if compute_prob_death(simulation.agent, simulation.death)
+                if agent_dies(simulation.agent, simulation.death)
                     @set! simulation.agent.alive = false
                     increment_field_in_outcome_matrix!(outcome_matrix, "death",
                         simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
