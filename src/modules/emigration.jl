@@ -1,21 +1,19 @@
 
 struct Emigration <: EmigrationModule
-    projected_rate
-    age_distribution
     table::GroupedDataFrame{DataFrame}
     function Emigration(starting_year::Integer, province::String, population_growth_type::String)
         emigration_table = load_emigration_table(starting_year, province, population_growth_type)
-        new(nothing, nothing, emigration_table)
+        new(emigration_table)
     end
-    function Emigration(projected_rate, age_distribution, table)
-        new(projected_rate, age_distribution, table)
+    function Emigration(table)
+        new(table)
     end
 end
 
 
 function load_emigration_table(
     starting_year::Integer, province::String, population_growth_type::String
-)
+)::GroupedDataFrame{DataFrame}
 
     master_emigration_table = CSV.read(
         joinpath(PROCESSED_DATA_PATH, "master_emigration_table.csv"),
