@@ -1,4 +1,22 @@
+"""
+    Emigration
 
+A struct containing information about emigration from Canada.
+
+# Fields
+- `table::GroupedDataFrame{DataFrame}`: A dataframe grouped by year, giving the probability of
+    emigration for a given age, province, sex, and growth scenario:
+        `year`: integer year the range 2001 - 2065.
+        `age`: integer age.
+        `province`: a string indicating the province abbreviation, e.g. "BC". For all of Canada,
+            set province to "CA".
+        `M`: the probability of a male emigrating.
+        `F`: the probability of a female emigrating.
+        `projection_scenario`: Population growth type, one of:
+            ["past", "LG", "HG", "M1", "M2", "M3", "M4", "M5", "M6", FA", "SA"].
+            See [Stats Canada](https://www150.statcan.gc.ca/n1/pub/91-520-x/91-520-x2022001-eng.htm).
+    See `master_emigration_table.csv`.
+"""
 struct Emigration <: EmigrationModule
     table::GroupedDataFrame{DataFrame}
     function Emigration(starting_year::Integer, province::String, population_growth_type::String)
@@ -23,7 +41,8 @@ function load_emigration_table(
         select(
             select(
                 filter(
-                    ([:year, :province, :proj_scenario] => (x, y,z) -> x > starting_year
+                    ([:year, :province, :proj_scenario] => (x, y, z) ->
+                    x > starting_year
                     && y == province
                     && z == population_growth_type),
                     master_emigration_table
@@ -56,6 +75,6 @@ function compute_prob_emigration(cal_year_index::Integer, age::Integer, sex::Boo
     if age == 0
         return false
     else
-        return rand(Bernoulli(emigration.table[cal_year_index][min(age, 100), sex+3]))
+        return rand(Bernoulli(emigration.table[cal_year_index][min(age, 100), sex + 3]))
     end
 end
