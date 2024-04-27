@@ -8,13 +8,8 @@ A struct containing information about emigration from Canada.
     emigration for a given age, province, sex, and growth scenario:
         `year`: integer year the range 2001 - 2065.
         `age`: integer age.
-        `province`: a string indicating the province abbreviation, e.g. "BC". For all of Canada,
-            set province to "CA".
         `M`: the probability of a male emigrating.
         `F`: the probability of a female emigrating.
-        `projection_scenario`: Population growth type, one of:
-            ["past", "LG", "HG", "M1", "M2", "M3", "M4", "M5", "M6", FA", "SA"].
-            See [Stats Canada](https://www150.statcan.gc.ca/n1/pub/91-520-x/91-520-x2022001-eng.htm).
     See `master_emigration_table.csv`.
 """
 struct Emigration <: EmigrationModule
@@ -29,6 +24,24 @@ struct Emigration <: EmigrationModule
 end
 
 
+"""
+    load_emigration_table(starting_year, province, population_growth_type)
+
+Load the data from the `master_emigration_table.csv`.
+
+# Arguments
+- `starting_year::Integer`: the year for the data to start at. Must be between 2001-2065.
+- `province::String`: a string indicating the province abbreviation, e.g. "BC". For all of Canada,
+    set province to "CA".
+- `population_growth_type`: Population growth type, one of:
+    ["past", "LG", "HG", "M1", "M2", "M3", "M4", "M5", "M6", FA", "SA"].
+    See [Stats Canada](https://www150.statcan.gc.ca/n1/pub/91-520-x/91-520-x2022001-eng.htm).
+
+
+# Returns
+- `GroupedDataFrame{DataFrame}`: A dataframe grouped by year, giving the probability of
+    emigration for a given age, province, sex, and growth scenario.
+"""
 function load_emigration_table(
     starting_year::Integer, province::String, population_growth_type::String
 )::GroupedDataFrame{DataFrame}
@@ -58,7 +71,7 @@ end
 
 
 """
-    compute_prob_emigration(agent, death)
+    compute_prob_emigration(cal_year_index, age, sex, emigration)
 
 Determine the probability of emigration of an agent (person) in a given year.
 
@@ -70,7 +83,8 @@ Determine the probability of emigration of an agent (person) in a given year.
 - `emigration::Emigration`: Emigration module, see [`Emigration`](@ref).
 """
 function compute_prob_emigration(cal_year_index::Integer, age::Integer, sex::Bool,
-    emigration::Emigration)
+    emigration::Emigration
+)
 
     if age == 0
         return false
