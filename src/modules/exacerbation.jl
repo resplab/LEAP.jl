@@ -7,18 +7,8 @@ struct Exacerbation <: ExacerbationModule
         parameters = string_to_symbols_dict(config["parameters"])
         parameters[:β0] = assign_random_β0(hyperparameters[:β0_μ], hyperparameters[:β0_σ])
         initial_rate = config["initial_rate"]
-        exacerbation_calibration = load_exacerbation_calibration()
-        parameters[:calibration] = groupby(
-            select(
-                filter(
-                    [:province] => (x) -> x == province,
-                    exacerbation_calibration
-                ),
-                Not([:province])
-            ),
-            [:year,:sex]
-        )
-        parameters[:min_year] = collect(keys(parameters[:calibration])[1])[1]+1
+        parameters[:calibration] = load_exacerbation_calibration(province)
+        parameters[:min_year] = collect(keys(parameters[:calibration])[1])[1] + 1
         new(hyperparameters, parameters, initial_rate)
     end
     function Exacerbation(
@@ -34,12 +24,40 @@ struct ExacerbationHist <: ExacerbationHistModule
     num_prev_year::Integer
 end
 
-function load_exacerbation_calibration()
+
+"""
+    load_exacerbation_calibration(province)
+
+Load the exacerbation calibration table.
+
+# Arguments
+- `province::String`: a string indicating the province abbreviation, e.g. "BC". For all of Canada,
+    set province to "CA".
+
+# Returns
+- `GroupedDataFrame{DataFrame}`: A dataframe grouped by year and sex, with the
+    following columns:
+    `year`: integer year.
+    `sex`: 1 = male, 0 = female.
+    `age`: integer age.
+    `calibration_multiplier`: Float64, TODO.
+"""
+function load_exacerbation_calibration(province::String)
     exacerbation_calibration  = CSV.read(
         joinpath(PROCESSED_DATA_PATH, "master_calibrated_exac.csv"),
         DataFrame
     )
-    return exacerbation_calibration
+    table = groupby(
+        select(
+            filter(
+                [:province] => (x) -> x == province,
+                exacerbation_calibration
+            ),
+            Not([:province])
+        ),
+        [:year, :sex]
+    )
+    return table
 end
 
 
