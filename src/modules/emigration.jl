@@ -16,7 +16,7 @@ function load_emigration_table(
 )::GroupedDataFrame{DataFrame}
 
     master_emigration_table = CSV.read(
-        joinpath(PROCESSED_DATA_PATH, "master_emigration_table.csv"),
+        joinpath(PROCESSED_DATA_PATH, "migration/master_emigration_table.csv"),
         DataFrame
     )
     emigration_table = groupby(
