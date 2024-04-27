@@ -1,3 +1,35 @@
+"""
+    Exacerbation
+
+A struct containing information about asthma exacerbations.
+
+# Fields
+- `hyperparameters::AbstractDict`: A dictionary containing the hyperparameters used
+    to compute `β0` from a normal distribution:
+    `β0_μ`: Float64, the mean of the normal distribution.
+    `β0_σ`: Float64, the standard deviation of the normal distribution.
+- `parameters::AbstractDict`: A dictionary containing the following keys:
+    `β0`: Float64, a constant parameter, randomly selected from a normal distribution with mean
+        `β0_μ` and standard deviation `β0_σ`. See `hyperparameters`.
+    `β0_calibration`: Float64, the parameter for the calibration term.
+    `βage`: Float64, the parameter for the age term.
+    `βsex`: Float64, the parameter for the sex term.
+    `βasthmaDx`: Float64, TODO.
+    `βprev_exac1`: Float64, TODO.
+    `βprev_exac2`: Float64, TODO.
+    `βcontrol`: Float64, TODO.
+    `βcontrol_C`: Float64, the parameter for the controlled asthma term.
+    `βcontrol_PC`: Float64, the parameter for the partially-controlled asthma term.
+    `βcontrol_UC`: Float64, the parameter for the uncontrolled asthma term.
+    `calibration::GroupedDataFrame{DataFrame}`: A dataframe grouped by year and sex, with the
+        following columns:
+        `year`: integer year.
+        `sex`: 1 = male, 0 = female.
+        `age`: integer age.
+        `calibrator_multiplier`: Float64, TODO.
+    `min_year`: Integer, the minimum year for which exacerbation data exists + 1. Currently 2001.
+- `inital_rate::Float64`: TODO.
+"""
 struct Exacerbation <: ExacerbationModule
     hyperparameters::AbstractDict
     parameters::AbstractDict
@@ -40,7 +72,7 @@ Load the exacerbation calibration table.
     `year`: integer year.
     `sex`: 1 = male, 0 = female.
     `age`: integer age.
-    `calibration_multiplier`: Float64, TODO.
+    `calibrator_multiplier`: Float64, TODO.
 """
 function load_exacerbation_calibration(province::String)
     exacerbation_calibration  = CSV.read(
