@@ -77,7 +77,7 @@ end
 
 
 """
-    compute_num_exacerbations(agent, exacerbation)
+    compute_num_exacerbations(age, sex, cal_year, control_levels, exacerbation)
 
 Return the number of asthma exacerbations in a given year.
 
@@ -88,7 +88,7 @@ Return the number of asthma exacerbations in a given year.
 function compute_num_exacerbations(age::Integer, sex::Bool, cal_year::Integer,
     control_levels::AbstractDict, exacerbation::Exacerbation)
     params = exacerbation.parameters
-    tmp_year = max(params[:min_year], cal_year)
+    year = max(params[:min_year], cal_year)
     tmp_age = min(age, 90)
     μ = (
         params[:β0] +
@@ -98,9 +98,11 @@ function compute_num_exacerbations(age::Integer, sex::Bool, cal_year::Integer,
         control_levels[:uncontrolled] * params[:βcontrol_UC] +
         control_levels[:partially_controlled] * params[:βcontrol_PC] +
         control_levels[:fully_controlled] * params[:βcontrol_C] +
-        log(params[:calibration][(tmp_year, Int(sex))][tmp_age - 2, "calibrator_multiplier"])
+        log(params[:calibration][(year, Int(sex))][tmp_age - 2, "calibrator_multiplier"])
     )
-    return exacerbation_prediction(μ)
+    λ = exp(μ)
+    poisson_distribution = Poisson(λ)
+    return rand(poisson_distribution)
 end
 
 
@@ -115,21 +117,23 @@ Return the number of asthma exacerbations in a given year.
 """
 function compute_num_exacerbations_initial(agent::Agent, exacerbation::Exacerbation)
     params = exacerbation.parameters
-    tmp_year = max(params[:min_year], agent.cal_year - 1)
-    tmp_age = min(agent.age - 1, 90)
-    if tmp_age < 3
+    year = max(params[:min_year], agent.cal_year - 1)
+    age = min(agent.age - 1, 90)
+    if age < 3
         return 0
     else
         μ = (
             params[:β0] +
-            tmp_age * params[:βage] +
+            age * params[:βage] +
             agent.sex * params[:βsex] +
             agent.control_levels[:uncontrolled] * params[:βcontrol_UC] +
             agent.control_levels[:partially_controlled] * params[:βcontrol_PC] +
             agent.control_levels[:fully_controlled] * params[:βcontrol_C] +
-            log(params[:calibration][(tmp_year, Int(agent.sex))][tmp_age - 2, "calibrator_multiplier"])
+            log(params[:calibration][(year, Int(agent.sex))][age - 2, "calibrator_multiplier"])
         )
-        return exacerbation_prediction(μ)
+        λ = exp(μ)
+        poisson_distribution = Poisson(λ)
+        return rand(poisson_distribution)
     end
 end
 
@@ -156,8 +160,4 @@ function assign_random_β0!(exacerbation::Exacerbation)
         exacerbation.hyperparameters[:β0_σ]
     )
     exacerbation.parameters[:β0] = β0
-end
-
-function exacerbation_prediction(μ::Float64; inv_link::Function=exp)
-    rand(Poisson(inv_link(μ)))
 end
