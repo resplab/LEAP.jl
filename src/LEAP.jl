@@ -34,9 +34,10 @@ export
     get_new_agents,
     agent_has_asthma,
     compute_num_exacerbations,
+    compute_hospitalization_prob,
     load_census_boundaries,
     point_in_polygon,
-    # global datasets
+    # global paths
     PROCESSED_DATA_PATH,
     CONFIG_PATH
 end # module
