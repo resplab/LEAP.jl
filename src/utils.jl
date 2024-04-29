@@ -18,11 +18,3 @@ function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
     end
     return new_dict
 end
-
-function logit(p)
-    return log.( p ./ (1 .- p) )
-end
-
-function inverse_logit(x)
-    return exp.(x) ./ (1 .+ exp.(x))
-end

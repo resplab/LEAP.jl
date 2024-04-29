@@ -102,7 +102,17 @@
       "βfam_hist": [0.12221763272424911, 0.3619942],
       "βabx_exp": [1.826, -0.2920745, 0.053]
     },
-    "parameters_prev": {
+    "max_age": 63
+  },
+  "pollution": {
+    "SSP": "SSP1_2.6"
+  },
+  "prevalence": {
+    "hyperparameters": {
+      "β0_μ": 0,
+      "β0_σ": 0.00000001
+    },
+    "parameters": {
       "β0": -2.28093577,
       "βsex": -0.10755806,
       "βage": [
@@ -126,9 +136,6 @@
       "βabx_exp": [1.826, -0.225, 0.053]
     },
     "max_age": 63
-  },
-  "pollution": {
-    "SSP": "SSP1_2.6"
   },
   "utility": {
     "parameters": {

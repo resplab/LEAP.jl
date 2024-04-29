@@ -28,6 +28,7 @@ TODO.
     immigration::ImmigrationModule
     death::DeathModule
     incidence::IncidenceModule
+    prevalence::PrevalenceModule
     reassessment::ReassessmentModule
     control::ControlModule
     exacerbation::ExacerbationModule
@@ -61,6 +62,7 @@ TODO.
             Immigration(min_cal_year, province, population_growth_type),
             Death(config["death"], province, min_cal_year),
             Incidence(config["incidence"]),
+            Prevalence(config["prevalence"]),
             Reassessment(min_cal_year, province),
             Control(config["control"]),
             Exacerbation(config["exacerbation"], province),
@@ -90,6 +92,7 @@ TODO.
         immigration::ImmigrationModule,
         death::DeathModule,
         incidence::IncidenceModule,
+        prevalence::PrevalenceModule,
         reassessment::ReassessmentModule,
         control::ControlModule,
         exacerbation::ExacerbationModule,
@@ -118,6 +121,7 @@ TODO.
             immigration,
             death,
             incidence,
+            prevalence,
             reassessment,
             control,
             exacerbation,
@@ -185,12 +189,12 @@ end
 
 function generate_initial_asthma!(simulation::Simulation)
     @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.incidence, "prevalence"
+        simulation.agent, simulation.prevalence
     )
     if simulation.agent.has_asthma
         @set! simulation.agent.asthma_status = true
         @set! simulation.agent.asthma_age = compute_asthma_age(
-            simulation.agent, simulation.incidence, simulation.agent.age
+            simulation.agent, simulation.incidence, simulation.prevalence, simulation.agent.age
         )
         @set! simulation.agent.total_hosp = compute_hospitalization_prob(
             simulation.agent, simulation.exacerbation_severity, simulation.control,
@@ -327,7 +331,7 @@ function check_if_agent_gets_new_asthma_diagnosis!(simulation::SimulationModule,
     outcome_matrix::OutcomeMatrixModule
 )
     @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.incidence, "incidence"
+        simulation.agent, simulation.incidence, simulation.prevalence
     )
     # simulate and record asthma related events if they are labeled with asthma
     if simulation.agent.has_asthma

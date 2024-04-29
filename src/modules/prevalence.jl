@@ -1,7 +1,7 @@
 """
-    Incidence
+    Prevalence
 
-A struct containing information about asthma incidence.
+A struct containing information about asthma prevalence.
 
 # Fields
 - `hyperparameters::AbstractDict`: A dictionary containing the hyperparameters used
@@ -16,15 +16,31 @@ A struct containing information about asthma incidence.
     `βage::Vector{Float64}`: an array of 5 parameters to be multiplied by functions of age,
         i.e. βage1 * f1(age) + βage2 * f2(age) + βage3 * f3(age) + βage4 * f4(age) + βage5 * f5(age)
         See `poly_age_calculator`.
-    `βyear::Float64`: the parameter for the year term,
-        i.e. βyear * year
+    `βyear::Vector{Float64}`: an array of 2 parameters to be multiplied by functions of year,
+        i.e. βyear1 * g1(year) + βyear2 * g2(year)
+        See `poly_year_calculator`.
     `βsexage::Vector{Float64}`: an array of 5 parameters to be multiplied by the sex and
         functions of age,
         i.e. βsexage1 * f1(age) * sex + βsexage2 * f2(age) * sex + βsexage3 * f3(age) * sex +
              βsexage4 * f4(age) * sex + βsexage5 * f5(age) * sex
         See `poly_age_calculator`.
-    `βsexyear::Float64`: the parameter to be multiplied by sex and year,
-        i.e. βsexyear * year * sex
+    `βsexyear::Vector{Float64}`: an array of 2 parameters to be multiplied by sex and
+        functions of year,
+        i.e. βyear1 * g1(year) * sex + βyear2 * g2(year) * sex
+    `βyearage::Vector{Float64}`: an array of 10 parameters to be multiplied by
+        functions of age and year, i.e.
+        βyearage1 * f1(age) * g1(year) + βyearage2 * f1(age) * g2(year) +
+        βyearage3 * f2(age) * g1(year) + βyearage4 * f2(age) * g2(year) +
+        βyearage5 * f3(age) * g1(year) + βyearage6 * f3(age) * g2(year) +
+        βyearage7 * f4(age) * g1(year) + βyearage8 * f4(age) * g2(year) +
+        βyearage9 * f5(age) * g1(year) + βyearage10 * f5(age) * g2(year)
+    `βyearagesex::Vector{Float64}`: an array of 10 parameters to be multiplied by sex and
+        functions of age and year, i.e.
+        βyearagesex1 * f1(age) * g1(year) * sex + βyearagesex2 * f1(age) * g2(year) * sex +
+        βyearagesex3 * f2(age) * g1(year) * sex + βyearagesex4 * f2(age) * g2(year) * sex +
+        βyearagesex5 * f3(age) * g1(year) * sex + βyearagesex6 * f3(age) * g2(year) * sex +
+        βyearagesex7 * f4(age) * g1(year) * sex + βyearagesex8 * f4(age) * g2(year) * sex +
+        βyearagesex9 * f5(age) * g1(year) * sex + βyearagesex10 * f5(age) * g2(year) * sex
     `βfam_hist::Vector{Float64}`: an array of 2 parameters to be multiplied by functions of age,
         See `log_OR_family_history`.
     `βabx_exp::Vector{Float64}`: an array of 3 parameters to be multiplied by functions of age
@@ -40,22 +56,26 @@ A struct containing information about asthma incidence.
         `correction`: Float64, TODO.
     See `master_occurrence_correction`.
 """
-struct Incidence <: IncidenceModule
+struct Prevalence <: PrevalenceModule
     hyperparameters::AbstractDict
     parameters::AbstractDict
     min_year::Integer
     max_year::Integer
     max_age::Integer
     correction_table::GroupedDataFrame{DataFrame}
-    function Incidence(config::AbstractDict)
+    function Prevalence(config::AbstractDict)
         hyperparameters = string_to_symbols_dict(config["hyperparameters"])
         parameters = string_to_symbols_dict(config["parameters"])
         parameters[:βage] = Array{Float64, 1}(parameters[:βage])
+        parameters[:βyear] = Array{Float64, 1}(parameters[:βyear])
         parameters[:βsexage] = Array{Float64, 1}(parameters[:βsexage])
+        parameters[:βsexyear] = Array{Float64, 1}(parameters[:βsexyear])
+        parameters[:βyearage] = Array{Float64, 1}(parameters[:βyearage])
+        parameters[:βsexyearage] = Array{Float64, 1}(parameters[:βsexyearage])
         parameters[:βfam_hist] = Array{Float64, 1}(parameters[:βfam_hist])
         parameters[:βabx_exp] = Array{Float64, 1}(parameters[:βabx_exp])
         max_age = config["max_age"]
-        correction_table = load_incidence_correction_table()
+        correction_table = load_prevalence_correction_table()
         min_year = collect(keys(correction_table)[1])[1]+1
         max_year = collect(keys(correction_table)[length(correction_table)])[1]
         new(
@@ -63,144 +83,57 @@ struct Incidence <: IncidenceModule
             correction_table
         )
     end
-    function Incidence(hyperparameters::AbstractDict, parameters::AbstractDict,
+    function Prevalence(hyperparameters::AbstractDict, parameters::AbstractDict,
         min_year::Integer, max_year::Integer, max_age::Integer,
         correction_table::GroupedDataFrame{DataFrame}
     )
         new(
-            hyperparameters, parameters, min_year, max_year, max_age,
-            incidence_correction_table
+            hyperparameters, parameters, min_year, max_year, max_age, correction_table
         )
     end
 end
 
 
-function load_incidence_correction_table()
+function load_prevalence_correction_table()
     master_occurrence_correction = CSV.read(
         joinpath(PROCESSED_DATA_PATH, "master_asthma_occurrence_correction.csv"),
         DataFrame
     )
-    incidence_correction_table = groupby(
+    prevalence_correction_table = groupby(
         select(
-            filter([:type] => (x) -> x == "inc", master_occurrence_correction),
+            filter([:type] => (x) -> x == "prev", master_occurrence_correction),
             Not([:type])
         ),
         [:year, :sex, :age]
     )
-    return incidence_correction_table
+    return prevalence_correction_table
 end
 
 
 """
-    agent_has_asthma(agent, incidence, inc_or_prev)
+    agent_has_asthma(agent, prevalence)
 
 Determine whether the agent obtains a new asthma diagnosis based on age and sex.
 
 # Arguments
 
 - `agent::Agent`: Agent module, see [`Agent`](@ref).
-- `incidence::Incidence`: Incidence module, see [`Incidence`](@ref).
-- `age::Union{Integer, Nothing}`: integer age of the agent.
-- `year::Union{Integer, Nothing}`: integer year.
+- `prevalence::Prevalence`: Prevalence module, see [`Prevalence`](@ref).
 """
-function agent_has_asthma(
-    agent::Agent, incidence::Incidence, prevalence::PrevalenceModule,
-    age::Union{Integer, Nothing}=nothing,
-    year::Union{Integer, Nothing}=nothing
-)
+function agent_has_asthma(agent::Agent, prevalence::Prevalence)
 
-    if isnothing(age)
-        age = min(agent.age, incidence.max_age)
-    end
-    if isnothing(year)
-        year = agent.cal_year
-    end
+    age = min(agent.age - 1, prevalence.max_age)
+    year = agent.cal_year - 1
 
     # assume no asthma if age < 3
     if age < 3
         has_asthma = false
-    elseif age == 3
+    else
         has_asthma = rand(Bernoulli(prevalence_equation(
             agent.sex, age, year, agent.has_family_hist, agent.num_antibiotic_use, prevalence
         )))
-    else
-        has_asthma = rand(Bernoulli(incidence_equation(
-            agent.sex, age, year, agent.has_family_hist, agent.num_antibiotic_use, incidence
-        )))
     end
     return has_asthma
-end
-
-
-
-# initialization means prevalence ! ! !
-
-
-"""
-    compute_asthma_age(agent, incidence, current_age)
-
-Compute the age at which the person (agent) is first diagnosed with asthma.
-
-# Arguments
-- `agent::Agent`: A person in the model, see  [`Agent`](@ref).
-- `incidence::Incidence`: Asthma incidence, see [`Incidence`](@ref).
-"""
-function compute_asthma_age(agent::Agent, incidence::Incidence, prevalence::PrevalenceModule,
-    current_age::Integer, max_asthma_age::Integer=110
-)
-    # obtain the previous incidence
-    min_year = incidence.min_year
-    max_year = incidence.max_year
-    if current_age == 3
-        return 3
-    else
-        find_asthma_age = true
-        asthma_age = 3
-        tmp_sex = Int(agent.sex)
-        tmp_abx_num = min(agent.num_antibiotic_use, 3)
-        tmp_year = min(max(agent.cal_year - current_age + asthma_age, min_year), max_year)
-        while find_asthma_age && asthma_age < max_asthma_age
-            has_asthma = agent_has_asthma(agent, incidence, prevalence, asthma_age, tmp_year)
-            if has_asthma
-                return asthma_age
-            end
-            asthma_age += 1
-            asthma_age = min(asthma_age, incidence.max_age)
-            tmp_year += 1
-            tmp_year = min(tmp_year, max_year)
-        end
-        return asthma_age
-    end
-end
-
-
-function crude_incidence(sex, age, cal_year::Integer, parameters::AbstractDict)
-    poly_age = poly_age_calculator(age)
-    return exp(
-        parameters[:β0] +
-        parameters[:βsex] * sex +
-        parameters[:βyear] * cal_year +
-        parameters[:βsexyear] * sex * cal_year +
-        sum(parameters[:βage] .* poly_age) +
-        sum(parameters[:βsexage] .* sex .* poly_age)
-    )
-end
-
-
-function incidence_equation(
-    sex, age::Integer, cal_year::Integer, has_family_hist::Bool, dose::Integer, incidence::Incidence
-)
-    parameters = incidence.parameters
-    correction_year = min(cal_year, incidence.max_year + 1)
-    cal_year = min(cal_year, incidence.max_year)
-    p0 = crude_incidence(sex, age, cal_year, parameters)
-    p = logistic(
-        logit(p0) +
-        has_family_hist * log_OR_family_history(age, parameters[:βfam_hist]) +
-        log_OR_abx_exposure(age, dose, parameters[:βabx_exp]) +
-        incidence.correction_table[(correction_year, sex, min(age, 63))].correction[1]
-    )
-    return p
 end
 
 
@@ -215,6 +148,41 @@ function log_OR_abx_exposure(age::Integer, dose::Integer, βabx_exp::Array{Float
     else
         return βabx_exp[1] + βabx_exp[2] * min(age, 7) + βabx_exp[3] * min(dose, 3)
     end
+end
+
+
+function prevalence_equation(
+    sex, age::Integer, cal_year::Integer, has_family_hist::Bool, dose::Integer,
+    prevalence::Prevalence
+)
+    parameters = prevalence.parameters
+    correction_year = min(cal_year, prevalence.max_year + 1)
+    cal_year = min(cal_year, prevalence.max_year)
+    p0 = crude_prevalence(sex, age, cal_year, parameters)
+    p = logistic(
+        logit(p0) +
+        has_family_hist * log_OR_family_history(age, parameters[:βfam_hist]) +
+        log_OR_abx_exposure(age, dose, parameters[:βabx_exp]) +
+        prevalence.correction_table[(correction_year, sex, min(age, 63))].correction[1]
+    )
+    return p
+end
+
+
+function crude_prevalence(sex, age::Integer, cal_year::Integer, parameters::AbstractDict)
+    poly_year = poly_year_calculator(cal_year)
+    poly_age = poly_age_calculator(age)
+    poly_yearage = vec(poly_year .* poly_age')
+    return exp(
+        parameters[:β0] +
+        parameters[:βsex] * sex +
+        sum(parameters[:βyear] .* poly_year) +
+        sum(parameters[:βage] .* poly_age) +
+        sum(parameters[:βsexyear] .* sex .* poly_year) +
+        sum(parameters[:βsexage] .* sex .* poly_age) +
+        sum(parameters[:βyearage] .* poly_yearage) +
+        sum(parameters[:βsexyearage] .* sex .* poly_yearage)
+    )
 end
 
 
@@ -235,6 +203,19 @@ function poly_age_calculator(
             nd[i+1] / sqrt(nd[i]) * fs[i-1]
         ) / sqrt(nd[i+2])
     end
+    popfirst!(fs)
+    fs
+end
+
+function poly_year_calculator(
+    year::Integer,
+    alpha::Array{Float64, 1}=[2009.5, 2009.5],
+    nd::Array{Float64, 1}=[1.0, 520.0, 17290.0, 456456.0]
+)
+    fs = zeros(3)
+    fs[1] =  1 / sqrt(nd[2])
+    fs[2] = (year-alpha[1]) / sqrt(nd[3])
+    fs[3] = ((year-alpha[2]) * sqrt(nd[3]) * fs[2] - nd[3] / sqrt(nd[2]) * fs[1]) / sqrt(nd[4])
     popfirst!(fs)
     fs
 end

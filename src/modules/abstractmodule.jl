@@ -19,6 +19,7 @@ abstract type FamilyHistoryModule <: RiskFactorsModule end
 
 # asthma occurrence
 abstract type IncidenceModule   <: AsthmaOccurrenceModule  end
+abstract type PrevalenceModule   <: AsthmaOccurrenceModule  end
 abstract type ReassessmentModule <: AsthmaOccurrenceModule end
 
 # asthma outcomes
