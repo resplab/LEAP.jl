@@ -115,11 +115,16 @@ end
 
 
 """
-    compute_hospitalization_prob(agent, incidence, current_age)
+    compute_hospitalization_prob(agent, exac_severity, control, exacerbation)
 
 Determine whether a person (agent) has been hospitalized due to an asthma exacerbation.
 
 https://stats.stackexchange.com/questions/174952/marginal-probability-function-of-the-dirichlet-multinomial-distribution
+
+Note on limits: the Γ(z) function approaches infinity as z -> 0+ and z -> inf. Empirically, when
+the `total_rate` variable is around 150, the Γ(z) function returns Inf. Likewise, if the
+probability of a severe exacerbation is exactly 1.0, the Γ(z) function will return Inf. To remedy
+this, I have added max values for these variables.
 
 # Arguments
 - `agent::AgentModule`:: A person in the simulation, see [`Agent`](@ref).
@@ -154,10 +159,12 @@ function compute_hospitalization_prob(agent::AgentModule, exac_severity::Exacerb
             cal_year += 1
         end
         # toss a coin: avg chance of having at least one hosp
+        prob_severe_exacerbation = min(exac_severity.parameters[:p][4], 0.9999999999999)
+        total_rate = min(total_rate, 150)
         zero_prob = (
             1 / SpecialFunctions.gamma(total_rate + 1) *
-            (SpecialFunctions.gamma(total_rate + 1 - exac_severity.parameters[:p][4]) /
-             SpecialFunctions.gamma(1 - exac_severity.parameters[:p][4]))
+            (SpecialFunctions.gamma(total_rate + 1 - prob_severe_exacerbation) /
+             SpecialFunctions.gamma(1 - prob_severe_exacerbation))
         )
         p = 1 - min(max(zero_prob, 0), 1)
         return Int(rand(Bernoulli(p)))
