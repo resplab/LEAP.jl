@@ -18,6 +18,7 @@ include("test_incidence.jl")
 include("test_outcomematrix.jl")
 include("test_pollution.jl")
 include("test_prevalence.jl")
+include("test_reassessment.jl")
 include("test_simulation.jl")
 
 end
