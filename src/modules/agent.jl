@@ -98,12 +98,3 @@ A person in the model.
         )
     end
 end
-
-
-function process_initial(agent::Agent, asthma_age_data)
-    if agent.age==0
-        return 0
-    else
-        return StatsBase.sample(Weights(asthma_age_data[1:agent.age+1,Int(agent.sex)+1]))-1
-    end
-end
