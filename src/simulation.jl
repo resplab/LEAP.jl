@@ -303,7 +303,8 @@ function update_asthma_effects!(simulation::SimulationModule, outcome_matrix::Ou
             "exacerbation",
             simulation.agent.age,
             simulation.agent.sex,
-            simulation.agent.cal_year_index
+            simulation.agent.cal_year_index,
+            simulation.agent.exac_hist.num_current_year
         )
         increment_field_in_outcome_matrix!(outcome_matrix, "exacerbation_hospital",
             simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
