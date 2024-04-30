@@ -21,5 +21,6 @@ include("test_prevalence.jl")
 include("test_reassessment.jl")
 include("test_severity.jl")
 include("test_simulation.jl")
+include("test_utility.jl")
 
 end
