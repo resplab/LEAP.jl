@@ -32,7 +32,7 @@ A person in the model.
     cal_year::Integer
     cal_year_index::Integer
     alive::Bool
-    num_antibiotic_use::Integer
+    num_antibiotic_use::Union{Nothing, Integer}
     has_asthma::Bool
     asthma_age::Union{Nothing, Integer}
     severity::Union{Nothing, Integer}
@@ -40,18 +40,20 @@ A person in the model.
     exac_hist::Union{Nothing, ExacerbationHistModule}
     exac_sev_hist::Union{Nothing, ExacerbationSeverityHistModule}
     total_hosp::Integer
-    has_family_hist::Bool
+    has_family_hist::Union{Nothing, Bool}
     asthma_status::Bool
     census_division::Union{Nothing, CensusDivisionModule}
     pollution::Union{Nothing, PollutionModule}
     function Agent(; sex::Bool, age::Integer, cal_year::Integer,
-        cal_year_index::Integer, alive::Bool=true, has_asthma::Bool=false,
+        cal_year_index::Integer, province::String="CA", month::Integer=1, alive::Bool=true,
+        has_asthma::Bool=false,
         asthma_age::Union{Integer, Nothing}=nothing, severity=nothing, control_levels=nothing,
         exac_hist::ExacerbationHistModule=ExacerbationHist(0, 0),
         exac_sev_hist::ExacerbationSeverityHistModule=ExacerbationSeverityHist(zeros(4), zeros(4)),
-        total_hosp::Integer=0, family_hist::FamilyHistory=nothing, asthma_status::Bool=false,
-        antibiotic_exposure::AntibioticExposureModule=nothing,
-        province::String, month::Integer, SSP::String="SSP1_2.6"
+        total_hosp::Integer=0, family_hist::Union{FamilyHistoryModule, Nothing}=nothing,
+        asthma_status::Bool=false,
+        antibiotic_exposure::Union{AntibioticExposureModule, Nothing}=nothing,
+        SSP::String="SSP1_2.6"
     )
 
         census_division = CensusDivision(province, cal_year)
@@ -64,6 +66,9 @@ A person in the model.
                 birth_year=cal_year - age
             )
             has_family_hist = has_family_history_of_asthma(family_hist)
+        else
+            num_antibiotic_use = nothing
+            has_family_hist = nothing
         end
 
         new(
