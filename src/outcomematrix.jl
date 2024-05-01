@@ -106,8 +106,8 @@ end
 
 
 
-function create_outcome_matrix(until_all_die::Bool, cal_years::UnitRange{Int}, min_cal_year::Integer,
-    max_cal_year::Integer, max_age::Integer)
+function create_outcome_matrix(; until_all_die::Bool, cal_years::UnitRange{Int},
+    min_cal_year::Integer, max_cal_year::Integer, max_age::Integer)
 
     outcome_matrix = OutcomeMatrix(
         control=nothing, cost=nothing, util=nothing, exacerbation_by_severity=nothing,

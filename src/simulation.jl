@@ -191,6 +191,7 @@ function generate_initial_asthma!(simulation::Simulation)
     @set! simulation.agent.has_asthma = agent_has_asthma(
         simulation.agent, simulation.prevalence
     )
+
     if simulation.agent.has_asthma
         @set! simulation.agent.asthma_status = true
         @set! simulation.agent.asthma_age = compute_asthma_age(
@@ -441,7 +442,11 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     total_years = max_cal_year - min_cal_year + 1
 
     outcome_matrix = create_outcome_matrix(
-        until_all_die, cal_years, min_cal_year, max_cal_year, max_age
+        until_all_die=until_all_die,
+        cal_years=cal_years,
+        min_cal_year=min_cal_year,
+        max_cal_year=max_cal_year,
+        max_age=max_age
     )
 
     # time the performance
