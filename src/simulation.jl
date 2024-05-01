@@ -323,44 +323,46 @@ end
     check_if_agent_gets_new_asthma_diagnosis!(simulation, outcome_matrix)
 
 If the agent does not have asthma, check to see if they get a new diagnosis this year.
+Mutates both the `simulation` and `outcome_matrix` arguments.
 
 # Arguments
 - `simulation::SimulationModule`: Simulation struct, see [`Simulation`](@ref).
 - `outcome_matrix::OutcomeMatrixModule`: OutcomeMatrix struct, see [`OutcomeMatrix`](@ref).
 """
-function check_if_agent_gets_new_asthma_diagnosis!(simulation::SimulationModule,
-    outcome_matrix::OutcomeMatrixModule
+function check_if_agent_gets_new_asthma_diagnosis!(
+    simulation::SimulationModule, outcome_matrix::OutcomeMatrixModule
 )
-    @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.incidence, simulation.prevalence
+    agent = deepcopy(simulation.agent)
+    @set! agent.has_asthma = agent_has_asthma(
+        agent, simulation.incidence, simulation.prevalence
     )
     # simulate and record asthma related events if they are labeled with asthma
-    if simulation.agent.has_asthma
+    if agent.has_asthma
         # if they did not have asthma dx in the past, then record it
-        @set! simulation.agent.asthma_age = copy(simulation.agent.age)
+        @set! agent.asthma_age = copy(agent.age)
         increment_field_in_outcome_matrix!(outcome_matrix, "asthma_incidence",
-            simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
+            agent.age, agent.sex, agent.cal_year_index
         )
         update_asthma_effects!(simulation, outcome_matrix)
+
+        # keep track of patients who got asthma for the first time
+        if !agent.asthma_status
+            @set! agent.asthma_status = true
+            increment_field_in_outcome_matrix!(outcome_matrix, "asthma_status",
+                agent.age, agent.sex,
+                agent.cal_year_index
+            )
+        end
     end
 
     update_asthma_in_contingency_table!(outcome_matrix,
-        simulation.agent.age, simulation.agent.sex,
-        simulation.agent.cal_year, simulation.agent.has_family_hist,
-        simulation.agent.num_antibiotic_use,
-        simulation.agent.has_asthma,
+        agent.age, simulation.agent.sex,
+        agent.cal_year, agent.has_family_hist,
+        agent.num_antibiotic_use,
+        agent.has_asthma,
         "incidence"
     )
-
-    # keep track of patients who got asthma for the first time
-    if simulation.agent.has_asthma && !simulation.agent.asthma_status
-        @set! simulation.agent.asthma_status = true
-        @set! simulation.agent.asthma_age = simulation.agent.age
-        increment_field_in_outcome_matrix!(outcome_matrix, "asthma_status",
-            simulation.agent.age, simulation.agent.sex,
-            simulation.agent.cal_year_index
-        )
-    end
+    setproperty!(simulation, Symbol("agent"), agent)
 end
 
 
