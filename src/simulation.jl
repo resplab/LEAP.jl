@@ -278,45 +278,54 @@ end
 
 function update_asthma_effects!(simulation::SimulationModule, outcome_matrix::OutcomeMatrixModule)
 
-    @set! simulation.agent.control_levels = compute_control_levels(
-        simulation.control, simulation.agent.sex, simulation.agent.age
+    agent = deepcopy(simulation.agent)
+    @set! agent.control_levels = compute_control_levels(
+        simulation.control, agent.sex, agent.age
     )
-    add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
-        simulation.agent.sex, simulation.agent.cal_year_index,
-        simulation.agent.control_levels
+    add_control_to_outcome_matrix!(
+        outcome_matrix,
+        agent.age,
+        agent.sex,
+        agent.cal_year_index,
+        agent.control_levels
     )
 
-    @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations(
-        simulation.agent, simulation.exacerbation
+    @set! agent.exac_hist.num_current_year = compute_num_exacerbations(
+        agent, simulation.exacerbation
     )
 
-    if simulation.agent.exac_hist.num_current_year != 0
-        @set! simulation.agent.exac_sev_hist.current_year = (
+    if agent.exac_hist.num_current_year != 0
+        @set! agent.exac_sev_hist.current_year = (
         compute_distribution_exac_severity(
             simulation.exacerbation_severity,
-            simulation.agent.exac_hist.num_current_year,
-            (simulation.agent.total_hosp>0),
-            simulation.agent.age
+            agent.exac_hist.num_current_year,
+            (agent.total_hosp > 0),
+            agent.age
         ))
-        @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
+        @set! agent.total_hosp += agent.exac_sev_hist.current_year[4]
         increment_field_in_outcome_matrix!(
             outcome_matrix,
             "exacerbation",
-            simulation.agent.age,
-            simulation.agent.sex,
-            simulation.agent.cal_year_index,
-            simulation.agent.exac_hist.num_current_year
+            agent.age,
+            agent.sex,
+            agent.cal_year_index,
+            agent.exac_hist.num_current_year
         )
-        increment_field_in_outcome_matrix!(outcome_matrix, "exacerbation_hospital",
-            simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-            simulation.agent.exac_sev_hist.current_year[4]
+        increment_field_in_outcome_matrix!(
+            outcome_matrix,
+            "exacerbation_hospital",
+            agent.age, agent.sex, agent.cal_year_index,
+            agent.exac_sev_hist.current_year[4]
         )
-        add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix,
-            simulation.agent.age,
-            simulation.agent.sex, simulation.agent.cal_year_index,
-            simulation.agent.exac_sev_hist.current_year
+        add_exacerbation_by_severity_to_outcome_matrix!(
+            outcome_matrix,
+            agent.age,
+            agent.sex,
+            agent.cal_year_index,
+            agent.exac_sev_hist.current_year
         )
     end
+    setproperty!(simulation, Symbol("agent"), agent)
 end
 
 
