@@ -188,33 +188,34 @@ end
 
 
 function generate_initial_asthma!(simulation::Simulation)
-    @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.prevalence
-    )
 
-    if simulation.agent.has_asthma
-        @set! simulation.agent.asthma_status = true
-        @set! simulation.agent.asthma_age = compute_asthma_age(
-            simulation.agent, simulation.incidence, simulation.prevalence, simulation.agent.age
+    agent = deepcopy(simulation.agent)
+    @set! agent.has_asthma = agent_has_asthma(agent, simulation.prevalence)
+
+    if agent.has_asthma
+        @set! agent.asthma_status = true
+        @set! agent.asthma_age = compute_asthma_age(
+            agent, simulation.incidence, simulation.prevalence, agent.age
         )
-        @set! simulation.agent.total_hosp = compute_hospitalization_prob(
-            simulation.agent, simulation.exacerbation_severity, simulation.control,
+        @set! agent.total_hosp = compute_hospitalization_prob(
+            agent, simulation.exacerbation_severity, simulation.control,
             simulation.exacerbation
         )
-        @set! simulation.agent.control_levels = compute_control_levels(
-            simulation.control, simulation.agent.sex, simulation.agent.age, true
+        @set! agent.control_levels = compute_control_levels(
+            simulation.control, agent.sex, agent.age, true
         )
-        @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations_initial(
-            simulation.agent, simulation.exacerbation
+        @set! agent.exac_hist.num_current_year = compute_num_exacerbations_initial(
+            agent, simulation.exacerbation
         )
-        # the number of exacerbation by severity
-        @set! simulation.agent.exac_sev_hist.current_year = compute_distribution_exac_severity(
-            simulation.exacerbation_severity, simulation.agent.exac_hist.num_current_year,
-            (simulation.agent.total_hosp>0), simulation.agent.age
+        # the number of exacerbations by severity
+        @set! agent.exac_sev_hist.current_year = compute_distribution_exac_severity(
+            simulation.exacerbation_severity, agent.exac_hist.num_current_year,
+            (agent.total_hosp>0), agent.age
         )
-        # update total hosp
-        @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
+        # update total hospitalizations
+        @set! agent.total_hosp += agent.exac_sev_hist.current_year[4]
     end
+    setproperty!(simulation, Symbol("agent"), agent)
 end
 
 
