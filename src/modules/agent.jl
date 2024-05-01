@@ -26,7 +26,7 @@ A person in the model.
 - `asthma_status::Bool`: TODO.
 - `census_division::CensusDivisionModule`: the Canadian census division where the agent resides.
 """
-@kwdef struct Agent  <: AgentModule
+@kwdef mutable struct Agent  <: AgentModule
     sex::Bool
     age::Integer
     cal_year::Integer
