@@ -236,25 +236,6 @@ function test_check_if_agent_gets_new_asthma_diagnosis!(config)
 end
 
 
-"""
-    test_check_if_agent_gets_new_asthma_diagnosis_false!(config)
-
-Setting the incidence parameter `βfam_hist` to [-100, 0] and the family history parameter `p` to 1.0
-ensures that the probability of an agent being diagnosed with asthma is 0.
-
-Setting the `time_horizon` to 1 means that the agents are generated from the initial population
-table, and that no immigration happens.
-
-Setting the antibiotic exposure parameters below ensures that the antibiotic use is 0.
-
-Setting the `num_births_initial` to 10 and starting in 2024 with growth type "M3", each of the
-age groups has 10 agents, for a total of 10 x 5 = 50 agents.
-
-"""
-function check_if_agent_gets_new_asthma_diagnosis_false!(config)
-
-end
-
 function test_get_new_agents(config)
     config["simulation"] = Dict(
         "min_cal_year" => 2024,
@@ -310,6 +291,6 @@ end
 @testset "test simulation" begin
     config = JSON.parsefile(CONFIG_PATH)
     # test_get_new_agents(deepcopy(config))
-    test_check_if_agent_gets_new_asthma_diagnosis!(deepcopy(config))
-    # test_run_simulation_one_year(deepcopy(config))
+    # test_check_if_agent_gets_new_asthma_diagnosis!(deepcopy(config))
+    test_run_simulation_one_year(deepcopy(config))
 end
