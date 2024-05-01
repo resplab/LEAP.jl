@@ -21,33 +21,35 @@ A struct containing information about asthma exacerbations.
     `βcontrol_C`: Float64, the parameter for the controlled asthma term.
     `βcontrol_PC`: Float64, the parameter for the partially-controlled asthma term.
     `βcontrol_UC`: Float64, the parameter for the uncontrolled asthma term.
-    `calibration::GroupedDataFrame{DataFrame}`: A dataframe grouped by year and sex, with the
-        following columns:
+    `min_year`: Integer, the minimum year for which exacerbation data exists + 1. Currently 2001.
+- `calibration_table::GroupedDataFrame{DataFrame}`: A dataframe grouped by year and sex, with the
+    following columns:
         `year`: integer year.
         `sex`: 1 = male, 0 = female.
         `age`: integer age.
         `calibrator_multiplier`: Float64, TODO.
-    `min_year`: Integer, the minimum year for which exacerbation data exists + 1. Currently 2001.
+    See `master_calibrated_exac.csv`.
 - `inital_rate::Float64`: TODO.
 """
 struct Exacerbation <: ExacerbationModule
     hyperparameters::AbstractDict
     parameters::AbstractDict
+    calibration_table::GroupedDataFrame{DataFrame}
     initial_rate::Float64
     function Exacerbation(config::AbstractDict, province::String)
         hyperparameters = string_to_symbols_dict(config["hyperparameters"])
         parameters = string_to_symbols_dict(config["parameters"])
         parameters[:β0] = assign_random_β0(hyperparameters[:β0_μ], hyperparameters[:β0_σ])
         initial_rate = config["initial_rate"]
-        parameters[:calibration] = load_exacerbation_calibration(province)
-        parameters[:min_year] = collect(keys(parameters[:calibration])[1])[1] + 1
-        new(hyperparameters, parameters, initial_rate)
+        calibration_table = load_exacerbation_calibration(province)
+        parameters[:min_year] = collect(keys(calibration_table)[1])[1] + 1
+        new(hyperparameters, parameters, calibration_table, initial_rate)
     end
     function Exacerbation(
         hyperparameters::AbstractDict, parameters::AbstractDict,
-        initial_rate::Float64
+        calibration_table::GroupedDataFrame{DataFrame}, initial_rate::Float64
     )
-        new(hyperparameters, parameters, initial_rate)
+        new(hyperparameters, parameters, calibration_table, initial_rate)
     end
 end
 
@@ -130,7 +132,7 @@ function compute_num_exacerbations(age::Integer, sex::Bool, cal_year::Integer,
         control_levels[:uncontrolled] * params[:βcontrol_UC] +
         control_levels[:partially_controlled] * params[:βcontrol_PC] +
         control_levels[:fully_controlled] * params[:βcontrol_C] +
-        log(params[:calibration][(year, Int(sex))][tmp_age - 2, "calibrator_multiplier"])
+        log(exacerbation.calibration_table[(year, Int(sex))][tmp_age - 2, "calibrator_multiplier"])
     )
     λ = exp(μ)
     poisson_distribution = Poisson(λ)
@@ -161,7 +163,7 @@ function compute_num_exacerbations_initial(agent::Agent, exacerbation::Exacerbat
             agent.control_levels[:uncontrolled] * params[:βcontrol_UC] +
             agent.control_levels[:partially_controlled] * params[:βcontrol_PC] +
             agent.control_levels[:fully_controlled] * params[:βcontrol_C] +
-            log(params[:calibration][(year, Int(agent.sex))][age - 2, "calibrator_multiplier"])
+            log(exacerbation.calibration_table[(year, Int(agent.sex))][age - 2, "calibrator_multiplier"])
         )
         λ = exp(μ)
         poisson_distribution = Poisson(λ)
