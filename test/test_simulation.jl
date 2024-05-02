@@ -43,6 +43,8 @@ Setting the antibiotic exposure parameters below ensures that the antibiotic use
 Setting the `num_births_initial` to 10 and starting in 2024 with growth type "M3", each of the
 age groups has 10 agents, for a total of 10 x 5 = 50 agents.
 
+Setting the `prevalence` parameters below ensures that the prevalence is 0.
+
 """
 function test_run_simulation_one_year(config)
     @testset "test run_simulation one year" begin
@@ -66,6 +68,18 @@ function test_run_simulation_one_year(config)
         )
         config["exacerbation"]["hyperparameters"]["β0_μ"] = 5.0
         config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
+        config["prevalence"]["parameters"] = Dict(
+            "β0" => -20,
+            "βsex" => -20,
+            "βage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βyear" => [0.0, 0.0],
+            "βsexage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyear" => [0.0, 0.0],
+            "βyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βfam_hist" => [-100, 0],
+            "βabx_exp" => [0.0, 0.0, 0.0]
+        )
         config["family_history"]["parameters"]["p"] = 1.0
         config["death"]["parameters"] = Dict(
             :β0 => -1,
