@@ -351,7 +351,9 @@ function check_if_agent_gets_new_asthma_diagnosis!(
         increment_field_in_outcome_matrix!(outcome_matrix, "asthma_incidence",
             agent.age, agent.sex, agent.cal_year_index
         )
+        setproperty!(simulation, Symbol("agent"), agent)
         update_asthma_effects!(simulation, outcome_matrix)
+        agent = deepcopy(simulation.agent)
 
         # keep track of patients who got asthma for the first time
         if !agent.asthma_status
