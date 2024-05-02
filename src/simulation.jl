@@ -386,21 +386,23 @@ Reassess if the agent has asthma.
 function reassess_asthma_diagnosis!(simulation::SimulationModule,
     outcome_matrix::OutcomeMatrixModule
 )
-
-    # reassessment
-    @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.reassessment
+    agent = deepcopy(simulation.agent)
+    @set! agent.has_asthma = agent_has_asthma(
+        agent, simulation.reassessment
     )
     # if still labeled with asthma
-    if simulation.agent.has_asthma
+    if agent.has_asthma
         # update exacerbation
-        @set! simulation.agent.exac_hist.num_prev_year = copy(
-            simulation.agent.exac_hist.num_current_year
+        @set! agent.exac_hist.num_prev_year = copy(
+            agent.exac_hist.num_current_year
         )
-        @set! simulation.agent.exac_sev_hist.prev_year = copy(
-            simulation.agent.exac_sev_hist.current_year
+        @set! agent.exac_sev_hist.prev_year = copy(
+            agent.exac_sev_hist.current_year
         )
+        setproperty!(simulation, Symbol("agent"), agent)
         update_asthma_effects!(simulation, outcome_matrix)
+    else
+        setproperty!(simulation, Symbol("agent"), agent)
     end
 end
 
