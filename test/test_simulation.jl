@@ -104,6 +104,153 @@ end
 
 
 """
+    test_generate_initial_asthma!(config)
+
+Setting the `time_horizon` to 1 means that the agents are generated from the initial population
+table, and that no immigration happens.
+
+Setting the antibiotic exposure parameters below ensures that the antibiotic use is 0.
+
+Setting the `num_births_initial` to 10 and starting in 2024 with growth type "M3", each of the
+age groups has 10 agents, for a total of 10 x 5 = 50 agents.
+
+Setting the incidence parameter `βfam_hist` to [100, 0] and the family history parameter `p` to 1.0
+ensures that the probability of an agent being diagnosed with asthma is 1. The maximum age is set
+to 4, and the minimum age required for an asthma diagnosis is 3. So all agents aged 4 should
+receive an asthma diagnosis.
+
+Setting the control parameter `θ` to [-1e5, -1e5] ensures that the `control_levels` are:
+    FC: 0.0
+    PC: 0.0
+    UC: 1.0
+
+Setting the exacerbation parameter `β0_μ` to 5.0 ensures that the number of exacerbations will be
+large.
+
+"""
+function test_generate_initial_asthma!(config)
+    @testset "test generate_initial_asthma! false" begin
+        min_cal_year = 2024
+        time_horizon = 1
+        max_cal_year = min_cal_year + time_horizon - 1
+        max_age = 4
+
+        config["simulation"] = Dict(
+            "min_cal_year" => min_cal_year,
+            "time_horizon" => time_horizon,
+            "province" => "CA",
+            "population_growth_type" => "M3",
+            "num_births_initial" => 10,
+            "max_age" => max_age
+        )
+        config["antibiotic_exposure"]["parameters"] = Dict(
+            :β0 => -100000,
+            :βcal_year => -0.01,
+            :βsex => -1,
+            :θ => 500,
+            :fixyear => nothing,
+            :βfloor => 0.0,
+            :β2005 => 1,
+            :β2005_cal_year => 1
+        )
+        config["prevalence"]["parameters"] = Dict(
+            "β0" => -20,
+            "βsex" => -20,
+            "βage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βyear" => [0.0, 0.0],
+            "βsexage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyear" => [0.0, 0.0],
+            "βyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βfam_hist" => [-100, 0],
+            "βabx_exp" => [0.0, 0.0, 0.0]
+        )
+        config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
+        config["family_history"]["parameters"]["p"] = 1.0
+        config["exacerbation"]["hyperparameters"]["β0_μ"] = 5.0
+        simulation = LEAP.Simulation(config)
+        @set! simulation.agent = LEAP.Agent(
+            sex=true,
+            age=4,
+            cal_year=min_cal_year,
+            cal_year_index=1,
+            family_hist=simulation.family_history,
+            antibiotic_exposure=simulation.antibiotic_exposure,
+            province=simulation.province,
+            SSP=simulation.SSP
+        )
+        LEAP.generate_initial_asthma!(simulation)
+        @test simulation.agent.has_asthma == false
+        @test simulation.agent.asthma_age == nothing
+        @test simulation.agent.asthma_status == false
+        @test simulation.agent.control_levels == nothing
+    end
+    @testset "test generate_initial_asthma! true" begin
+        min_cal_year = 2024
+        time_horizon = 1
+        max_cal_year = min_cal_year + time_horizon - 1
+        max_age = 4
+
+        config["simulation"] = Dict(
+            "min_cal_year" => min_cal_year,
+            "time_horizon" => time_horizon,
+            "province" => "CA",
+            "population_growth_type" => "M3",
+            "num_births_initial" => 10,
+            "max_age" => max_age
+        )
+        config["antibiotic_exposure"]["parameters"] = Dict(
+            :β0 => -100000,
+            :βcal_year => -0.01,
+            :βsex => -1,
+            :θ => 500,
+            :fixyear => nothing,
+            :βfloor => 0.0,
+            :β2005 => 1,
+            :β2005_cal_year => 1
+        )
+        config["prevalence"]["parameters"] = Dict(
+            "β0" => -0.01,
+            "βsex" => -0.01,
+            "βage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βyear" => [0.0, 0.0],
+            "βsexage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyear" => [0.0, 0.0],
+            "βyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βfam_hist" => [100, 0],
+            "βabx_exp" => [0.0, 0.0, 0.0]
+        )
+        config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
+        config["family_history"]["parameters"]["p"] = 1.0
+        config["control"]["parameters"]["θ"] = [-1e5, -1e5]
+        config["exacerbation"]["hyperparameters"]["β0_μ"] = 5.0
+        simulation = LEAP.Simulation(config)
+        @set! simulation.agent = LEAP.Agent(
+            sex=true,
+            age=4,
+            cal_year=min_cal_year,
+            cal_year_index=1,
+            family_hist=simulation.family_history,
+            antibiotic_exposure=simulation.antibiotic_exposure,
+            province=simulation.province,
+            SSP=simulation.SSP
+        )
+        LEAP.generate_initial_asthma!(simulation)
+        @test simulation.agent.has_asthma == true
+        @test simulation.agent.asthma_age == 3
+        @test simulation.agent.asthma_status == true
+        @test simulation.agent.control_levels == Dict(
+            :fully_controlled => 0.0,
+            :partially_controlled => 0.0,
+            :uncontrolled => 1.0,
+            :as_array => [0.0, 0.0, 1.0]
+        )
+    end
+end
+
+
+"""
     test_check_if_agent_gets_new_asthma_diagnosis!(config)
 
 Setting the `time_horizon` to 1 means that the agents are generated from the initial population
