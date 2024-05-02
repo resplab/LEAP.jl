@@ -552,7 +552,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                     "prevalence"
                 )
 
-                increment_field_in_outcome_matrix!(outcome_matrix, "util",
+                increment_field_in_outcome_matrix!(outcome_matrix, "utility",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
                     compute_utility(simulation.agent, simulation.utility)
                 )
