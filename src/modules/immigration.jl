@@ -18,8 +18,12 @@ A struct containing information about immigration to Canada.
 """
 struct Immigration <: ImmigrationModule
     table::GroupedDataFrame{DataFrame}
-    function Immigration(starting_year::Integer, province::String, population_growth_type::String)
-        immigration_table = load_immigration_table(starting_year, province, population_growth_type)
+    function Immigration(
+        starting_year::Integer, province::String, population_growth_type::String, max_age::Integer
+    )
+        immigration_table = load_immigration_table(
+            starting_year, province, population_growth_type, max_age
+        )
         new(immigration_table)
     end
     function Immigration(table::GroupedDataFrame)
@@ -47,7 +51,7 @@ Load the data from the `master_immigration_table.csv`.
     immigration for a given age, province, sex, and growth scenario.
 """
 function load_immigration_table(
-    starting_year::Integer, province::String, population_growth_type::String
+    starting_year::Integer, province::String, population_growth_type::String, max_age::Integer=111
 )
 
     master_immigration_table = CSV.read(
@@ -58,8 +62,9 @@ function load_immigration_table(
         select(
             select(
                 filter(
-                    ([:year, :province, :proj_scenario] => (x, y, z) ->
-                    x > starting_year
+                    ([:age, :year, :province, :proj_scenario] => (w, x, y, z) ->
+                    w <= max_age
+                    && x >= starting_year
                     && y == province
                     && z == population_growth_type),
                     master_immigration_table
