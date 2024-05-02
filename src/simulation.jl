@@ -40,7 +40,6 @@ TODO.
     census_table::CensusTableModule
     pollution_table::PollutionTableModule
     SSP::String
-    initial_distribution
     outcome_matrix
     function Simulation(config::AbstractDict)
         min_cal_year = config["simulation"]["min_cal_year"]
@@ -75,7 +74,6 @@ TODO.
             CensusTable(config["census_table"]),
             PollutionTable(),
             config["pollution"]["SSP"],
-            nothing,
             (;)
         )
     end
@@ -105,7 +103,6 @@ TODO.
         census_table::CensusTableModule,
         pollution_table::PollutionTableModule,
         SSP::String,
-        initial_distribution,
         outcome_matrix
     )
         new(
@@ -134,7 +131,6 @@ TODO.
             census_table,
             pollution_table,
             SSP,
-            initial_distribution,
             outcome_matrix
         )
     end
