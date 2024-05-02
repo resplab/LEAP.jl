@@ -464,8 +464,6 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     for cal_year in cal_years
         @timeit timer_output "calendar year $cal_year" begin
 
-        @info "$cal_year"
-
         cal_year_index = cal_year - min_cal_year + 1
 
         @timeit timer_output "get_new_agents" begin
@@ -476,6 +474,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
         )
         end
 
+        @info "Year $cal_year, $(size(new_agents_df)[1]) new agents born/immigrated."
         @info "$new_agents_df"
         # for each agent i born/immigrated in cal_year
         for i in 1:size(new_agents_df)[1]
@@ -494,7 +493,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 month=month,
                 SSP=simulation.SSP
             )
-            @info "$cal_year, year $cal_year_index of $total_years years:" *
+            @info "$cal_year, year $cal_year_index of $total_years years: " *
                   "Agent $i, age $(simulation.agent.age), sex $(Int(simulation.agent.sex))"
 
             if new_agents_df.immigrant[i]
@@ -516,20 +515,22 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
             # if age >4, we need to generate the initial distribution of asthma related events
             if simulation.agent.age > 3
                 generate_initial_asthma!(simulation)
-                @info "| -- Agent > 3, agent has asthma (prevalence)? $(simulation.agent.has_asthma)"
+                @info "| - Agent > 3, agent has asthma (prevalence)? $(simulation.agent.has_asthma)"
             end
 
             # go through event processes for each agent
             while(simulation.agent.alive && simulation.agent.age <= max_age &&
                 simulation.agent.cal_year_index <= max_time_horizon)
 
+                @info "| - Agent age: $(simulation.agent.age)"
+
                 if !simulation.agent.has_asthma
                     check_if_agent_gets_new_asthma_diagnosis!(simulation, outcome_matrix)
-                    @info "| -- Agent has asthma (incidence)? $(simulation.agent.has_asthma)"
+                    @info "| --- Agent has asthma (incidence)? $(simulation.agent.has_asthma)"
 
                 else
                     reassess_asthma_diagnosis!(simulation, outcome_matrix)
-                    @info "| -- Agent was diagnosed with asthma, is this diagnosis correct? " *
+                    @info "| --- Agent was diagnosed with asthma, is this diagnosis correct? " *
                     "$(simulation.agent.has_asthma)"
                 end
 
@@ -562,6 +563,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                     increment_field_in_outcome_matrix!(outcome_matrix, "death",
                         simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
                     )
+                    @info "| --- Agent has died at age $(simulation.agent.age)"
                 # emigration
                 elseif compute_prob_emigration(simulation.agent.cal_year_index,
                     simulation.agent.age,simulation.agent.sex,simulation.emigration)
