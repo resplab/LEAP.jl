@@ -55,9 +55,13 @@ SSP scenario.
     wildfire_pm25_scaled::Float64
     total_pm25::Float64
     SSP::String
-    function Pollution(cduid::Integer, year::Integer, month::Integer, SSP::String)
-
-        pollution_table = PollutionTable()
+    function Pollution(
+        cduid::Integer, year::Integer, month::Integer, SSP::String,
+        pollution_table::Union{Nothing, PollutionTable}=nothing
+    )
+        if isnothing(pollution_table)
+            pollution_table = PollutionTable()
+        end
         df = filter(
             [:CDUID, :year, :month] => (x, y, z) ->
             x == cduid && y == year && z == month, pollution_table.data[(SSP,)]

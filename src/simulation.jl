@@ -485,6 +485,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
             assign_random_β0!(simulation.exacerbation)
             assign_random_p!(simulation.exacerbation_severity)
 
+            @timeit timer_output "create new Agent" begin
             simulation.agent = Agent(
                 sex=new_agents_df.sex[i],
                 age=new_agents_df.age[i],
@@ -494,8 +495,12 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 antibiotic_exposure=simulation.antibiotic_exposure,
                 province=simulation.province,
                 month=month,
-                SSP=simulation.SSP
+                SSP=simulation.SSP,
+                census_table=simulation.census_table,
+                pollution_table=simulation.pollution_table
             )
+            end
+
             @info "[Agent #$(simulation.agent.uuid.short)]: $(i)th new agent of $cal_year, " *
                   "age $(simulation.agent.age), sex $(Int(simulation.agent.sex)), " *
                   "immigrant: $(new_agents_df.immigrant[i]), " *

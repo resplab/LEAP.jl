@@ -51,12 +51,13 @@ A person in the model.
         total_hosp::Integer=0, family_hist::Union{FamilyHistoryModule, Nothing}=nothing,
         asthma_status::Bool=false,
         antibiotic_exposure::Union{AntibioticExposureModule, Nothing}=nothing,
-        SSP::String="SSP1_2.6"
+        SSP::String="SSP1_2.6", census_table::Union{Nothing, CensusTableModule}=nothing,
+        pollution_table::Union{Nothing, PollutionTableModule}=nothing
     )
 
         uuid = UUID4()
-        census_division = CensusDivision(province, cal_year)
-        pollution = Pollution(census_division.cduid, cal_year, month, SSP)
+        census_division = CensusDivision(province, cal_year, census_table)
+        pollution = Pollution(census_division.cduid, cal_year, month, SSP, pollution_table)
 
         if antibiotic_exposure !== nothing && family_hist !== nothing
             num_antibiotic_use = compute_num_antibiotic_use(

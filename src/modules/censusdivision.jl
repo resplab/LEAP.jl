@@ -92,9 +92,12 @@ based on population.
     name::String
     year::Integer
     function CensusDivision(
-        province::String, year::Integer=MIN_CENSUS_YEAR
+        province::String, year::Integer=MIN_CENSUS_YEAR,
+        census_table::Union{Nothing, CensusTable}=nothing
     )
-        census_table = CensusTable(year)
+        if isnothing(census_table)
+            census_table = CensusTable(year)
+        end
         if province == "CA"
             census_table_df = DataFrames.DataFrame(census_table.data)
         else
