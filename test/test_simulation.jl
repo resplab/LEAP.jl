@@ -758,14 +758,14 @@ function test_run_simulation_two_years(config)
             "max_age" => 4
         )
         config["antibiotic_exposure"]["parameters"] = Dict(
-            :β0 => -100000,
-            :βcal_year => -0.01,
-            :βsex => -1,
-            :θ => 500,
-            :fixyear => nothing,
-            :βfloor => 0.0,
-            :β2005 => 1,
-            :β2005_cal_year => 1
+            "β0" => -100000,
+            "βcal_year" => -0.01,
+            "βsex" => -1,
+            "θ" => 500,
+            "fixyear" => nothing,
+            "βfloor" => 0.0,
+            "β2005" => 1,
+            "β2005_cal_year" => 1
         )
         config["control"]["parameters"]["θ"] = [-1e5, -1e5]
         config["cost"]["parameters"] = Dict(
