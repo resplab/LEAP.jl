@@ -1,5 +1,3 @@
-import Base.@kwdef
-
 MIN_CENSUS_YEAR = 2021
 
 """

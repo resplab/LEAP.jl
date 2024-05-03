@@ -104,7 +104,7 @@ Return the number of asthma exacerbations in a given year.
 - `agent::Agent`: A person in the model, see  [`Agent`](@ref).
 - `exacerbation::Exacerbation`: An asthma exacerbation, see [`Exacerbation`](@ref).
 """
-function compute_num_exacerbations(agent::Agent, exacerbation::Exacerbation)
+function compute_num_exacerbations(agent::AgentModule, exacerbation::Exacerbation)
     return compute_num_exacerbations(agent.age, agent.sex, agent.cal_year, agent.control_levels,
         exacerbation::Exacerbation)
 end
@@ -149,7 +149,7 @@ Return the number of asthma exacerbations in a given year.
 - `agent::Agent`: A person in the model, see  [`Agent`](@ref).
 - `exacerbation::Exacerbation`: An asthma exacerbation, see [`Exacerbation`](@ref).
 """
-function compute_num_exacerbations_initial(agent::Agent, exacerbation::Exacerbation)
+function compute_num_exacerbations_initial(agent::AgentModule, exacerbation::Exacerbation)
     params = exacerbation.parameters
     year = max(params[:min_year], agent.cal_year - 1)
     age = min(agent.age - 1, 90)
