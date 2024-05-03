@@ -27,6 +27,7 @@ A person in the model.
 - `census_division::CensusDivisionModule`: the Canadian census division where the agent resides.
 """
 @kwdef mutable struct Agent  <: AgentModule
+    uuid::UUID4
     sex::Bool
     age::Integer
     cal_year::Integer
@@ -56,6 +57,7 @@ A person in the model.
         SSP::String="SSP1_2.6"
     )
 
+        uuid = UUID4()
         census_division = CensusDivision(province, cal_year)
         pollution = Pollution(census_division.cduid, cal_year, month, SSP)
 
@@ -72,12 +74,13 @@ A person in the model.
         end
 
         new(
-            sex, age, cal_year, cal_year_index, alive, num_antibiotic_use, has_asthma,
+            uuid, sex, age, cal_year, cal_year_index, alive, num_antibiotic_use, has_asthma,
             asthma_age, severity, control_levels, exac_hist, exac_sev_hist, total_hosp,
             has_family_hist, asthma_status, census_division, pollution
         )
     end
     function Agent(
+        uuid::UUID4,
         sex::Bool,
         age::Integer,
         cal_year::Integer,
@@ -97,7 +100,7 @@ A person in the model.
         pollution::Union{Nothing, PollutionModule}
     )
         new(
-            sex, age, cal_year, cal_year_index, alive, num_antibiotic_use, has_asthma,
+            uuid, sex, age, cal_year, cal_year_index, alive, num_antibiotic_use, has_asthma,
             asthma_age, severity, control_levels, exac_hist, exac_sev_hist, total_hosp,
             has_family_hist, asthma_status, census_division, pollution
         )

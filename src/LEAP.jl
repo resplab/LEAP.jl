@@ -1,14 +1,16 @@
 module LEAP
 
 # Write your package code here
-using DataFrames, Query, CSV, JLD, JLD2, FileIO, JSON
+using DataFrames, Query, CSV, JLD, JLD2, FileIO, JSON, UUIDs
 using Setfield, Distributions, StatsFuns, StatsBase, Random, SpecialFunctions
 using TimerOutputs, Printf, Logging
 using GRIB, PolygonOps, Shapefile, JSON, GeoInterface
+import Base.@kwdef
 
 PROCESSED_DATA_PATH = joinpath(dirname(pathof(LEAP)), "processed_data")
 CONFIG_PATH = joinpath(dirname(pathof(LEAP)), "config.json")
 
+include("utils.jl")
 include("modules/abstractmodule.jl")
 include("modules/birth.jl")
 include("modules/familyhistory.jl")
@@ -17,7 +19,6 @@ include("modules/agent.jl")
 include("modules/exacerbation.jl")
 include("modules/severity.jl")
 include.(filter(contains(r".jl$"), readdir(joinpath(dirname(pathof(LEAP)),"modules/"); join=true)))
-include("utils.jl")
 include("outcomematrix.jl")
 include("simulation.jl")
 

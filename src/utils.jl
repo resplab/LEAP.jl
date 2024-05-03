@@ -1,3 +1,17 @@
+@kwdef mutable struct UUID4
+    uuid4::UUID
+    short::String
+    function UUID4()
+        uuid4 = UUIDs.uuid4()
+        short = last(string(uuid4), 6)
+        new(uuid4, short)
+    end
+    function UUID4(; uuid4::UUID, short::String)
+        new(uuid4, short)
+    end
+end
+
+
 function dict_initializer(parameter_names::Union{Nothing,Vector{Symbol}})
     isnothing(parameter_names) ? nothing : Dict(parameter_names .=> missing)
 end
