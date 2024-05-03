@@ -55,7 +55,7 @@ function load_emigration_table(
             select(
                 filter(
                     ([:year, :province, :proj_scenario] => (x, y, z) ->
-                    x > starting_year
+                    x >= starting_year
                     && y == province
                     && z == population_growth_type),
                     master_emigration_table
@@ -85,7 +85,6 @@ Determine the probability of emigration of an agent (person) in a given year.
 function compute_prob_emigration(cal_year_index::Integer, age::Integer, sex::Bool,
     emigration::Emigration
 )
-
     if age == 0
         return false
     else
