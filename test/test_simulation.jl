@@ -44,14 +44,14 @@ function test_generate_initial_asthma!(config)
             "max_age" => max_age
         )
         config["antibiotic_exposure"]["parameters"] = Dict(
-            :β0 => -100000,
-            :βcal_year => -0.01,
-            :βsex => -1,
-            :θ => 500,
-            :fixyear => nothing,
-            :βfloor => 0.0,
-            :β2005 => 1,
-            :β2005_cal_year => 1
+            "β0" => -100000,
+            "βcal_year" => -0.01,
+            "βsex" => -1,
+            "θ" => 500,
+            "fixyear" => nothing,
+            "βfloor" => 0.0,
+            "β2005" => 1,
+            "β2005_cal_year" => 1
         )
         config["prevalence"]["parameters"] = Dict(
             "β0" => -20,
@@ -100,14 +100,14 @@ function test_generate_initial_asthma!(config)
             "max_age" => max_age
         )
         config["antibiotic_exposure"]["parameters"] = Dict(
-            :β0 => -100000,
-            :βcal_year => -0.01,
-            :βsex => -1,
-            :θ => 500,
-            :fixyear => nothing,
-            :βfloor => 0.0,
-            :β2005 => 1,
-            :β2005_cal_year => 1
+            "β0" => -100000,
+            "βcal_year" => -0.01,
+            "βsex" => -1,
+            "θ" => 500,
+            "fixyear" => nothing,
+            "βfloor" => 0.0,
+            "β2005" => 1,
+            "β2005_cal_year" => 1
         )
         config["prevalence"]["parameters"] = Dict(
             "β0" => -0.01,
@@ -190,14 +190,14 @@ function test_check_if_agent_gets_new_asthma_diagnosis!(config)
             "max_age" => max_age
         )
         config["antibiotic_exposure"]["parameters"] = Dict(
-            :β0 => -100000,
-            :βcal_year => -0.01,
-            :βsex => -1,
-            :θ => 500,
-            :fixyear => nothing,
-            :βfloor => 0.0,
-            :β2005 => 1,
-            :β2005_cal_year => 1
+            "β0" => -100000,
+            "βcal_year" => -0.01,
+            "βsex" => -1,
+            "θ" => 500,
+            "fixyear" => nothing,
+            "βfloor" => 0.0,
+            "β2005" => 1,
+            "β2005_cal_year" => 1
         )
         config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
         config["family_history"]["parameters"]["p"] = 1.0
@@ -245,14 +245,14 @@ function test_check_if_agent_gets_new_asthma_diagnosis!(config)
             "max_age" => max_age
         )
         config["antibiotic_exposure"]["parameters"] = Dict(
-            :β0 => -100000,
-            :βcal_year => -0.01,
-            :βsex => -1,
-            :θ => 500,
-            :fixyear => nothing,
-            :βfloor => 0.0,
-            :β2005 => 1,
-            :β2005_cal_year => 1
+            "β0" => -100000,
+            "βcal_year" => -0.01,
+            "βsex" => -1,
+            "θ" => 500,
+            "fixyear" => nothing,
+            "βfloor" => 0.0,
+            "β2005" => 1,
+            "β2005_cal_year" => 1
         )
         config["incidence"]["parameters"] = Dict(
             "β0" => 34.6,
@@ -338,14 +338,14 @@ function test_update_asthma_effects!(config)
             "max_age" => max_age
         )
         config["antibiotic_exposure"]["parameters"] = Dict(
-            :β0 => -100000,
-            :βcal_year => -0.01,
-            :βsex => -1,
-            :θ => 500,
-            :fixyear => nothing,
-            :βfloor => 0.0,
-            :β2005 => 1,
-            :β2005_cal_year => 1
+            "β0" => -100000,
+            "βcal_year" => -0.01,
+            "βsex" => -1,
+            "θ" => 500,
+            "fixyear" => nothing,
+            "βfloor" => 0.0,
+            "β2005" => 1,
+            "β2005_cal_year" => 1
         )
         config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
         config["family_history"]["parameters"]["p"] = 1.0
@@ -433,14 +433,14 @@ function test_reassess_asthma_diagnosis!(config)
             "max_age" => max_age
         )
         config["antibiotic_exposure"]["parameters"] = Dict(
-            :β0 => -100000,
-            :βcal_year => -0.01,
-            :βsex => -1,
-            :θ => 500,
-            :fixyear => nothing,
-            :βfloor => 0.0,
-            :β2005 => 1,
-            :β2005_cal_year => 1
+            "β0" => -100000,
+            "βcal_year" => -0.01,
+            "βsex" => -1,
+            "θ" => 500,
+            "fixyear" => nothing,
+            "βfloor" => 0.0,
+            "β2005" => 1,
+            "β2005_cal_year" => 1
         )
         config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
         config["family_history"]["parameters"]["p"] = 1.0
