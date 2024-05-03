@@ -3,215 +3,6 @@ using LEAP
 using DataFrames, JSON, Setfield
 
 
-function test_run_simulation(config)
-    test_run_simulation_full(deepcopy(config))
-    test_run_simulation_one_year(deepcopy(config))
-end
-
-
-function test_run_simulation_full(config)
-    @testset "test run_simulation" begin
-        config["simulation"] = Dict(
-            "min_cal_year" => 2024,
-            "time_horizon" => 3,
-            "province" => "CA",
-            "population_growth_type" => "M3",
-            "num_births_initial" => 10,
-            "max_age" => 111
-        )
-        outcome_matrix = LEAP.run_simulation(seed=1, until_all_die=false, verbose=false, config=config)
-    end
-end
-
-
-"""
-    test_run_simulation_one_year(config)
-
-Setting the incidence parameter `βfam_hist` to [100, 0] and the family history parameter `p` to 1.0
-ensures that the probability of an agent being diagnosed with asthma is 1. The maximum age is set
-to 4, and the minimum age required for an asthma diagnosis is 3. So all agents aged 4 should
-receive an asthma diagnosis.
-
-Setting the exacerbation hyperparameter `β0_μ` to 20.0 ensures that every agent aged 4 has an
-asthma exacerbation.
-
-Setting the `time_horizon` to 1 means that the agents are generated from the initial population
-table, and that no immigration happens.
-
-Setting the antibiotic exposure parameters below ensures that the antibiotic use is 0.
-
-Setting the `num_births_initial` to 10 and starting in 2024 with growth type "M3", each of the
-age groups has 10 agents, for a total of 10 x 5 = 50 agents.
-
-Setting the `prevalence` parameters below ensures that the prevalence is 0.
-
-"""
-function test_run_simulation_one_year(config)
-    @testset "test run_simulation one year" begin
-        config["simulation"] = Dict(
-            "min_cal_year" => 2024,
-            "time_horizon" => 1,
-            "province" => "CA",
-            "population_growth_type" => "M3",
-            "num_births_initial" => 10,
-            "max_age" => 4
-        )
-        config["antibiotic_exposure"]["parameters"] = Dict(
-            :β0 => -100000,
-            :βcal_year => -0.01,
-            :βsex => -1,
-            :θ => 500,
-            :fixyear => nothing,
-            :βfloor => 0.0,
-            :β2005 => 1,
-            :β2005_cal_year => 1
-        )
-        config["exacerbation"]["hyperparameters"]["β0_μ"] = 5.0
-        config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
-        config["prevalence"]["parameters"] = Dict(
-            "β0" => -20,
-            "βsex" => -20,
-            "βage" => [0.0, 0.0, 0.0, 0.0, 0.0],
-            "βyear" => [0.0, 0.0],
-            "βsexage" => [0.0, 0.0, 0.0, 0.0, 0.0],
-            "βsexyear" => [0.0, 0.0],
-            "βyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            "βsexyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            "βfam_hist" => [-100, 0],
-            "βabx_exp" => [0.0, 0.0, 0.0]
-        )
-        config["family_history"]["parameters"]["p"] = 1.0
-        config["death"]["parameters"] = Dict(
-            :β0 => -1,
-            :β1 => -1,
-            :β2 => -1
-        )
-        outcome_matrix = LEAP.run_simulation(seed=1, until_all_die=false, verbose=true, config=config)
-        @info "asthma_incidence: $(outcome_matrix.asthma_incidence)"
-        @test outcome_matrix.immigration == zeros(Int, (1, 5, 2))
-        @test outcome_matrix.antibiotic_exposure == zeros(Int, (1, 5, 2))
-        @test outcome_matrix.death == zeros(Int, (1, 5, 2))
-        @test (
-            outcome_matrix.asthma_incidence[1, 5, 1] +
-            outcome_matrix.asthma_incidence[1, 5, 2]
-        ) == 10
-        @test (
-            outcome_matrix.exacerbation[1, 5, 1] +
-            outcome_matrix.exacerbation[1, 5, 2]
-        ) > 1000
-    end
-end
-
-
-"""
-    test_run_simulation_two_years(config)
-
-Setting the incidence parameter `βfam_hist` to [100, 0] and the family history parameter `p` to 1.0
-ensures that the probability of an agent being diagnosed with asthma is 1. The maximum age is set
-to 4, and the minimum age required for an asthma diagnosis is 3. So all agents aged 4 should
-receive an asthma diagnosis.
-
-Setting the exacerbation hyperparameter `β0_μ` to 20.0 ensures that every agent aged 4 has an
-asthma exacerbation.
-
-Setting the antibiotic exposure parameters below ensures that the antibiotic use is 0.
-
-Setting the `num_births_initial` to 10 and starting in 2024 with growth type "M3", each of the
-age groups has 10 agents, for a total of 10 x 5 = 50 agents.
-
-Setting the `prevalence` parameters below ensures that the prevalence is 0.
-
-Setting the `time_horizon` to 2 means that in the first year there should be 0 immigrants, and
-in the second year there should be 1 immigrant.
-
-"""
-function test_run_simulation_two_years(config)
-    @testset "test run_simulation two years" begin
-        config["simulation"] = Dict(
-            "min_cal_year" => 2024,
-            "time_horizon" => 2,
-            "province" => "CA",
-            "population_growth_type" => "M3",
-            "num_births_initial" => 10,
-            "max_age" => 4
-        )
-        config["antibiotic_exposure"]["parameters"] = Dict(
-            :β0 => -100000,
-            :βcal_year => -0.01,
-            :βsex => -1,
-            :θ => 500,
-            :fixyear => nothing,
-            :βfloor => 0.0,
-            :β2005 => 1,
-            :β2005_cal_year => 1
-        )
-        config["exacerbation"]["hyperparameters"]["β0_μ"] = 5.0
-        config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
-        config["prevalence"]["parameters"] = Dict(
-            "β0" => -20,
-            "βsex" => -20,
-            "βage" => [0.0, 0.0, 0.0, 0.0, 0.0],
-            "βyear" => [0.0, 0.0],
-            "βsexage" => [0.0, 0.0, 0.0, 0.0, 0.0],
-            "βsexyear" => [0.0, 0.0],
-            "βyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            "βsexyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            "βfam_hist" => [-100, 0],
-            "βabx_exp" => [0.0, 0.0, 0.0]
-        )
-        config["family_history"]["parameters"]["p"] = 1.0
-        config["death"]["parameters"] = Dict(
-            :β0 => -1,
-            :β1 => -1,
-            :β2 => -1
-        )
-        outcome_matrix = LEAP.run_simulation(seed=1, until_all_die=false, verbose=true, config=config)
-        @info "asthma_incidence: $(outcome_matrix.asthma_incidence)"
-        @test outcome_matrix.immigration[1, :, :] == zeros(Int, (5, 2))
-        @test (
-            outcome_matrix.immigration[2, 2, 1] +
-            outcome_matrix.immigration[2, 2, 2] +
-            outcome_matrix.immigration[2, 3, 1] +
-            outcome_matrix.immigration[2, 3, 2] +
-            outcome_matrix.immigration[2, 4, 1] +
-            outcome_matrix.immigration[2, 4, 2] +
-            outcome_matrix.immigration[2, 5, 1] +
-            outcome_matrix.immigration[2, 5, 2]
-        ) == 1
-        @test outcome_matrix.antibiotic_exposure == zeros(Int, (2, 5, 2))
-        @test outcome_matrix.death == zeros(Int, (2, 5, 2))
-        @test (
-            outcome_matrix.alive[1, 1, 1] +
-            outcome_matrix.alive[1, 1, 2]
-        ) == 10
-        @test (
-            outcome_matrix.alive[1, 5, 1] +
-            outcome_matrix.alive[1, 5, 2]
-        ) == 10
-        @test (
-            outcome_matrix.alive[2, 1, 1] +
-            outcome_matrix.alive[2, 1, 2]
-        ) == 11
-        @test (
-            outcome_matrix.asthma_incidence[1, 5, 1] +
-            outcome_matrix.asthma_incidence[1, 5, 2]
-        ) == 10
-        @test (
-            outcome_matrix.asthma_incidence[2, 5, 1] +
-            outcome_matrix.asthma_incidence[2, 5, 2]
-        ) >= 10
-        @test (
-            outcome_matrix.asthma_incidence[2, 5, 1] +
-            outcome_matrix.asthma_incidence[2, 5, 2]
-        ) <= 11
-        @test (
-            outcome_matrix.exacerbation[1, 5, 1] +
-            outcome_matrix.exacerbation[1, 5, 2]
-        ) > 1000
-    end
-end
-
-
 """
     test_generate_initial_asthma!(config)
 
@@ -743,6 +534,365 @@ function test_get_new_agents_subsequent_year(config)
         @test new_agents_df.age[11] == 0
         @test new_agents_df.age[21] == 0
         @test new_agents_df.immigrant == vcat(trues(10), falses(11))
+    end
+end
+
+function test_run_simulation(config)
+    test_run_simulation_one_year(deepcopy(config))
+    test_run_simulation_two_years(deepcopy(config))
+    test_run_simulation_full(deepcopy(config))
+end
+
+
+"""
+    test_run_simulation_one_year(config)
+
+
+Setting the `num_births_initial` to 10 and starting in 2024 with growth type "M3", each of the
+age groups has 10 agents, for a total of 10 x 5 = 50 agents.
+
+Setting the antibiotic exposure parameters below ensures that the antibiotic use is 0.
+
+Setting the control parameter `θ` to [-1e5, -1e5] ensures that the `control_levels` are:
+    FC: 0.0
+    PC: 0.0
+    UC: 1.0
+
+Setting the cost parameters to:
+    {
+        "control": [0.0, 0.0, 1000.0],
+        "exac": [0.0, 0.0, 0.0, 0.0]
+    }
+together with the control parameter `θ` to [-1e5, -1e5] ensures that the cost for each agent
+diagnosed with asthma is 100.
+
+For the year 2024, province "CA", growth type "M3", ages 0 - 4, the probability of emigration is 0.
+See `master_emigration_table.csv`.
+
+Setting the exacerbation hyperparameter `β0_μ` to 20.0 ensures that every agent aged 4 has an
+asthma exacerbation.
+
+Setting the `family_history` parameter `p` to 1.0 ensures that every agent has a family history
+of asthma.
+
+Setting the `time_horizon` to 1 means that the agents are generated from the initial population
+table, and that no immigration happens.
+
+Setting the incidence parameter `βfam_hist` to [100, 0] and the family history parameter `p` to 1.0
+ensures that the probability of an agent being diagnosed with asthma is 1. The maximum age is set
+to 4, and the minimum age required for an asthma diagnosis is 3. So all agents aged 4 should
+receive an asthma diagnosis.
+
+Setting the `prevalence` parameters below ensures that the prevalence is 0.
+
+Setting the `utility` parameters to:
+
+    {
+        "βcontrol": [0.0, 0.0, 0.10],
+        "βexac_sev_hist": [0.0, 0.0, 0.0, 0.0]
+    }
+
+ensures that the utility for each agent with asthma is either 0.87222 (male) or 0.87356 (female).
+For each agent without asthma, it is just the baseline from the EQ-5D table.
+
+
+"""
+function test_run_simulation_one_year(config)
+    @testset "test run_simulation one year" begin
+        config["simulation"] = Dict(
+            "min_cal_year" => 2024,
+            "time_horizon" => 1,
+            "province" => "CA",
+            "population_growth_type" => "M3",
+            "num_births_initial" => 10,
+            "max_age" => 4
+        )
+        config["antibiotic_exposure"]["parameters"] = Dict(
+            "β0" => -100000,
+            "βcal_year" => -0.01,
+            "βsex" => -1,
+            "θ" => 500,
+            "fixyear" => nothing,
+            "βfloor" => 0.0,
+            "β2005" => 1,
+            "β2005_cal_year" => 1
+        )
+        config["control"]["parameters"]["θ"] = [-1e5, -1e5]
+        config["cost"]["parameters"] = Dict(
+            "control" => [0.0, 0.0, 100.0],
+            "exac" => [0.0, 0.0, 0.0, 0.0]
+        )
+        config["death"]["parameters"] = Dict(
+            "β0" => -1,
+            "β1" => -1,
+            "β2" => -1
+        )
+        config["exacerbation"]["hyperparameters"]["β0_μ"] = 5.0
+        config["family_history"]["parameters"]["p"] = 1.0
+        config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
+        config["prevalence"]["parameters"] = Dict(
+            "β0" => -20,
+            "βsex" => -20,
+            "βage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βyear" => [0.0, 0.0],
+            "βsexage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyear" => [0.0, 0.0],
+            "βyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βfam_hist" => [-100, 0],
+            "βabx_exp" => [0.0, 0.0, 0.0]
+        )
+        config["utility"]["parameters"] = Dict(
+            "βcontrol" => [0.0, 0.0, 0.10],
+            "βexac_sev_hist" => [0.0, 0.0, 0.0, 0.0]
+        )
+        outcome_matrix = LEAP.run_simulation(seed=1, until_all_die=false, verbose=true, config=config)
+        @info "asthma_incidence: $(outcome_matrix.asthma_incidence)"
+
+        @test outcome_matrix.antibiotic_exposure == zeros(Int, (1, 5, 2))
+        @test (
+            outcome_matrix.asthma_incidence[1, 5, 1] +
+            outcome_matrix.asthma_incidence[1, 5, 2]
+        ) == 10
+        @test (
+            outcome_matrix.asthma_status[1, 5, 1] +
+            outcome_matrix.asthma_status[1, 5, 2]
+        ) == 10
+        @test outcome_matrix.cost[1, 1, :] == zeros(Real, (2))
+        @test outcome_matrix.cost[1, 2, :] == zeros(Real, (2))
+        @test outcome_matrix.cost[1, 3, :] == zeros(Real, (2))
+        @test outcome_matrix.cost[1, 4, :] == zeros(Real, (2))
+        @test (
+            outcome_matrix.cost[1, 5, 1] +
+            outcome_matrix.cost[1, 5, 2]
+        ) == 1660.0
+        @test outcome_matrix.death == zeros(Int, (1, 5, 2))
+        @test outcome_matrix.emigration == zeros(Int, (1, 5, 2))
+        @test (
+            outcome_matrix.exacerbation[1, 5, 1] +
+            outcome_matrix.exacerbation[1, 5, 2]
+        ) > 1000
+        @test (
+            outcome_matrix.family_history[1, 1, 1] +
+            outcome_matrix.family_history[1, 1, 2]
+        ) == 10
+        @test (
+            outcome_matrix.family_history[1, 2, 1] +
+            outcome_matrix.family_history[1, 2, 2]
+        ) == 10
+        @test (
+            outcome_matrix.family_history[1, 3, 1] +
+            outcome_matrix.family_history[1, 3, 2]
+        ) == 10
+        @test (
+            outcome_matrix.family_history[1, 4, 1] +
+            outcome_matrix.family_history[1, 4, 2]
+        ) == 10
+        @test (
+            outcome_matrix.family_history[1, 5, 1] +
+            outcome_matrix.family_history[1, 5, 2]
+        ) == 10
+        @test outcome_matrix.immigration == zeros(Int, (1, 5, 2))
+        @test (
+            outcome_matrix.utility[1, 1, 1] +
+            outcome_matrix.utility[1, 1, 2]
+        ) == 10.0
+        @test round(
+            outcome_matrix.utility[1, 2, 1] + outcome_matrix.utility[1, 2, 2],
+            digits=2
+        ) == 9.93
+        @test round(
+            outcome_matrix.utility[1, 3, 1] + outcome_matrix.utility[1, 3, 2],
+            digits=1
+        ) == 9.9
+        @test round(
+            outcome_matrix.utility[1, 4, 1] + outcome_matrix.utility[1, 4, 2],
+            digits=1
+        ) == 9.8
+        @test round(
+            outcome_matrix.utility[1, 5, 1] + outcome_matrix.utility[1, 5, 2],
+            digits=1
+        ) == 8.7
+    end
+end
+
+
+"""
+    test_run_simulation_two_years(config)
+
+Setting the incidence parameter `βfam_hist` to [100, 0] and the family history parameter `p` to 1.0
+ensures that the probability of an agent being diagnosed with asthma is 1. The maximum age is set
+to 4, and the minimum age required for an asthma diagnosis is 3. So all agents aged 4 should
+receive an asthma diagnosis.
+
+Setting the antibiotic exposure parameters below ensures that the antibiotic use is 0.
+
+Setting the `num_births_initial` to 10 and starting in 2024 with growth type "M3", each of the
+age groups has 10 agents, for a total of 10 x 5 = 50 agents.
+
+Setting the control parameter `θ` to [-1e5, -1e5] ensures that the `control_levels` are:
+    FC: 0.0
+    PC: 0.0
+    UC: 1.0
+
+Setting the exacerbation hyperparameter `β0_μ` to 20.0 ensures that every agent aged 4 has an
+asthma exacerbation.
+
+Setting the `time_horizon` to 2 means that in the first year there should be 0 immigrants, and
+in the second year there should be 1 immigrant.
+
+For the years 2024 and 2025, province "CA", growth type "M3", ages 0 - 4, the probability of
+emigration is 0. See `master_emigration_table.csv`.
+
+Setting the `prevalence` parameters below ensures that the prevalence is 0.
+
+"""
+function test_run_simulation_two_years(config)
+    @testset "test run_simulation two years" begin
+        config["simulation"] = Dict(
+            "min_cal_year" => 2024,
+            "time_horizon" => 2,
+            "province" => "CA",
+            "population_growth_type" => "M3",
+            "num_births_initial" => 10,
+            "max_age" => 4
+        )
+        config["antibiotic_exposure"]["parameters"] = Dict(
+            :β0 => -100000,
+            :βcal_year => -0.01,
+            :βsex => -1,
+            :θ => 500,
+            :fixyear => nothing,
+            :βfloor => 0.0,
+            :β2005 => 1,
+            :β2005_cal_year => 1
+        )
+        config["control"]["parameters"]["θ"] = [-1e5, -1e5]
+        config["cost"]["parameters"] = Dict(
+            "control" => [0.0, 0.0, 100.0],
+            "exac" => [0.0, 0.0, 0.0, 0.0]
+        )
+        config["death"]["parameters"] = Dict(
+            "β0" => -1,
+            "β1" => -1,
+            "β2" => -1
+        )
+        config["exacerbation"]["hyperparameters"]["β0_μ"] = 5.0
+        config["family_history"]["parameters"]["p"] = 1.0
+        config["incidence"]["parameters"]["βfam_hist"] = [100, 0]
+        config["prevalence"]["parameters"] = Dict(
+            "β0" => -20,
+            "βsex" => -20,
+            "βage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βyear" => [0.0, 0.0],
+            "βsexage" => [0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyear" => [0.0, 0.0],
+            "βyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βsexyearage" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "βfam_hist" => [-100, 0],
+            "βabx_exp" => [0.0, 0.0, 0.0]
+        )
+
+
+        outcome_matrix = LEAP.run_simulation(seed=1, until_all_die=false, verbose=true, config=config)
+        @info "asthma_incidence: $(outcome_matrix.asthma_incidence)"
+        @test (
+            outcome_matrix.alive[1, 1, 1] +
+            outcome_matrix.alive[1, 1, 2]
+        ) == 10
+        @test (
+            outcome_matrix.alive[1, 5, 1] +
+            outcome_matrix.alive[1, 5, 2]
+        ) == 10
+        @test (
+            outcome_matrix.alive[2, 1, 1] +
+            outcome_matrix.alive[2, 1, 2]
+        ) == 11
+        @test outcome_matrix.antibiotic_exposure == zeros(Int, (2, 5, 2))
+        @test (
+            outcome_matrix.asthma_incidence[1, 5, 1] +
+            outcome_matrix.asthma_incidence[1, 5, 2]
+        ) == 10
+        @test (
+            outcome_matrix.asthma_incidence[2, 5, 1] +
+            outcome_matrix.asthma_incidence[2, 5, 2]
+        ) >= 10
+        @test (
+            outcome_matrix.asthma_incidence[2, 5, 1] +
+            outcome_matrix.asthma_incidence[2, 5, 2]
+        ) <= 11
+        @test outcome_matrix.cost[1, 1, :] == zeros(Real, (2))
+        @test outcome_matrix.cost[1, 2, :] == zeros(Real, (2))
+        @test outcome_matrix.cost[1, 3, :] == zeros(Real, (2))
+        @test outcome_matrix.cost[1, 4, :] == zeros(Real, (2))
+        @test (
+            outcome_matrix.cost[1, 5, 1] +
+            outcome_matrix.cost[1, 5, 2]
+        ) == 1660.0
+        @test outcome_matrix.cost[2, 1, :] == zeros(Real, (2))
+        @test outcome_matrix.cost[2, 2, :] == zeros(Real, (2))
+        @test outcome_matrix.cost[2, 3, :] == zeros(Real, (2))
+        @test outcome_matrix.cost[2, 4, :] == zeros(Real, (2))
+        @test (
+            outcome_matrix.cost[2, 5, 1] +
+            outcome_matrix.cost[2, 5, 2]
+        ) >= 1660.0
+        @test (
+            outcome_matrix.cost[2, 5, 1] +
+            outcome_matrix.cost[2, 5, 2]
+        ) <= 1820.0
+        @test outcome_matrix.death == zeros(Int, (2, 5, 2))
+        @test outcome_matrix.emigration == zeros(Int, (2, 5, 2))
+        @test (
+            outcome_matrix.exacerbation[1, 5, 1] +
+            outcome_matrix.exacerbation[1, 5, 2]
+        ) > 1000
+        @test (
+            outcome_matrix.family_history[1, 1, 1] +
+            outcome_matrix.family_history[1, 1, 2]
+        ) == 10
+        @test (
+            outcome_matrix.family_history[1, 2, 1] +
+            outcome_matrix.family_history[1, 2, 2]
+        ) == 10
+        @test (
+            outcome_matrix.family_history[1, 3, 1] +
+            outcome_matrix.family_history[1, 3, 2]
+        ) == 10
+        @test (
+            outcome_matrix.family_history[1, 4, 1] +
+            outcome_matrix.family_history[1, 4, 2]
+        ) == 10
+        @test (
+            outcome_matrix.family_history[1, 5, 1] +
+            outcome_matrix.family_history[1, 5, 2]
+        ) == 10
+        @test outcome_matrix.immigration[1, :, :] == zeros(Int, (5, 2))
+        @test (
+            outcome_matrix.immigration[2, 2, 1] +
+            outcome_matrix.immigration[2, 2, 2] +
+            outcome_matrix.immigration[2, 3, 1] +
+            outcome_matrix.immigration[2, 3, 2] +
+            outcome_matrix.immigration[2, 4, 1] +
+            outcome_matrix.immigration[2, 4, 2] +
+            outcome_matrix.immigration[2, 5, 1] +
+            outcome_matrix.immigration[2, 5, 2]
+        ) == 1
+    end
+end
+
+
+function test_run_simulation_full(config)
+    @testset "test run_simulation" begin
+        config["simulation"] = Dict(
+            "min_cal_year" => 2024,
+            "time_horizon" => 3,
+            "province" => "CA",
+            "population_growth_type" => "M3",
+            "num_births_initial" => 10,
+            "max_age" => 111
+        )
+        outcome_matrix = LEAP.run_simulation(seed=1, until_all_die=false, verbose=false, config=config)
     end
 end
 
