@@ -546,7 +546,9 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                     "$(simulation.agent.has_asthma)"
 
                 else
+                    @timeit timer_output "reassess_asthma_diagnosis!" begin
                     reassess_asthma_diagnosis!(simulation, outcome_matrix)
+                    end
                     @info "    | -- Agent was diagnosed with asthma, " *
                     "is this diagnosis correct? $(simulation.agent.has_asthma)"
                 end
@@ -565,16 +567,20 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                     "prevalence"
                 )
 
+                @timeit timer_output "compute_utility" begin
                 utility = compute_utility(simulation.agent, simulation.utility)
                 @info "    | -- Utility of asthma: $utility"
+                end
 
                 increment_field_in_outcome_matrix!(
                     outcome_matrix, "utility", simulation.agent.age, simulation.agent.sex,
                     simulation.agent.cal_year_index, utility
                 )
 
+                @timeit timer_output "compute_cost" begin
                 cost = compute_cost(simulation.agent, simulation.cost)
                 @info "    | -- Cost of asthma: $cost CAD"
+                end
 
                 increment_field_in_outcome_matrix!(
                     outcome_matrix, "cost", simulation.agent.age, simulation.agent.sex,
