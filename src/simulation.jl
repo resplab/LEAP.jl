@@ -527,7 +527,9 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
             # if age >4, we need to generate the initial distribution of asthma related events
             if simulation.agent.age > 3
+                @timeit timer_output "generate_initial_asthma!" begin
                 generate_initial_asthma!(simulation)
+                end
                 @info "    | -- Agent age > 3, " *
                 "agent has asthma (prevalence)? $(simulation.agent.has_asthma)"
             end
@@ -537,7 +539,9 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 simulation.agent.cal_year_index <= max_time_horizon)
 
                 if !simulation.agent.has_asthma
+                    @timeit timer_output "check_if_agent_gets_new_asthma_diagnosis!" begin
                     check_if_agent_gets_new_asthma_diagnosis!(simulation, outcome_matrix)
+                    end
                     @info "    | -- Agent has asthma (incidence)? " *
                     "$(simulation.agent.has_asthma)"
 
