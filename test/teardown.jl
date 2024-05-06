@@ -11,17 +11,13 @@ function process_coverage_files(module_name="all")
         coverage = process_folder(folder)
         files = readdir(folder)
         files = map!(file -> joinpath(folder, file), files, files)
-        @info files
         append!(files, readdir(joinpath(folder, "modules")))
         files = map!(file -> joinpath(folder, "modules", file), files, files)
-        @info files
         filter!(file -> occursin(".cov", file), files)
         sources = Vector{String}()
-        @info files
         for file in files
             push!(sources, read(file, String))
         end
-        @info sources
     else
         if module_name * ".jl" in readdir(joinpath(LEAP_SRC_PATH, "modules"))
             folder = joinpath(LEAP_SRC_PATH, "modules")
