@@ -13,16 +13,16 @@ using LEAP
     if all_tests || "agent" in ARGS
         include("test_agent.jl")
     end
-    if all_tests || "antibiotic" in ARGS
+    if all_tests || "antibioticexposure" in ARGS
         include("test_antibioticexposure.jl")
     end
-    if all_tests || "cost" in ARGS
+    if all_tests || "asthmacost" in ARGS
         include("test_asthmacost.jl")
     end
     if all_tests || "birth" in ARGS
         include("test_birth.jl")
     end
-    if all_tests || "census" in ARGS
+    if all_tests || "censusdivision" in ARGS
         include("test_censusdivision.jl")
     end
     if all_tests || "control" in ARGS
@@ -37,7 +37,7 @@ using LEAP
     if all_tests || "exacerbation" in ARGS
         include("test_exacerbation.jl")
     end
-    if all_tests || "family_history" in ARGS
+    if all_tests || "familyhistory" in ARGS
         include("test_familyhistory.jl")
     end
     if all_tests || "immigration" in ARGS
@@ -46,7 +46,7 @@ using LEAP
     if all_tests || "incidence" in ARGS
         include("test_incidence.jl")
     end
-    if all_tests || "outcome_matrix" in ARGS
+    if all_tests || "outcomematrix" in ARGS
         include("test_outcomematrix.jl")
     end
     if all_tests || "pollution" in ARGS

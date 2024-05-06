@@ -46,6 +46,49 @@ julia> # type ] here to enter the Pkg REPL
 
 ## Tests
 
+### Command Line
+
+To run unit tests via the command line:
+
+```
+cd LEAP.jl
+julia --project=. --code-coverage test/runtests.jl
+```
+
+To select specific modules to test, list them as args:
+
+```
+julia --project=. --code-coverage test/runtests.jl "agent"
+```
+
+If you have run with `--code-coverage`, then after the tests have run, you will need to run
+the `teardown.jl` file:
+
+```
+julia --project=. "./test/teardown.jl" --module-coverage "agent"
+```
+
+
+### Julia REPL
+
+```
+cd LEAP.jl
+julia
+julia> using Pkg
+julia> Pkg.add(path="PATH_TO/LEAP.jl")
+julia> Pkg.activate(@__DIR__)
+julia> Pkg.instantiate()
+julia> Pkg.test("LEAP", coverage=true)
+```
+
+To select specific modules to test, use the `test_args` argument:
+
+```
+julia> Pkg.test("LEAP", coverage=true, tests_args=["all"])
+```
+
+### Package Mode
+
 ```
 cd LEAP.jl
 julia
