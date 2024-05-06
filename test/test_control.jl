@@ -29,11 +29,11 @@ function test_compute_control_levels()
     sex = false
     age = 20
     control_levels = LEAP.compute_control_levels(control, sex, age, false)
-    @test round(sum(
+    @test round(sum([
         control_levels[:fully_controlled],
         control_levels[:partially_controlled],
         control_levels[:uncontrolled]
-        ), digits=0) == 1
+        ]), digits=0) == 1
     @test round(sum(control_levels[:as_array]), digits=0) == 1
 end
 
