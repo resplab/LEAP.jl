@@ -892,16 +892,20 @@ function test_run_simulation_full(config)
             "num_births_initial" => 10,
             "max_age" => 111
         )
-        outcome_matrix = LEAP.run_simulation(seed=1, until_all_die=false, verbose=false, config=config)
+        outcome_matrix = LEAP.run_simulation(
+            seed=1, until_all_die=false, verbose=true, config=config
+        )
+        @test outcome_matrix.immigration[1, :, :] == zeros(Int, (112, 2))
     end
 end
 
 
 @testset "test simulation" begin
     config = JSON.parsefile(CONFIG_PATH)
-    # test_get_new_agents(deepcopy(config))
-    # test_check_if_agent_gets_new_asthma_diagnosis!(deepcopy(config))
-    test_run_simulation_one_year(deepcopy(config))
+    test_get_new_agents(deepcopy(config))
+    test_generate_initial_asthma!(deepcopy(config))
+    test_check_if_agent_gets_new_asthma_diagnosis!(deepcopy(config))
     test_update_asthma_effects!(deepcopy(config))
-    test_run_simulation_two_years(deepcopy(config))
+    test_reassess_asthma_diagnosis!(deepcopy(config))
+    test_run_simulation(deepcopy(config))
 end
