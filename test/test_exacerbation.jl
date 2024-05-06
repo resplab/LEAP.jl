@@ -23,7 +23,7 @@ function test_exacerbation()
         @test exacerbation.parameters[:βprev_exac1] == 0.0
         @test exacerbation.parameters[:βprev_exac2] == 0.0
         @test exacerbation.parameters[:min_year] == 2001
-        @test exacerbation.parameters[:calibration][(2000,0)][1, :age] == 3
+        @test exacerbation.calibration_table[(2000,0)][1, :age] == 3
     end
 end
 
