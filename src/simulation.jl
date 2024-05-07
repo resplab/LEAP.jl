@@ -1,5 +1,3 @@
-import Base.@kwdef
-
 """
     Simulation
 
@@ -28,6 +26,7 @@ TODO.
     immigration::ImmigrationModule
     death::DeathModule
     incidence::IncidenceModule
+    prevalence::PrevalenceModule
     reassessment::ReassessmentModule
     control::ControlModule
     exacerbation::ExacerbationModule
@@ -39,10 +38,10 @@ TODO.
     census_table::CensusTableModule
     pollution_table::PollutionTableModule
     SSP::String
-    initial_distribution
     outcome_matrix
     function Simulation(config::AbstractDict)
         min_cal_year = config["simulation"]["min_cal_year"]
+        max_age = config["simulation"]["max_age"]
         province = config["simulation"]["province"]
         population_growth_type = config["simulation"]["population_growth_type"]
         max_cal_year = min_cal_year + config["simulation"]["time_horizon"] - 1
@@ -56,11 +55,12 @@ TODO.
             config["simulation"]["num_births_initial"],
             population_growth_type,
             nothing,
-            Birth(min_cal_year, province, population_growth_type),
+            Birth(min_cal_year, province, population_growth_type, max_age),
             Emigration(min_cal_year, province, population_growth_type),
-            Immigration(min_cal_year, province, population_growth_type),
+            Immigration(min_cal_year, province, population_growth_type, max_age),
             Death(config["death"], province, min_cal_year),
             Incidence(config["incidence"]),
+            Prevalence(config["prevalence"]),
             Reassessment(min_cal_year, province),
             Control(config["control"]),
             Exacerbation(config["exacerbation"], province),
@@ -72,7 +72,6 @@ TODO.
             CensusTable(config["census_table"]),
             PollutionTable(),
             config["pollution"]["SSP"],
-            nothing,
             (;)
         )
     end
@@ -90,6 +89,7 @@ TODO.
         immigration::ImmigrationModule,
         death::DeathModule,
         incidence::IncidenceModule,
+        prevalence::PrevalenceModule,
         reassessment::ReassessmentModule,
         control::ControlModule,
         exacerbation::ExacerbationModule,
@@ -101,7 +101,6 @@ TODO.
         census_table::CensusTableModule,
         pollution_table::PollutionTableModule,
         SSP::String,
-        initial_distribution,
         outcome_matrix
     )
         new(
@@ -118,6 +117,7 @@ TODO.
             immigration,
             death,
             incidence,
+            prevalence,
             reassessment,
             control,
             exacerbation,
@@ -129,7 +129,6 @@ TODO.
             census_table,
             pollution_table,
             SSP,
-            initial_distribution,
             outcome_matrix
         )
     end
@@ -184,32 +183,34 @@ end
 
 
 function generate_initial_asthma!(simulation::Simulation)
-    @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.incidence, "prevalence"
-    )
-    if simulation.agent.has_asthma
-        @set! simulation.agent.asthma_status = true
-        @set! simulation.agent.asthma_age = compute_asthma_age(
-            simulation.agent, simulation.incidence, simulation.agent.age
+
+    agent = deepcopy(simulation.agent)
+    @set! agent.has_asthma = agent_has_asthma(agent, simulation.prevalence)
+
+    if agent.has_asthma
+        @set! agent.asthma_status = true
+        @set! agent.asthma_age = compute_asthma_age(
+            agent, simulation.incidence, simulation.prevalence, agent.age
         )
-        @set! simulation.agent.total_hosp = compute_hospitalization_prob(
-            simulation.agent, simulation.exacerbation_severity, simulation.control,
+        @set! agent.total_hosp = compute_hospitalization_prob(
+            agent, simulation.exacerbation_severity, simulation.control,
             simulation.exacerbation
         )
-        @set! simulation.agent.control_levels = compute_control_levels(
-            simulation.control, simulation.agent.sex, simulation.agent.age, true
+        @set! agent.control_levels = compute_control_levels(
+            simulation.control, agent.sex, agent.age, true
         )
-        @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations_initial(
-            simulation.agent, simulation.exacerbation
+        @set! agent.exac_hist.num_current_year = compute_num_exacerbations_initial(
+            agent, simulation.exacerbation
         )
-        # the number of exacerbation by severity
-        @set! simulation.agent.exac_sev_hist.current_year = compute_distribution_exac_severity(
-            simulation.exacerbation_severity, simulation.agent.exac_hist.num_current_year,
-            (simulation.agent.total_hosp>0), simulation.agent.age
+        # the number of exacerbations by severity
+        @set! agent.exac_sev_hist.current_year = compute_distribution_exac_severity(
+            simulation.exacerbation_severity, agent.exac_hist.num_current_year,
+            (agent.total_hosp>0), agent.age
         )
-        # update total hosp
-        @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
+        # update total hospitalizations
+        @set! agent.total_hosp += agent.exac_sev_hist.current_year[4]
     end
+    setproperty!(simulation, Symbol("agent"), agent)
 end
 
 
@@ -273,44 +274,54 @@ end
 
 function update_asthma_effects!(simulation::SimulationModule, outcome_matrix::OutcomeMatrixModule)
 
-    @set! simulation.agent.control_levels = compute_control_levels(
-        simulation.control, simulation.agent.sex, simulation.agent.age
+    agent = deepcopy(simulation.agent)
+    @set! agent.control_levels = compute_control_levels(
+        simulation.control, agent.sex, agent.age
     )
-    add_control_to_outcome_matrix!(outcome_matrix, simulation.agent.age,
-        simulation.agent.sex, simulation.agent.cal_year_index,
-        simulation.agent.control_levels
+    add_control_to_outcome_matrix!(
+        outcome_matrix,
+        agent.age,
+        agent.sex,
+        agent.cal_year_index,
+        agent.control_levels
     )
 
-    @set! simulation.agent.exac_hist.num_current_year = compute_num_exacerbations(
-        simulation.agent, simulation.exacerbation
+    @set! agent.exac_hist.num_current_year = compute_num_exacerbations(
+        agent, simulation.exacerbation
     )
 
-    if simulation.agent.exac_hist.num_current_year != 0
-        @set! simulation.agent.exac_sev_hist.current_year = (
+    if agent.exac_hist.num_current_year != 0
+        @set! agent.exac_sev_hist.current_year = (
         compute_distribution_exac_severity(
             simulation.exacerbation_severity,
-            simulation.agent.exac_hist.num_current_year,
-            (simulation.agent.total_hosp>0),
-            simulation.agent.age
+            agent.exac_hist.num_current_year,
+            (agent.total_hosp > 0),
+            agent.age
         ))
-        @set! simulation.agent.total_hosp += simulation.agent.exac_sev_hist.current_year[4]
+        @set! agent.total_hosp += agent.exac_sev_hist.current_year[4]
         increment_field_in_outcome_matrix!(
             outcome_matrix,
             "exacerbation",
-            simulation.agent.age,
-            simulation.agent.sex,
-            simulation.agent.cal_year_index
+            agent.age,
+            agent.sex,
+            agent.cal_year_index,
+            agent.exac_hist.num_current_year
         )
-        increment_field_in_outcome_matrix!(outcome_matrix, "exacerbation_hospital",
-            simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-            simulation.agent.exac_sev_hist.current_year[4]
+        increment_field_in_outcome_matrix!(
+            outcome_matrix,
+            "exacerbation_hospital",
+            agent.age, agent.sex, agent.cal_year_index,
+            agent.exac_sev_hist.current_year[4]
         )
-        add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix,
-            simulation.agent.age,
-            simulation.agent.sex, simulation.agent.cal_year_index,
-            simulation.agent.exac_sev_hist.current_year
+        add_exacerbation_by_severity_to_outcome_matrix!(
+            outcome_matrix,
+            agent.age,
+            agent.sex,
+            agent.cal_year_index,
+            agent.exac_sev_hist.current_year
         )
     end
+    setproperty!(simulation, Symbol("agent"), agent)
 end
 
 
@@ -318,44 +329,48 @@ end
     check_if_agent_gets_new_asthma_diagnosis!(simulation, outcome_matrix)
 
 If the agent does not have asthma, check to see if they get a new diagnosis this year.
+Mutates both the `simulation` and `outcome_matrix` arguments.
 
 # Arguments
 - `simulation::SimulationModule`: Simulation struct, see [`Simulation`](@ref).
 - `outcome_matrix::OutcomeMatrixModule`: OutcomeMatrix struct, see [`OutcomeMatrix`](@ref).
 """
-function check_if_agent_gets_new_asthma_diagnosis!(simulation::SimulationModule,
-    outcome_matrix::OutcomeMatrixModule
+function check_if_agent_gets_new_asthma_diagnosis!(
+    simulation::SimulationModule, outcome_matrix::OutcomeMatrixModule
 )
-    @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.incidence, "incidence"
+    agent = deepcopy(simulation.agent)
+    @set! agent.has_asthma = agent_has_asthma(
+        agent, simulation.incidence, simulation.prevalence
     )
     # simulate and record asthma related events if they are labeled with asthma
-    if simulation.agent.has_asthma
+    if agent.has_asthma
         # if they did not have asthma dx in the past, then record it
-        @set! simulation.agent.asthma_age = copy(simulation.agent.age)
+        @set! agent.asthma_age = copy(agent.age)
         increment_field_in_outcome_matrix!(outcome_matrix, "asthma_incidence",
-            simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
+            agent.age, agent.sex, agent.cal_year_index
         )
+        setproperty!(simulation, Symbol("agent"), agent)
         update_asthma_effects!(simulation, outcome_matrix)
+        agent = deepcopy(simulation.agent)
+
+        # keep track of patients who got asthma for the first time
+        if !agent.asthma_status
+            @set! agent.asthma_status = true
+            increment_field_in_outcome_matrix!(outcome_matrix, "asthma_status",
+                agent.age, agent.sex,
+                agent.cal_year_index
+            )
+        end
     end
 
     update_asthma_in_contingency_table!(outcome_matrix,
-        simulation.agent.age, simulation.agent.sex,
-        simulation.agent.cal_year, simulation.agent.family_hist,
-        simulation.agent.num_antibiotic_use,
-        simulation.agent.has_asthma,
+        agent.age, simulation.agent.sex,
+        agent.cal_year, agent.has_family_hist,
+        agent.num_antibiotic_use,
+        agent.has_asthma,
         "incidence"
     )
-
-    # keep track of patients who got asthma for the first time
-    if simulation.agent.has_asthma && !simulation.agent.asthma_status
-        @set! simulation.agent.asthma_status = true
-        @set! simulation.agent.asthma_age = simulation.agent.age
-        increment_field_in_outcome_matrix!(outcome_matrix, "asthma_status",
-            simulation.agent.age, simulation.agent.sex,
-            simulation.agent.cal_year_index
-        )
-    end
+    setproperty!(simulation, Symbol("agent"), agent)
 end
 
 
@@ -371,21 +386,23 @@ Reassess if the agent has asthma.
 function reassess_asthma_diagnosis!(simulation::SimulationModule,
     outcome_matrix::OutcomeMatrixModule
 )
-
-    # reassessment
-    @set! simulation.agent.has_asthma = agent_has_asthma(
-        simulation.agent, simulation.reassessment
+    agent = deepcopy(simulation.agent)
+    @set! agent.has_asthma = agent_has_asthma(
+        agent, simulation.reassessment
     )
     # if still labeled with asthma
-    if simulation.agent.has_asthma
+    if agent.has_asthma
         # update exacerbation
-        @set! simulation.agent.exac_hist.num_prev_year = copy(
-            simulation.agent.exac_hist.num_current_year
+        @set! agent.exac_hist.num_prev_year = copy(
+            agent.exac_hist.num_current_year
         )
-        @set! simulation.agent.exac_sev_hist.prev_year = copy(
-            simulation.agent.exac_sev_hist.current_year
+        @set! agent.exac_sev_hist.prev_year = copy(
+            agent.exac_sev_hist.current_year
         )
+        setproperty!(simulation, Symbol("agent"), agent)
         update_asthma_effects!(simulation, outcome_matrix)
+    else
+        setproperty!(simulation, Symbol("agent"), agent)
     end
 end
 
@@ -403,7 +420,16 @@ TODO.
 - `verbose::Bool`: If true, print out updates during simulation. Default true.
 """
 function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool=false,
-    config::Union{AbstractDict, Nothing}=nothing)
+    config::Union{AbstractDict, Nothing}=nothing
+)
+
+    log_level = Logging.Warn
+    if verbose
+        log_level = Logging.Info
+    end
+
+    logger = ConsoleLogger(stdout, log_level)
+    global_logger(logger)
 
     if isnothing(config)
         config = JSON.parsefile(CONFIG_PATH)
@@ -422,8 +448,15 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
     max_time_horizon = (until_all_die ? typemax(Int) : simulation.time_horizon)
     cal_years = min_cal_year:max_cal_year
+    total_years = max_cal_year - min_cal_year + 1
 
-    outcome_matrix = create_outcome_matrix(until_all_die, cal_years, min_cal_year, max_cal_year, max_age)
+    outcome_matrix = create_outcome_matrix(
+        until_all_die=until_all_die,
+        cal_years=cal_years,
+        min_cal_year=min_cal_year,
+        max_cal_year=max_cal_year,
+        max_age=max_age
+    )
 
     # time the performance
     timer_output = TimerOutput()
@@ -433,37 +466,49 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     for cal_year in cal_years
         @timeit timer_output "calendar year $cal_year" begin
 
-        if verbose
-            println(cal_year)
-        end
-
         cal_year_index = cal_year - min_cal_year + 1
 
+        @timeit timer_output "get_new_agents" begin
         new_agents_df = get_new_agents(
             simulation=simulation,
             cal_year=cal_year,
             cal_year_index=cal_year_index
         )
+        end
 
+        @info "Year $cal_year, year $cal_year_index of $total_years years, " *
+        "$(size(new_agents_df)[1]) new agents born/immigrated."
+        @info "$new_agents_df"
         # for each agent i born/immigrated in cal_year
         for i in 1:size(new_agents_df)[1]
-            @set! simulation.control = Control(config["control"])
-            @set! simulation.exacerbation = Exacerbation(config["exacerbation"], simulation.province)
-            @set! simulation.exacerbation_severity = ExacerbationSeverity(config["exacerbation_severity"])
+            assign_random_β0!(simulation.control)
+            assign_random_β0!(simulation.exacerbation)
+            assign_random_p!(simulation.exacerbation_severity)
 
-            simulation.agent = create_agent(
-                cal_year=cal_year,
-                cal_year_index=cal_year_index,
-                month=month,
+            @timeit timer_output "create new Agent" begin
+            simulation.agent = Agent(
                 sex=new_agents_df.sex[i],
                 age=new_agents_df.age[i],
-                province=simulation.province,
-                antibiotic_exposure=simulation.antibiotic_exposure,
+                cal_year=cal_year,
+                cal_year_index=cal_year_index,
                 family_hist=simulation.family_history,
+                antibiotic_exposure=simulation.antibiotic_exposure,
+                province=simulation.province,
+                month=month,
+                SSP=simulation.SSP,
                 census_table=simulation.census_table,
-                pollution_table=simulation.pollution_table,
-                SSP=simulation.SSP
+                pollution_table=simulation.pollution_table
             )
+            end
+
+            @info "[Agent #$(simulation.agent.uuid.short)]: $(i)th new agent of $cal_year, " *
+                  "age $(simulation.agent.age), sex $(Int(simulation.agent.sex)), " *
+                  "immigrant: $(new_agents_df.immigrant[i]), " *
+                  "newborn: $(!new_agents_df.immigrant[i])"
+
+            @info "| -- Year: $(simulation.agent.cal_year_index + min_cal_year - 1), " *
+            " age: $(simulation.agent.age)"
+
             if new_agents_df.immigrant[i]
                 increment_field_in_outcome_matrix!(outcome_matrix, "immigration",
                     simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
@@ -472,17 +517,21 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
             increment_field_in_outcome_matrix!(outcome_matrix, "antibiotic_exposure",
                 simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                simulation.agent.family_hist
+                simulation.agent.num_antibiotic_use
             )
 
             increment_field_in_outcome_matrix!(outcome_matrix, "family_history",
                 simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                simulation.agent.num_antibiotic_use
+                simulation.agent.has_family_hist
             )
 
             # if age >4, we need to generate the initial distribution of asthma related events
             if simulation.agent.age > 3
+                @timeit timer_output "generate_initial_asthma!" begin
                 generate_initial_asthma!(simulation)
+                end
+                @info "    | -- Agent age > 3, " *
+                "agent has asthma (prevalence)? $(simulation.agent.has_asthma)"
             end
 
             # go through event processes for each agent
@@ -490,9 +539,18 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 simulation.agent.cal_year_index <= max_time_horizon)
 
                 if !simulation.agent.has_asthma
+                    @timeit timer_output "check_if_agent_gets_new_asthma_diagnosis!" begin
                     check_if_agent_gets_new_asthma_diagnosis!(simulation, outcome_matrix)
+                    end
+                    @info "    | -- Agent has asthma (incidence)? " *
+                    "$(simulation.agent.has_asthma)"
+
                 else
+                    @timeit timer_output "reassess_asthma_diagnosis!" begin
                     reassess_asthma_diagnosis!(simulation, outcome_matrix)
+                    end
+                    @info "    | -- Agent was diagnosed with asthma, " *
+                    "is this diagnosis correct? $(simulation.agent.has_asthma)"
                 end
 
                 # if no asthma, record it
@@ -503,27 +561,39 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                 end
                 update_asthma_in_contingency_table!(outcome_matrix,
                     simulation.agent.age, simulation.agent.sex,
-                    simulation.agent.cal_year, simulation.agent.family_hist,
+                    simulation.agent.cal_year, simulation.agent.has_family_hist,
                     simulation.agent.num_antibiotic_use,
                     simulation.agent.has_asthma,
                     "prevalence"
                 )
 
-                increment_field_in_outcome_matrix!(outcome_matrix, "util",
-                    simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                    compute_utility(simulation.agent, simulation.utility)
+                @timeit timer_output "compute_utility" begin
+                utility = compute_utility(simulation.agent, simulation.utility)
+                @info "    | -- Utility of asthma: $utility"
+                end
+
+                increment_field_in_outcome_matrix!(
+                    outcome_matrix, "utility", simulation.agent.age, simulation.agent.sex,
+                    simulation.agent.cal_year_index, utility
                 )
-                increment_field_in_outcome_matrix!(outcome_matrix, "cost",
-                    simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index,
-                    compute_cost(simulation.agent, simulation.cost)
+
+                @timeit timer_output "compute_cost" begin
+                cost = compute_cost(simulation.agent, simulation.cost)
+                @info "    | -- Cost of asthma: $cost CAD"
+                end
+
+                increment_field_in_outcome_matrix!(
+                    outcome_matrix, "cost", simulation.agent.age, simulation.agent.sex,
+                    simulation.agent.cal_year_index, cost
                 )
 
                 # death or emigration, assume death occurs first
-                if compute_prob_death(simulation.agent, simulation.death)
+                if agent_dies(simulation.agent, simulation.death)
                     @set! simulation.agent.alive = false
                     increment_field_in_outcome_matrix!(outcome_matrix, "death",
                         simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
                     )
+                    @info "    | -- Agent has died at age $(simulation.agent.age)"
                 # emigration
                 elseif compute_prob_emigration(simulation.agent.cal_year_index,
                     simulation.agent.age,simulation.agent.sex,simulation.emigration)
@@ -531,6 +601,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                     increment_field_in_outcome_matrix!(outcome_matrix, "emigration",
                         simulation.agent.age, simulation.agent.sex, simulation.agent.cal_year_index
                     )
+                    @info "    | -- Agent has emigrated at age $(simulation.agent.age)"
                 else
                     # record alive
                     increment_field_in_outcome_matrix!(outcome_matrix, "alive",
@@ -540,6 +611,13 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                     @set! simulation.agent.age += 1
                     @set! simulation.agent.cal_year += 1
                     @set! simulation.agent.cal_year_index +=1
+
+                    if (simulation.agent.age <= max_age &&
+                        simulation.agent.cal_year_index <= max_time_horizon
+                    )
+                        @info "| -- Year: $(simulation.agent.cal_year_index + min_cal_year - 1), " *
+                        " age: $(simulation.agent.age)"
+                    end
                 end
             end
         end
@@ -560,10 +638,8 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
     @set! simulation.outcome_matrix = outcome_matrix
 
-    if verbose
-        print("\n Simulation finished. Check your simulation object for results.")
-        print_timer(timer_output::TimerOutput)
-    end
+    @info "\n Simulation finished. Check your simulation object for results."
+    print_timer(timer_output::TimerOutput)
 
     return simulation.outcome_matrix
 end

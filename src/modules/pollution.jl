@@ -1,7 +1,4 @@
 using GRIB
-using DataFrames
-using Statistics
-using CSV
 
 
 """
@@ -58,6 +55,33 @@ SSP scenario.
     wildfire_pm25_scaled::Float64
     total_pm25::Float64
     SSP::String
+    function Pollution(
+        cduid::Integer, year::Integer, month::Integer, SSP::String,
+        pollution_table::Union{Nothing, PollutionTable}=nothing
+    )
+        if isnothing(pollution_table)
+            pollution_table = PollutionTable()
+        end
+        df = filter(
+            [:CDUID, :year, :month] => (x, y, z) ->
+            x == cduid && y == year && z == month, pollution_table.data[(SSP,)]
+        )
+
+        new(
+            cduid,
+            year,
+            month,
+            df[1, :wildfire_pm25_scaled],
+            df[1, :total_pm25],
+            SSP
+        )
+    end
+    function Pollution(
+        cduid::Integer, year::Integer, month::Integer, wildfire_pm25_scaled::Float64,
+        total_pm25::Float64, SSP::String
+    )
+        new(cduid, year, month, wildfire_pm25_scaled, total_pm25, SSP)
+    end
 end
 
 
@@ -86,42 +110,6 @@ function load_pollution_data(pm25_data_path::Union{String, Nothing}=nothing)
     end
     pollution_data = groupby(pollution_data, :SSP)
     return pollution_data
-end
-
-
-"""
-    assign_pollution(cduid, year, month, SSP, pollution_table)
-
-Get the pollution data for a specific year and SSP scenario.
-
-# Arguments
-- `cduid::Integer`: the census division identifier.
-- `year::Integer`: the year for the pollution data projection.
-- `month::Integer`: the integer month for the pollution data projection.
-- `SSP::String`: the SSP scenario, one of `SSP1_2.6`, `SSP2_4.5`, `SSP3_7.0`, `SSP5_8.5`.
-- `pollution_table::PollutionTable`: an object containing the PM2.5 pollution data for various
-    SSP scenarios.
-
-# Returns
-- `Pollution`: PM2.5 pollution data for a specific year, month and SSP scenario.
-"""
-function assign_pollution(cduid::Integer, year::Integer, month::Integer, SSP::String,
-    pollution_table::PollutionTable)
-
-    df = filter(
-        [:CDUID, :year, :month] => (x, y, z) ->
-        x == cduid && y == year && z == month, pollution_table.data[(SSP,)]
-    )
-
-    pollution = Pollution(
-        cduid=cduid,
-        year=year,
-        month=month,
-        wildfire_pm25_scaled=df[1, :wildfire_pm25_scaled],
-        total_pm25=df[1, :total_pm25],
-        SSP=SSP
-    )
-    return pollution
 end
 
 

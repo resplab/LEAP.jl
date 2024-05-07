@@ -1,4 +1,4 @@
-import Base.@kwdef
+MIN_CENSUS_YEAR = 2021
 
 """
     CensusTable
@@ -35,8 +35,22 @@ struct CensusTable <: CensusTableModule
     data::GroupedDataFrame{DataFrame}
     year::Integer
     function CensusTable(config::AbstractDict)
-        data = load_census_data()
         year = config["year"]
+        if year < MIN_CENSUS_YEAR
+            throw(ArgumentError(
+                "year must be > $MIN_CENSUS_YEAR, received $year."
+            ))
+        end
+        data = load_census_data()
+        new(data, year)
+    end
+    function CensusTable(year::Integer)
+        if year < MIN_CENSUS_YEAR
+            throw(ArgumentError(
+                "year must be > $MIN_CENSUS_YEAR, received $year."
+            ))
+        end
+        data = load_census_data()
         new(data, year)
     end
     function CensusTable(data::GroupedDataFrame{DataFrame}, year::Integer)
@@ -65,15 +79,50 @@ Population and dwelling counts: Canada and census divisions
 
 https://www150.statcan.gc.ca/t1/tbl1/en/cv.action?pid=9810000701
 
+If the user provides only the province and year, a census division will be randomly assigned
+based on population.
+
 # Fields
-- `cduid::Union{Integer, Nothing}`: the census division identifier.
-- `name::Union{String, Nothing}`: the census division name.
+- `cduid::Integer`: the census division identifier.
+- `name::String`: the census division name.
 - `year::Integer`: the year the census population data was collected.
 """
 @kwdef struct CensusDivision <: CensusDivisionModule
-    cduid::Union{Integer, Nothing}
-    name::Union{String, Nothing}
-    year::Union{Integer, Nothing}
+    cduid::Integer
+    name::String
+    year::Integer
+    function CensusDivision(
+        province::String, year::Integer=MIN_CENSUS_YEAR,
+        census_table::Union{Nothing, CensusTable}=nothing
+    )
+        if isnothing(census_table)
+            census_table = CensusTable(year)
+        end
+        if province == "CA"
+            census_table_df = DataFrames.DataFrame(census_table.data)
+        else
+            census_table_df = census_table.data[(province,)]
+        end
+
+        census_division_id = sample(
+            census_table_df[!, "CDUID"],
+            Weights(census_table_df[!, "population"])
+        )
+        census_division_name = filter(
+            :CDUID => isequal(census_division_id), census_table_df
+        )[1, "census_division_name"]
+
+        new(
+            census_division_id,
+            census_division_name,
+            year
+        )
+    end
+    function CensusDivision(
+        cduid::Integer, name::String, year::Integer
+    )
+        new(cduid, name, year)
+    end
 end
 
 
@@ -163,43 +212,6 @@ end
 
 
 """
-    assign_census_division(census_table, province, year)
-
-Randomly assign a census division based on population.
-
-# Arguments
-- `census_table::CensusTable`: Struct containing Canadian census data, see  [`CensusTable`](@ref).
-- `province::String`: the two-letter province identifier.
-- `year::Integer`: the year the census was taken (default = 2021).
-
-# Returns
-- `CensusDivision`: the census division assigned.
-"""
-function assign_census_division(census_table::CensusTable, province::String, year::Integer=2021)
-    if province == "CA"
-        census_table_df = DataFrames.DataFrame(census_table.data)
-    else
-        census_table_df = census_table.data[(province,)]
-    end
-
-    census_division_id = sample(
-        census_table_df[!, "CDUID"],
-        Weights(census_table_df[!, "population"])
-    )
-    census_division_name = filter(
-        :CDUID => isequal(census_division_id), census_table_df
-    )[1, "census_division_name"]
-
-    census_division = CensusDivision(
-        census_division_id,
-        census_division_name,
-        year
-    )
-    return census_division
-end
-
-
-"""
     get_census_division_from_lat_lon(longitude, latitude, census_boundaries)
 
 Given a latitude and longitude, find the corresponding census division.
@@ -225,19 +237,16 @@ function get_census_division_from_lat_lon(; longitude::Float64, latitude::Float6
         y_0=census_boundaries.false_northing
     )
 
-    census_division = CensusDivision(
-        name=nothing,
-        cduid=nothing,
-        year=census_boundaries.year
-    )
     is_point_in_polygon = false
+    name = ""
+    cduid = 0
 
     for row_index in 1:size(census_boundaries.shapefile_data)[1]
         row = census_boundaries.shapefile_data[row_index, :]
         polygon = row.geometry
         if point_in_polygon(point, polygon)
-            @set! census_division.name = row.CDNAME
-            @set! census_division.cduid = row.CDUID
+            name = row.CDNAME
+            cduid = row.CDUID
             is_point_in_polygon = true
             break
         end
@@ -246,6 +255,11 @@ function get_census_division_from_lat_lon(; longitude::Float64, latitude::Float6
     if !is_point_in_polygon
         throw(error("Could not find point in any of the federal electoral districts."))
     else
+        census_division = CensusDivision(
+            name=name,
+            cduid=cduid,
+            year=census_boundaries.year
+        )
         return census_division
     end
 end

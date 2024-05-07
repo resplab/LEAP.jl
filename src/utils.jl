@@ -1,3 +1,17 @@
+@kwdef mutable struct UUID4
+    uuid4::UUID
+    short::String
+    function UUID4()
+        uuid4 = UUIDs.uuid4()
+        short = last(string(uuid4), 6)
+        new(uuid4, short)
+    end
+    function UUID4(; uuid4::UUID, short::String)
+        new(uuid4, short)
+    end
+end
+
+
 function dict_initializer(parameter_names::Union{Nothing,Vector{Symbol}})
     isnothing(parameter_names) ? nothing : Dict(parameter_names .=> missing)
 end
@@ -17,12 +31,4 @@ function string_to_symbols_dict(dict::AbstractDict)::AbstractDict
         new_dict[Symbol(key)] = value
     end
     return new_dict
-end
-
-function logit(p)
-    return log.( p ./ (1 .- p) )
-end
-
-function inverse_logit(x)
-    return exp.(x) ./ (1 .+ exp.(x))
 end

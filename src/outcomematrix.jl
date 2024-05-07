@@ -1,6 +1,3 @@
-import Base.@kwdef
-
-
 """
     OutcomeMatrix
 
@@ -14,7 +11,7 @@ TODO.
     asthma_prevalence_contingency_table::Union{GroupedDataFrame{DataFrame}, Matrix{Int}, Nothing}
     control::Union{Array{Real}, Nothing}
     cost::Union{Array{Real}, Nothing}
-    util::Union{Array{Real}, Nothing}
+    utility::Union{Array{Real}, Nothing}
     exacerbation_by_severity::Union{Array{Real}, Nothing}
     asthma_incidence_family_history::Union{Array{Int}, Nothing}
     asthma_prevalence_family_history::Union{Array{Int}, Nothing}
@@ -106,11 +103,11 @@ end
 
 
 
-function create_outcome_matrix(until_all_die::Bool, cal_years::UnitRange{Int}, min_cal_year::Integer,
-    max_cal_year::Integer, max_age::Integer)
+function create_outcome_matrix(; until_all_die::Bool, cal_years::UnitRange{Int},
+    min_cal_year::Integer, max_cal_year::Integer, max_age::Integer)
 
     outcome_matrix = OutcomeMatrix(
-        control=nothing, cost=nothing, util=nothing, exacerbation_by_severity=nothing,
+        control=nothing, cost=nothing, utility=nothing, exacerbation_by_severity=nothing,
         asthma_incidence_family_history=nothing,
         asthma_prevalence_family_history=nothing,
         asthma_status_family_history=nothing,
@@ -164,7 +161,7 @@ function create_outcome_matrix(until_all_die::Bool, cal_years::UnitRange{Int}, m
     type = Real
     dimensions = (length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2)
     setfield_outcome_matrix!(outcome_matrix, "cost", type, dimensions)
-    setfield_outcome_matrix!(outcome_matrix, "util", type, dimensions)
+    setfield_outcome_matrix!(outcome_matrix, "utility", type, dimensions)
 
     type = Int
     dimensions = (length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2)
@@ -186,7 +183,7 @@ end
 
 function add_control_to_outcome_matrix!(outcome_matrix::OutcomeMatrix, age::Integer, sex::Bool,
     cal_year_index::Integer, control_levels::AbstractDict)
-    outcome_matrix.control[cal_year_index, age+1, sex+1, :] += control_levels[:as_array]
+    outcome_matrix.control[cal_year_index, age + 1, sex + 1, :] += control_levels[:as_array]
 end
 
 function add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix::OutcomeMatrix, age::Integer,
@@ -196,7 +193,7 @@ function add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix::Outcome
 end
 
 function update_asthma_in_contingency_table!(outcome_matrix::OutcomeMatrix,
-    age::Integer, sex::Bool, cal_year::Integer, family_hist::Any, num_antibiotic_use::Integer,
+    age::Integer, sex::Bool, cal_year::Integer, has_family_hist::Bool, num_antibiotic_use::Integer,
     has_asthma::Bool, inc_or_prev::String
 )
     if has_asthma
@@ -208,13 +205,13 @@ function update_asthma_in_contingency_table!(outcome_matrix::OutcomeMatrix,
     if inc_or_prev == "incidence"
         outcome_matrix.asthma_incidence_contingency_table[(
             cal_year, Int(sex),
-            Int(family_hist),
+            Int(has_family_hist),
             min(num_antibiotic_use, 3)
             )][age + 1, column] += 1
     elseif inc_or_prev == "prevalence"
         outcome_matrix.asthma_prevalence_contingency_table[(
             cal_year, Int(sex),
-            Int(family_hist),
+            Int(has_family_hist),
             min(num_antibiotic_use, 3)
             )][age + 1, column] += 1
     else
