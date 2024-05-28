@@ -6,7 +6,7 @@ TODO.
 # Fields
 - `max_age::Integer`: the maximum age to compute in the simulation.
 - `province::Union{String, Char}`: a string indicating the province abbreviation, e.g. "BC".
-- `min_cal_year::Integer`: the calendar year to start the simulation at, e.g. 2000.
+- `min_year::Integer`: the calendar year to start the simulation at, e.g. 2000.
 - `time_horizon::Union{Missing,Int,Vector{Int}}`: TODO.
 - `num_births_initial::Union{Nothing,Missing,Real,String}`: the number of births for the initial
     year of the simulation.
@@ -15,8 +15,8 @@ TODO.
 @kwdef mutable struct Simulation <: SimulationModule
     max_age::Integer
     province::Union{String,Char}
-    min_cal_year::Integer
-    max_cal_year::Integer
+    min_year::Integer
+    max_year::Integer
     time_horizon::Union{Missing,Int,Vector{Int}}
     num_births_initial::Union{Nothing,Missing,Real,String}
     population_growth_type::Union{Missing,String,Char}
@@ -40,28 +40,28 @@ TODO.
     SSP::String
     outcome_matrix
     function Simulation(config::AbstractDict)
-        min_cal_year = config["simulation"]["min_cal_year"]
+        min_year = config["simulation"]["min_year"]
         max_age = config["simulation"]["max_age"]
         province = config["simulation"]["province"]
         population_growth_type = config["simulation"]["population_growth_type"]
-        max_cal_year = min_cal_year + config["simulation"]["time_horizon"] - 1
+        max_year = min_year + config["simulation"]["time_horizon"] - 1
 
         new(
             config["simulation"]["max_age"],
             province,
-            min_cal_year,
-            max_cal_year,
+            min_year,
+            max_year,
             config["simulation"]["time_horizon"],
             config["simulation"]["num_births_initial"],
             population_growth_type,
             nothing,
-            Birth(min_cal_year, province, population_growth_type, max_age),
-            Emigration(min_cal_year, province, population_growth_type),
-            Immigration(min_cal_year, province, population_growth_type, max_age),
-            Death(config["death"], province, min_cal_year),
+            Birth(min_year, province, population_growth_type, max_age),
+            Emigration(min_year, province, population_growth_type),
+            Immigration(min_year, province, population_growth_type, max_age),
+            Death(config["death"], province, min_year),
             Incidence(config["incidence"]),
             Prevalence(config["prevalence"]),
-            Reassessment(min_cal_year, province),
+            Reassessment(min_year, province),
             Control(config["control"]),
             Exacerbation(config["exacerbation"], province),
             ExacerbationSeverity(config["exacerbation_severity"]),
@@ -78,8 +78,8 @@ TODO.
     function Simulation(
         max_age::Integer,
         province::Union{String,Char},
-        min_cal_year::Integer,
-        max_cal_year::Integer,
+        min_year::Integer,
+        max_year::Integer,
         time_horizon::Union{Missing,Int,Vector{Int}},
         num_births_initial::Union{Nothing,Missing,Real,String},
         population_growth_type::Union{Missing,String,Char},
@@ -106,8 +106,8 @@ TODO.
         new(
             max_age,
             province,
-            min_cal_year,
-            max_cal_year,
+            min_year,
+            max_year,
             time_horizon,
             num_births_initial,
             population_growth_type,
@@ -148,30 +148,30 @@ end
 
 
 """
-    get_num_new_agents(cal_year, min_cal_year, num_new_born, num_immigrants, simulation)
+    get_num_new_agents(cal_year, min_year, num_new_born, num_immigrants, simulation)
 
 TODO.
 
 # Arguments
 - `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
-- `min_cal_year::Integer`: the calendar year of the initial iteration, e.g. 2010.
+- `min_year::Integer`: the calendar year of the initial iteration, e.g. 2010.
 - `num_new_born::Integer`: the number of babies born in the specified year `cal_year`.
 - `num_immigrants::Integer`: the number of immigrants who moved to Canada in the specified year
     `cal_year`.
 - `simulation::Simulation`:  Simulation module, see [`Simulation`](@ref).
 """
-function get_num_new_agents(cal_year::Integer, min_cal_year::Integer, num_new_born::Integer,
+function get_num_new_agents(cal_year::Integer, min_year::Integer, num_new_born::Integer,
     num_immigrants::Integer, simulation::Simulation)
     # for the first/initial year, we generate the initial population
     # otherwise we generate num_new_born + num_immigrants
     num_new_agents = (
-        cal_year==min_cal_year ? ceil(
+        cal_year==min_year ? ceil(
             Int, num_new_born / sum(filter(:age=> ==(0), simulation.birth.initial_population).prop)
         ) : num_new_born + num_immigrants
     )
     initial_pop_indices = Int[]
 
-    if cal_year == min_cal_year
+    if cal_year == min_year
         initial_pop_indices = get_initial_population_indices(
             simulation.birth, simulation.num_births_initial
         )
@@ -224,11 +224,11 @@ function get_new_agents(; simulation::SimulationModule, cal_year::Integer,
     num_immigrants = get_num_new_immigrants(
         simulation.immigration, num_new_born, cal_year_index
     )
-    num_new_agents = get_num_new_agents(cal_year, simulation.min_cal_year, num_new_born,
+    num_new_agents = get_num_new_agents(cal_year, simulation.min_year, num_new_born,
         num_immigrants, simulation
     )
 
-    if cal_year == simulation.min_cal_year
+    if cal_year == simulation.min_year
         initial_pop_indices = get_initial_population_indices(
             simulation.birth, simulation.num_births_initial
         )
@@ -443,18 +443,18 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
 
     month = 1
     max_age = simulation.max_age
-    min_cal_year = simulation.min_cal_year
-    max_cal_year = simulation.max_cal_year
+    min_year = simulation.min_year
+    max_year = simulation.max_year
 
     max_time_horizon = (until_all_die ? typemax(Int) : simulation.time_horizon)
-    cal_years = min_cal_year:max_cal_year
-    total_years = max_cal_year - min_cal_year + 1
+    cal_years = min_year:max_year
+    total_years = max_year - min_year + 1
 
     outcome_matrix = create_outcome_matrix(
         until_all_die=until_all_die,
         cal_years=cal_years,
-        min_cal_year=min_cal_year,
-        max_cal_year=max_cal_year,
+        min_year=min_year,
+        max_year=max_year,
         max_age=max_age
     )
 
@@ -466,7 +466,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
     for cal_year in cal_years
         @timeit timer_output "calendar year $cal_year" begin
 
-        cal_year_index = cal_year - min_cal_year + 1
+        cal_year_index = cal_year - min_year + 1
 
         @timeit timer_output "get_new_agents" begin
         new_agents_df = get_new_agents(
@@ -506,7 +506,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                   "immigrant: $(new_agents_df.immigrant[i]), " *
                   "newborn: $(!new_agents_df.immigrant[i])"
 
-            @info "| -- Year: $(simulation.agent.cal_year_index + min_cal_year - 1), " *
+            @info "| -- Year: $(simulation.agent.cal_year_index + min_year - 1), " *
             " age: $(simulation.agent.age)"
 
             if new_agents_df.immigrant[i]
@@ -615,7 +615,7 @@ function run_simulation(; seed=missing, until_all_die::Bool=false, verbose::Bool
                     if (simulation.agent.age <= max_age &&
                         simulation.agent.cal_year_index <= max_time_horizon
                     )
-                        @info "| -- Year: $(simulation.agent.cal_year_index + min_cal_year - 1), " *
+                        @info "| -- Year: $(simulation.agent.cal_year_index + min_year - 1), " *
                         " age: $(simulation.agent.age)"
                     end
                 end

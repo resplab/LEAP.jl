@@ -30,13 +30,13 @@ large.
 """
 function test_generate_initial_asthma!(config)
     @testset "test generate_initial_asthma! false" begin
-        min_cal_year = 2024
+        min_year = 2024
         time_horizon = 1
-        max_cal_year = min_cal_year + time_horizon - 1
+        max_year = min_year + time_horizon - 1
         max_age = 4
 
         config["simulation"] = Dict(
-            "min_cal_year" => min_cal_year,
+            "min_year" => min_year,
             "time_horizon" => time_horizon,
             "province" => "CA",
             "population_growth_type" => "M3",
@@ -72,7 +72,7 @@ function test_generate_initial_asthma!(config)
         @set! simulation.agent = LEAP.Agent(
             sex=true,
             age=4,
-            cal_year=min_cal_year,
+            cal_year=min_year,
             cal_year_index=1,
             family_hist=simulation.family_history,
             antibiotic_exposure=simulation.antibiotic_exposure,
@@ -86,13 +86,13 @@ function test_generate_initial_asthma!(config)
         @test simulation.agent.control_levels == nothing
     end
     @testset "test generate_initial_asthma! true" begin
-        min_cal_year = 2024
+        min_year = 2024
         time_horizon = 1
-        max_cal_year = min_cal_year + time_horizon - 1
+        max_year = min_year + time_horizon - 1
         max_age = 4
 
         config["simulation"] = Dict(
-            "min_cal_year" => min_cal_year,
+            "min_year" => min_year,
             "time_horizon" => time_horizon,
             "province" => "CA",
             "population_growth_type" => "M3",
@@ -129,7 +129,7 @@ function test_generate_initial_asthma!(config)
         @set! simulation.agent = LEAP.Agent(
             sex=true,
             age=4,
-            cal_year=min_cal_year,
+            cal_year=min_year,
             cal_year_index=1,
             family_hist=simulation.family_history,
             antibiotic_exposure=simulation.antibiotic_exposure,
@@ -176,13 +176,13 @@ ensures that the probability of an agent being diagnosed with asthma is 0.
 """
 function test_check_if_agent_gets_new_asthma_diagnosis!(config)
     @testset "test check_if_agent_gets_new_asthma_diagnosis! true" begin
-        min_cal_year = 2024
+        min_year = 2024
         time_horizon = 1
-        max_cal_year = min_cal_year + time_horizon - 1
+        max_year = min_year + time_horizon - 1
         max_age = 4
 
         config["simulation"] = Dict(
-            "min_cal_year" => min_cal_year,
+            "min_year" => min_year,
             "time_horizon" => time_horizon,
             "province" => "CA",
             "population_growth_type" => "M3",
@@ -203,16 +203,16 @@ function test_check_if_agent_gets_new_asthma_diagnosis!(config)
         config["family_history"]["parameters"]["p"] = 1.0
         outcome_matrix = LEAP.create_outcome_matrix(
             until_all_die=false,
-            cal_years=min_cal_year:max_cal_year,
-            min_cal_year=min_cal_year,
-            max_cal_year=max_cal_year,
+            cal_years=min_year:max_year,
+            min_year=min_year,
+            max_year=max_year,
             max_age=max_age
         )
         simulation = LEAP.Simulation(config)
         @set! simulation.agent = LEAP.Agent(
             sex=false,
             age=4,
-            cal_year=min_cal_year,
+            cal_year=min_year,
             cal_year_index=1,
             family_hist=simulation.family_history,
             antibiotic_exposure=simulation.antibiotic_exposure,
@@ -231,13 +231,13 @@ function test_check_if_agent_gets_new_asthma_diagnosis!(config)
         @test simulation.agent.asthma_status == true
     end
     @testset "test check_if_agent_gets_new_asthma_diagnosis! false" begin
-        min_cal_year = 2024
+        min_year = 2024
         time_horizon = 1
-        max_cal_year = min_cal_year + time_horizon - 1
+        max_year = min_year + time_horizon - 1
         max_age = 4
 
         config["simulation"] = Dict(
-            "min_cal_year" => min_cal_year,
+            "min_year" => min_year,
             "time_horizon" => time_horizon,
             "province" => "CA",
             "population_growth_type" => "M3",
@@ -267,16 +267,16 @@ function test_check_if_agent_gets_new_asthma_diagnosis!(config)
         config["family_history"]["parameters"]["p"] = 1.0
         outcome_matrix = LEAP.create_outcome_matrix(
             until_all_die=false,
-            cal_years=min_cal_year:max_cal_year,
-            min_cal_year=min_cal_year,
-            max_cal_year=max_cal_year,
+            cal_years=min_year:max_year,
+            min_year=min_year,
+            max_year=max_year,
             max_age=max_age
         )
         simulation = LEAP.Simulation(config)
         @set! simulation.agent = LEAP.Agent(
             sex=false,
             age=4,
-            cal_year=min_cal_year,
+            cal_year=min_year,
             cal_year_index=1,
             family_hist=simulation.family_history,
             antibiotic_exposure=simulation.antibiotic_exposure,
@@ -324,13 +324,13 @@ large.
 """
 function test_update_asthma_effects!(config)
     @testset "test update_asthma_effects!" begin
-        min_cal_year = 2024
+        min_year = 2024
         time_horizon = 1
-        max_cal_year = min_cal_year + time_horizon - 1
+        max_year = min_year + time_horizon - 1
         max_age = 4
 
         config["simulation"] = Dict(
-            "min_cal_year" => min_cal_year,
+            "min_year" => min_year,
             "time_horizon" => time_horizon,
             "province" => "CA",
             "population_growth_type" => "M3",
@@ -353,16 +353,16 @@ function test_update_asthma_effects!(config)
         config["exacerbation"]["hyperparameters"]["β0_μ"] = 5.0
         outcome_matrix = LEAP.create_outcome_matrix(
             until_all_die=false,
-            cal_years=min_cal_year:max_cal_year,
-            min_cal_year=min_cal_year,
-            max_cal_year=max_cal_year,
+            cal_years=min_year:max_year,
+            min_year=min_year,
+            max_year=max_year,
             max_age=max_age
         )
         simulation = LEAP.Simulation(config)
         @set! simulation.agent = LEAP.Agent(
             sex=false,
             age=4,
-            cal_year=min_cal_year,
+            cal_year=min_year,
             cal_year_index=1,
             family_hist=simulation.family_history,
             antibiotic_exposure=simulation.antibiotic_exposure,
@@ -419,13 +419,13 @@ large.
 """
 function test_reassess_asthma_diagnosis!(config)
     @testset "test test_reassess_asthma_diagnosis!" begin
-        min_cal_year = 2024
+        min_year = 2024
         time_horizon = 1
-        max_cal_year = min_cal_year + time_horizon - 1
+        max_year = min_year + time_horizon - 1
         max_age = 100
 
         config["simulation"] = Dict(
-            "min_cal_year" => min_cal_year,
+            "min_year" => min_year,
             "time_horizon" => time_horizon,
             "province" => "BC",
             "population_growth_type" => "M3",
@@ -448,16 +448,16 @@ function test_reassess_asthma_diagnosis!(config)
         config["exacerbation"]["hyperparameters"]["β0_μ"] = 10.0
         outcome_matrix = LEAP.create_outcome_matrix(
             until_all_die=false,
-            cal_years=min_cal_year:max_cal_year,
-            min_cal_year=min_cal_year,
-            max_cal_year=max_cal_year,
+            cal_years=min_year:max_year,
+            min_year=min_year,
+            max_year=max_year,
             max_age=max_age
         )
         simulation = LEAP.Simulation(config)
         @set! simulation.agent = LEAP.Agent(
             sex=true,
             age=53,
-            cal_year=min_cal_year,
+            cal_year=min_year,
             cal_year_index=1,
             family_hist=simulation.family_history,
             antibiotic_exposure=simulation.antibiotic_exposure,
@@ -488,7 +488,7 @@ end
 
 function test_get_new_agents(config)
     config["simulation"] = Dict(
-        "min_cal_year" => 2024,
+        "min_year" => 2024,
         "time_horizon" => 3,
         "province" => "CA",
         "population_growth_type" => "M3",
@@ -504,7 +504,7 @@ function test_get_new_agents_initial_year(config)
 
         simulation = LEAP.Simulation(config)
         cal_year = 2024
-        cal_year_index = cal_year - config["simulation"]["min_cal_year"] + 1
+        cal_year_index = cal_year - config["simulation"]["min_year"] + 1
         new_agents_df = LEAP.get_new_agents(
             simulation=simulation,
             cal_year=cal_year,
@@ -523,7 +523,7 @@ function test_get_new_agents_subsequent_year(config)
     @testset "test get_new_agents subsequent cal_year" begin
         simulation = LEAP.Simulation(config)
         cal_year = 2025
-        cal_year_index = cal_year - config["simulation"]["min_cal_year"] + 1
+        cal_year_index = cal_year - config["simulation"]["min_year"] + 1
         new_agents_df = LEAP.get_new_agents(
             simulation=simulation,
             cal_year=cal_year,
@@ -600,7 +600,7 @@ For each agent without asthma, it is just the baseline from the EQ-5D table.
 function test_run_simulation_one_year(config)
     @testset "test run_simulation one year" begin
         config["simulation"] = Dict(
-            "min_cal_year" => 2024,
+            "min_year" => 2024,
             "time_horizon" => 1,
             "province" => "CA",
             "population_growth_type" => "M3",
@@ -750,7 +750,7 @@ Setting the `prevalence` parameters below ensures that the prevalence is 0.
 function test_run_simulation_two_years(config)
     @testset "test run_simulation two years" begin
         config["simulation"] = Dict(
-            "min_cal_year" => 2024,
+            "min_year" => 2024,
             "time_horizon" => 2,
             "province" => "CA",
             "population_growth_type" => "M3",
@@ -885,7 +885,7 @@ end
 function test_run_simulation_full(config)
     @testset "test run_simulation" begin
         config["simulation"] = Dict(
-            "min_cal_year" => 2024,
+            "min_year" => 2024,
             "time_horizon" => 3,
             "province" => "CA",
             "population_growth_type" => "M3",

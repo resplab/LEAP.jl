@@ -37,14 +37,14 @@ end
 function set_outcome_matrix_asthma_prevalence_contingency_table!(
     outcome_matrix::OutcomeMatrix,
     cal_years::Union{UnitRange{Int}, Nothing}=nothing,
-    min_cal_year::Union{Integer, Nothing}=nothing,
-    max_cal_year::Union{Integer, Nothing}=nothing,
+    min_year::Union{Integer, Nothing}=nothing,
+    max_year::Union{Integer, Nothing}=nothing,
     until_all_die::Union{Bool, Nothing}=nothing,
     max_age::Union{Integer, Nothing}=nothing,
     asthma_prevalence_contingency_table::Union{GroupedDataFrame{DataFrame}, Nothing}=nothing
 )
     outcome_matrix.asthma_prevalence_contingency_table = create_contingency_table(
-        cal_years, min_cal_year, max_cal_year, until_all_die, max_age
+        cal_years, min_year, max_year, until_all_die, max_age
     )
     return outcome_matrix
 end
@@ -52,22 +52,22 @@ end
 function set_outcome_matrix_asthma_incidence_contingency_table!(
     outcome_matrix::OutcomeMatrix,
     cal_years::Union{UnitRange{Int}, Nothing}=nothing,
-    min_cal_year::Union{Integer, Nothing}=nothing,
-    max_cal_year::Union{Integer, Nothing}=nothing,
+    min_year::Union{Integer, Nothing}=nothing,
+    max_year::Union{Integer, Nothing}=nothing,
     until_all_die::Union{Bool, Nothing}=nothing,
     max_age::Union{Integer, Nothing}=nothing,
     asthma_incidence_contingency_table::Union{GroupedDataFrame{DataFrame}, Nothing}=nothing
 )
     outcome_matrix.asthma_incidence_contingency_table = create_contingency_table(
-        cal_years, min_cal_year, max_cal_year, until_all_die, max_age
+        cal_years, min_year, max_year, until_all_die, max_age
     )
     return outcome_matrix
 end
 
 function create_contingency_table(
     cal_years::Union{UnitRange{Int}, Nothing}=nothing,
-    min_cal_year::Union{Integer, Nothing}=nothing,
-    max_cal_year::Union{Integer, Nothing}=nothing,
+    min_year::Union{Integer, Nothing}=nothing,
+    max_year::Union{Integer, Nothing}=nothing,
     until_all_die::Union{Bool, Nothing}=nothing,
     max_age::Union{Integer, Nothing}=nothing,
     contingency_table::Union{GroupedDataFrame{DataFrame}, Nothing}=nothing
@@ -76,7 +76,7 @@ function create_contingency_table(
         tmp_df = DataFrame(year=Int64[], sex=Int64[], age=Int64[], fam_history = Int64[],
             abx_exposure = Int64[], n_asthma= Int64[], n_no_asthma = Int64[])
         foreach(x -> push!(tmp_df, x), Iterators.product(
-            min_cal_year:1:max_cal_year, 0:1:1, 0:1:max_age+1, 0:1:1, 0:1:3, 0, 0)
+            min_year:1:max_year, 0:1:1, 0:1:max_age+1, 0:1:1, 0:1:3, 0, 0)
         )
         tmp_df = groupby(tmp_df, [:year, :sex, :fam_history, :abx_exposure])
         return tmp_df
@@ -104,7 +104,7 @@ end
 
 
 function create_outcome_matrix(; until_all_die::Bool, cal_years::UnitRange{Int},
-    min_cal_year::Integer, max_cal_year::Integer, max_age::Integer)
+    min_year::Integer, max_year::Integer, max_age::Integer)
 
     outcome_matrix = OutcomeMatrix(
         control=nothing, cost=nothing, utility=nothing, exacerbation_by_severity=nothing,
@@ -131,10 +131,10 @@ function create_outcome_matrix(; until_all_die::Bool, cal_years::UnitRange{Int},
     )
 
     set_outcome_matrix_asthma_incidence_contingency_table!(
-        outcome_matrix, cal_years, min_cal_year, max_cal_year, until_all_die, max_age
+        outcome_matrix, cal_years, min_year, max_year, until_all_die, max_age
     )
     set_outcome_matrix_asthma_prevalence_contingency_table!(
-        outcome_matrix, cal_years, min_cal_year, max_cal_year, until_all_die, max_age
+        outcome_matrix, cal_years, min_year, max_year, until_all_die, max_age
     )
 
     type = Real
