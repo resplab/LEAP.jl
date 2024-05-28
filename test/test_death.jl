@@ -33,8 +33,8 @@ function test_agent_dies_is_dead(config)
         agent = LEAP.Agent(
             sex=true,
             age=110,
-            cal_year=2024,
-            cal_year_index=1,
+            year=2024,
+            year_index=1,
             family_hist=LEAP.FamilyHistory(config["family_history"]),
             antibiotic_exposure=LEAP.AntibioticExposure(config["antibiotic_exposure"]),
             province=province,
@@ -59,8 +59,8 @@ function test_agent_dies_is_not_dead(config)
         agent = LEAP.Agent(
             sex=true,
             age=7,
-            cal_year=2025,
-            cal_year_index=2,
+            year=2025,
+            year_index=2,
             family_hist=LEAP.FamilyHistory(config["family_history"]),
             antibiotic_exposure=LEAP.AntibioticExposure(config["antibiotic_exposure"]),
             province=province,

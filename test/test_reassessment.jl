@@ -25,8 +25,8 @@ function test_agent_has_asthma()
     @testset "test agent_has_asthma" begin
         province = "BC"
         starting_year = 2024
-        cal_year = 2024
-        cal_year_index = cal_year - starting_year + 1
+        year = 2024
+        year_index = year - starting_year + 1
         month = 1
         config = JSON.parsefile(LEAP.CONFIG_PATH)
         reassessment = LEAP.Reassessment(starting_year, province)
@@ -34,8 +34,8 @@ function test_agent_has_asthma()
         agent = LEAP.Agent(
             sex=true,
             age=53,
-            cal_year=cal_year,
-            cal_year_index=cal_year_index,
+            year=year,
+            year_index=year_index,
             family_hist=LEAP.FamilyHistory(config["family_history"]),
             antibiotic_exposure=LEAP.AntibioticExposure(config["antibiotic_exposure"]),
             province=province,

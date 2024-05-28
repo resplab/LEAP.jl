@@ -6,11 +6,11 @@ A struct containing information about antibiotic use.
 # Fields
 - `parameters::AbstractDict`: A dictionary with the following keys:
     `β0`: float, the constant parameter when computing μ.
-    `βcal_year`: float, the parameter to be multiplied by the agent's birth year for computing μ.
+    `βyear`: float, the parameter to be multiplied by the agent's birth year for computing μ.
     `β2005`: float, an added constant parameter if the agent's birth year > 2005 for computing μ.
     `βsex`: float, the parameter to be multiplied by the agent's sex when computing μ.
     `θ`: int, the number of successes (the r parameter) in the negative binomial distribution.
-    `β2005_cal_year`: float, if the agent's birth year is > 2005, β2005_cal_year will be
+    `β2005_year`: float, if the agent's birth year is > 2005, β2005_year will be
         multiplied by the birth year when computing μ.
     `fixyear`: integer or nothing. If present, replaces the `year` parameter when computing
         the probability for the negative binomial distribution.
@@ -72,13 +72,13 @@ function compute_num_antibiotic_use(
 )::Integer
     if birth_year < 2001
         p = antibiotic_exposure_prob(
-            sex=sex, cal_year=2000, parameters=antibiotic_exposure.parameters
+            sex=sex, year=2000, parameters=antibiotic_exposure.parameters
         )
     elseif !isnothing(antibiotic_exposure.parameters[:fixyear])
         if isa(antibiotic_exposure.parameters[:fixyear], Number)
             p = antibiotic_exposure_prob(
                 sex=sex,
-                cal_year=antibiotic_exposure.parameters[:fixyear],
+                year=antibiotic_exposure.parameters[:fixyear],
                 parameters=antibiotic_exposure.parameters
             )
         else
@@ -91,7 +91,7 @@ function compute_num_antibiotic_use(
     else
         p = antibiotic_exposure_prob(
             sex=sex,
-            cal_year=birth_year,
+            year=birth_year,
             parameters=antibiotic_exposure.parameters
         )
     end
@@ -101,32 +101,32 @@ end
 
 
 """
-    antibiotic_exposure_prob(sex, cal_year, parameters)
+    antibiotic_exposure_prob(sex, year, parameters)
 
 Returns the probability of antibiotic exposure for a given year and sex.
 
 # Arguments
 - `sex::Bool`: Sex of agent, true = male, false = female.
-- `cal_year::Integer`: The calendar year.
+- `year::Integer`: The calendar year.
 - `parameters::AbstractDict`: A dictionary with the following keys:
     `β0`: float, the constant parameter when computing μ.
-    `βcal_year`: float, the parameter to be multiplied by the agent's birth year for computing μ.
+    `βyear`: float, the parameter to be multiplied by the agent's birth year for computing μ.
     `β2005`: float, an added constant parameter if the agent's birth year > 2005 for computing μ.
     `βsex`: float, the parameter to be multiplied by the agent's sex when computing μ.
     `θ`: int, the number of successes (the r parameter) in the negative binomial distribution.
-    `β2005_cal_year`: float, if the agent's birth year is > 2005, β2005_cal_year will be
+    `β2005_year`: float, if the agent's birth year is > 2005, β2005_year will be
         multiplied by the birth year when computing μ.
     `fixyear`: integer or nothing. If present, replaces the `year` parameter when computing
         the probability for the negative binomial distribution.
     `βfloor`: float, the minimum value of μ.
 """
-function antibiotic_exposure_prob(; sex::Bool, cal_year::Integer, parameters::AbstractDict)::Float64
+function antibiotic_exposure_prob(; sex::Bool, year::Integer, parameters::AbstractDict)::Float64
     μ = exp(
         parameters[:β0] +
         parameters[:βsex] * sex +
-        parameters[:βcal_year] * cal_year +
-        parameters[:β2005] * (cal_year > 2005) +
-        parameters[:β2005_cal_year] * (cal_year > 2005) * cal_year
+        parameters[:βyear] * year +
+        parameters[:β2005] * (year > 2005) +
+        parameters[:β2005_year] * (year > 2005) * year
     )
     μ = max(μ, parameters[:βfloor] / 1000)
     return parameters[:θ] / (parameters[:θ] + μ)

@@ -23,22 +23,22 @@ function test_compute_prob_emigration()
         age = 0
         sex = false
         starting_year = 2020
-        cal_year_index = 4
+        year_index = 4
         population_growth_type = "FA"
         emigration = LEAP.Emigration(starting_year, province, population_growth_type)
-        @test LEAP.compute_prob_emigration(cal_year_index, age, sex, emigration) == 0
+        @test LEAP.compute_prob_emigration(year_index, age, sex, emigration) == 0
     end
     @testset "test compute_prob_emigration non-zero" begin
         province = "BC"
         age = 99
         sex = true
         starting_year = 2020
-        cal_year_index = 4
+        year_index = 4
         population_growth_type = "M2"
         emigration = LEAP.Emigration(starting_year, province, population_growth_type)
         true_count = 0
         for i in 1:1000000
-            if LEAP.compute_prob_emigration(cal_year_index, age, sex, emigration)
+            if LEAP.compute_prob_emigration(year_index, age, sex, emigration)
                 true_count += 1
             end
         end

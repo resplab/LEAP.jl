@@ -36,7 +36,7 @@ end
 
 function set_outcome_matrix_asthma_prevalence_contingency_table!(
     outcome_matrix::OutcomeMatrix,
-    cal_years::Union{UnitRange{Int}, Nothing}=nothing,
+    years::Union{UnitRange{Int}, Nothing}=nothing,
     min_year::Union{Integer, Nothing}=nothing,
     max_year::Union{Integer, Nothing}=nothing,
     until_all_die::Union{Bool, Nothing}=nothing,
@@ -44,14 +44,14 @@ function set_outcome_matrix_asthma_prevalence_contingency_table!(
     asthma_prevalence_contingency_table::Union{GroupedDataFrame{DataFrame}, Nothing}=nothing
 )
     outcome_matrix.asthma_prevalence_contingency_table = create_contingency_table(
-        cal_years, min_year, max_year, until_all_die, max_age
+        years, min_year, max_year, until_all_die, max_age
     )
     return outcome_matrix
 end
 
 function set_outcome_matrix_asthma_incidence_contingency_table!(
     outcome_matrix::OutcomeMatrix,
-    cal_years::Union{UnitRange{Int}, Nothing}=nothing,
+    years::Union{UnitRange{Int}, Nothing}=nothing,
     min_year::Union{Integer, Nothing}=nothing,
     max_year::Union{Integer, Nothing}=nothing,
     until_all_die::Union{Bool, Nothing}=nothing,
@@ -59,13 +59,13 @@ function set_outcome_matrix_asthma_incidence_contingency_table!(
     asthma_incidence_contingency_table::Union{GroupedDataFrame{DataFrame}, Nothing}=nothing
 )
     outcome_matrix.asthma_incidence_contingency_table = create_contingency_table(
-        cal_years, min_year, max_year, until_all_die, max_age
+        years, min_year, max_year, until_all_die, max_age
     )
     return outcome_matrix
 end
 
 function create_contingency_table(
-    cal_years::Union{UnitRange{Int}, Nothing}=nothing,
+    years::Union{UnitRange{Int}, Nothing}=nothing,
     min_year::Union{Integer, Nothing}=nothing,
     max_year::Union{Integer, Nothing}=nothing,
     until_all_die::Union{Bool, Nothing}=nothing,
@@ -103,7 +103,7 @@ end
 
 
 
-function create_outcome_matrix(; until_all_die::Bool, cal_years::UnitRange{Int},
+function create_outcome_matrix(; until_all_die::Bool, years::UnitRange{Int},
     min_year::Integer, max_year::Integer, max_age::Integer)
 
     outcome_matrix = OutcomeMatrix(
@@ -131,40 +131,40 @@ function create_outcome_matrix(; until_all_die::Bool, cal_years::UnitRange{Int},
     )
 
     set_outcome_matrix_asthma_incidence_contingency_table!(
-        outcome_matrix, cal_years, min_year, max_year, until_all_die, max_age
+        outcome_matrix, years, min_year, max_year, until_all_die, max_age
     )
     set_outcome_matrix_asthma_prevalence_contingency_table!(
-        outcome_matrix, cal_years, min_year, max_year, until_all_die, max_age
+        outcome_matrix, years, min_year, max_year, until_all_die, max_age
     )
 
     type = Real
-    dimensions = (length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2, 3)
+    dimensions = (length(years) + (until_all_die ? max_age : 0), max_age + 1, 2, 3)
     setfield_outcome_matrix!(outcome_matrix, "control", type, dimensions)
 
     type = Real
-    dimensions = (length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2, 4)
+    dimensions = (length(years) + (until_all_die ? max_age : 0), max_age + 1, 2, 4)
     setfield_outcome_matrix!(outcome_matrix, "exacerbation_by_severity", type, dimensions)
 
     type = Int
-    dimensions = (2, length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2)
+    dimensions = (2, length(years) + (until_all_die ? max_age : 0), max_age + 1, 2)
     setfield_outcome_matrix!(outcome_matrix, "asthma_incidence_family_history", type, dimensions)
     setfield_outcome_matrix!(outcome_matrix, "asthma_prevalence_family_history", type, dimensions)
     setfield_outcome_matrix!(outcome_matrix, "asthma_status_family_history", type, dimensions)
     setfield_outcome_matrix!(outcome_matrix, "family_history_prevalence", type, dimensions)
 
     type = Int
-    dimensions = (4, length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2)
+    dimensions = (4, length(years) + (until_all_die ? max_age : 0), max_age + 1, 2)
     setfield_outcome_matrix!(outcome_matrix, "asthma_incidence_antibiotic_exposure", type, dimensions)
     setfield_outcome_matrix!(outcome_matrix, "asthma_prevalence_antibiotic_exposure", type, dimensions)
     setfield_outcome_matrix!(outcome_matrix, "asthma_status_antibiotic_exposure", type, dimensions)
 
     type = Real
-    dimensions = (length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2)
+    dimensions = (length(years) + (until_all_die ? max_age : 0), max_age + 1, 2)
     setfield_outcome_matrix!(outcome_matrix, "cost", type, dimensions)
     setfield_outcome_matrix!(outcome_matrix, "utility", type, dimensions)
 
     type = Int
-    dimensions = (length(cal_years) + (until_all_die ? max_age : 0), max_age + 1, 2)
+    dimensions = (length(years) + (until_all_die ? max_age : 0), max_age + 1, 2)
     setfield_outcome_matrix!(outcome_matrix, "asthma_status", type, dimensions)
     setfield_outcome_matrix!(outcome_matrix, "antibiotic_exposure", type, dimensions)
     setfield_outcome_matrix!(outcome_matrix, "asthma_incidence", type, dimensions)
@@ -182,18 +182,18 @@ end
 
 
 function add_control_to_outcome_matrix!(outcome_matrix::OutcomeMatrix, age::Integer, sex::Bool,
-    cal_year_index::Integer, control_levels::AbstractDict)
-    outcome_matrix.control[cal_year_index, age + 1, sex + 1, :] += control_levels[:as_array]
+    year_index::Integer, control_levels::AbstractDict)
+    outcome_matrix.control[year_index, age + 1, sex + 1, :] += control_levels[:as_array]
 end
 
 function add_exacerbation_by_severity_to_outcome_matrix!(outcome_matrix::OutcomeMatrix, age::Integer,
-    sex::Bool, cal_year_index::Integer,
+    sex::Bool, year_index::Integer,
     exac_sev_hist_current_year::Vector{Integer})
-    outcome_matrix.exacerbation_by_severity[cal_year_index, age + 1, sex + 1, :] .+= exac_sev_hist_current_year
+    outcome_matrix.exacerbation_by_severity[year_index, age + 1, sex + 1, :] .+= exac_sev_hist_current_year
 end
 
 function update_asthma_in_contingency_table!(outcome_matrix::OutcomeMatrix,
-    age::Integer, sex::Bool, cal_year::Integer, has_family_hist::Bool, num_antibiotic_use::Integer,
+    age::Integer, sex::Bool, year::Integer, has_family_hist::Bool, num_antibiotic_use::Integer,
     has_asthma::Bool, inc_or_prev::String
 )
     if has_asthma
@@ -204,13 +204,13 @@ function update_asthma_in_contingency_table!(outcome_matrix::OutcomeMatrix,
 
     if inc_or_prev == "incidence"
         outcome_matrix.asthma_incidence_contingency_table[(
-            cal_year, Int(sex),
+            year, Int(sex),
             Int(has_family_hist),
             min(num_antibiotic_use, 3)
             )][age + 1, column] += 1
     elseif inc_or_prev == "prevalence"
         outcome_matrix.asthma_prevalence_contingency_table[(
-            cal_year, Int(sex),
+            year, Int(sex),
             Int(has_family_hist),
             min(num_antibiotic_use, 3)
             )][age + 1, column] += 1
@@ -224,17 +224,17 @@ end
 
 
 function increment_field_in_outcome_matrix!(outcome_matrix::OutcomeMatrix, field::String,
-    age::Integer, sex::Bool, cal_year_index::Integer, increment::Float64=1.0)
+    age::Integer, sex::Bool, year_index::Integer, increment::Float64=1.0)
 
     field_object = getfield(outcome_matrix, Symbol(field))
-    field_object[cal_year_index, age + 1, sex + 1] += increment
+    field_object[year_index, age + 1, sex + 1] += increment
     setproperty!(outcome_matrix, Symbol(field), field_object)
 end
 
 function increment_field_in_outcome_matrix!(outcome_matrix::OutcomeMatrix, field::String,
-    age::Integer, sex::Bool, cal_year_index::Integer, increment::Integer=1)
+    age::Integer, sex::Bool, year_index::Integer, increment::Integer=1)
 
     field_object = getfield(outcome_matrix, Symbol(field))
-    field_object[cal_year_index, age + 1, sex + 1] += increment
+    field_object[year_index, age + 1, sex + 1] += increment
     setproperty!(outcome_matrix, Symbol(field), field_object)
 end

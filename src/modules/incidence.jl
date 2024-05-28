@@ -113,7 +113,7 @@ function agent_has_asthma(
         age = min(agent.age, incidence.max_age)
     end
     if isnothing(year)
-        year = agent.cal_year
+        year = agent.year
     end
 
     # assume no asthma if age < 3
@@ -158,7 +158,7 @@ function compute_asthma_age(agent::Agent, incidence::Incidence, prevalence::Prev
         asthma_age = 3
         tmp_sex = Int(agent.sex)
         tmp_abx_num = min(agent.num_antibiotic_use, 3)
-        tmp_year = min(max(agent.cal_year - current_age + asthma_age, min_year), max_year)
+        tmp_year = min(max(agent.year - current_age + asthma_age, min_year), max_year)
         while find_asthma_age && asthma_age < max_asthma_age
             has_asthma = agent_has_asthma(agent, incidence, prevalence, asthma_age, tmp_year)
             if has_asthma
@@ -174,13 +174,13 @@ function compute_asthma_age(agent::Agent, incidence::Incidence, prevalence::Prev
 end
 
 
-function crude_incidence(sex, age, cal_year::Integer, parameters::AbstractDict)
+function crude_incidence(sex, age, year::Integer, parameters::AbstractDict)
     poly_age = poly_age_calculator(age)
     return exp(
         parameters[:β0] +
         parameters[:βsex] * sex +
-        parameters[:βyear] * cal_year +
-        parameters[:βsexyear] * sex * cal_year +
+        parameters[:βyear] * year +
+        parameters[:βsexyear] * sex * year +
         sum(parameters[:βage] .* poly_age) +
         sum(parameters[:βsexage] .* sex .* poly_age)
     )
@@ -188,12 +188,12 @@ end
 
 
 function incidence_equation(
-    sex, age::Integer, cal_year::Integer, has_family_hist::Bool, dose::Integer, incidence::Incidence
+    sex, age::Integer, year::Integer, has_family_hist::Bool, dose::Integer, incidence::Incidence
 )
     parameters = incidence.parameters
-    correction_year = min(cal_year, incidence.max_year + 1)
-    cal_year = min(cal_year, incidence.max_year)
-    p0 = crude_incidence(sex, age, cal_year, parameters)
+    correction_year = min(year, incidence.max_year + 1)
+    year = min(year, incidence.max_year)
+    p0 = crude_incidence(sex, age, year, parameters)
     p = logistic(
         logit(p0) +
         has_family_hist * log_OR_family_history(age, parameters[:βfam_hist]) +

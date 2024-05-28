@@ -51,8 +51,8 @@ function test_agent_has_asthma()
         max_age = 111
         province = "CA"
         starting_year = 2024
-        cal_year = 2025
-        cal_year_index = cal_year - starting_year + 1
+        year = 2025
+        year_index = year - starting_year + 1
         month = 1
         n = 10
         population_growth_type = "M3"
@@ -66,8 +66,8 @@ function test_agent_has_asthma()
         agent = LEAP.Agent(
             sex=false,
             age=24,
-            cal_year=cal_year,
-            cal_year_index=cal_year_index,
+            year=year,
+            year_index=year_index,
             family_hist=LEAP.FamilyHistory(config["family_history"]),
             antibiotic_exposure=LEAP.AntibioticExposure(config["antibiotic_exposure"]),
             province=province,

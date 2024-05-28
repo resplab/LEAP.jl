@@ -123,7 +123,7 @@ Determine whether the agent obtains a new asthma diagnosis based on age and sex.
 function agent_has_asthma(agent::Agent, prevalence::Prevalence)
 
     age = min(agent.age - 1, prevalence.max_age)
-    year = agent.cal_year - 1
+    year = agent.year - 1
 
     # assume no asthma if age < 3
     if age < 3
@@ -152,13 +152,13 @@ end
 
 
 function prevalence_equation(
-    sex, age::Integer, cal_year::Integer, has_family_hist::Bool, dose::Integer,
+    sex, age::Integer, year::Integer, has_family_hist::Bool, dose::Integer,
     prevalence::Prevalence
 )
     parameters = prevalence.parameters
-    correction_year = min(cal_year, prevalence.max_year + 1)
-    cal_year = min(cal_year, prevalence.max_year)
-    p0 = crude_prevalence(sex, age, cal_year, parameters)
+    correction_year = min(year, prevalence.max_year + 1)
+    year = min(year, prevalence.max_year)
+    p0 = crude_prevalence(sex, age, year, parameters)
     p = logistic(
         logit(p0) +
         has_family_hist * log_OR_family_history(age, parameters[:βfam_hist]) +
@@ -169,8 +169,8 @@ function prevalence_equation(
 end
 
 
-function crude_prevalence(sex, age::Integer, cal_year::Integer, parameters::AbstractDict)
-    poly_year = poly_year_calculator(cal_year)
+function crude_prevalence(sex, age::Integer, year::Integer, parameters::AbstractDict)
+    poly_year = poly_year_calculator(year)
     poly_age = poly_age_calculator(age)
     poly_yearage = vec(poly_year .* poly_age')
     return exp(

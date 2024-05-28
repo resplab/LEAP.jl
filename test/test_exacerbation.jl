@@ -32,7 +32,7 @@ function test_compute_num_exacerbations()
         province = "BC"
         age = 4
         sex = false
-        cal_year = 2001
+        year = 2001
         config = JSON.parsefile(CONFIG_PATH)
         config["exacerbation"]["hyperparameters"]["β0_μ"] = 2.0
         exacerbation = LEAP.Exacerbation(config["exacerbation"], province)
@@ -43,7 +43,7 @@ function test_compute_num_exacerbations()
             :as_array => [0.0, 0.0, 1.0]
         )
         num_exacerbations = LEAP.compute_num_exacerbations(
-            age, sex, cal_year, control_levels, exacerbation
+            age, sex, year, control_levels, exacerbation
         )
         @test num_exacerbations > 1
     end

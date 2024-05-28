@@ -17,9 +17,9 @@ using DataFrames, JSON
     max_age = simulation.max_age
     min_year = simulation.min_year
     max_year = simulation.max_year
-    cal_years = min_year:max_year
+    years = min_year:max_year
     outcome_matrix = LEAP.create_outcome_matrix(
-        until_all_die=until_all_die, cal_years=cal_years, min_year=min_year,
+        until_all_die=until_all_die, years=years, min_year=min_year,
         max_year=max_year, max_age=max_age
     )
 
@@ -44,9 +44,9 @@ end
     max_age = simulation.max_age
     min_year = simulation.min_year
     max_year = simulation.max_year
-    cal_years = min_year:max_year
+    years = min_year:max_year
     outcome_matrix = LEAP.create_outcome_matrix(
-        until_all_die=until_all_die, cal_years=cal_years, min_year=min_year,
+        until_all_die=until_all_die, years=years, min_year=min_year,
         max_year=max_year, max_age=max_age
     )
 

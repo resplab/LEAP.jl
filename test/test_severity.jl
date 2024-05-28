@@ -37,8 +37,8 @@ that probability of having an exacerbation with high severity is 1.
 """
 function test_compute_hospitalization_prob()
     @testset "test compute_hospitalization_prob" begin
-        cal_year = 2024
-        cal_year_index = 1
+        year = 2024
+        year_index = 1
         province = "BC"
         config = JSON.parsefile(CONFIG_PATH)
         config["exacerbation_severity"]["hyperparameters"] = Dict(
@@ -57,8 +57,8 @@ function test_compute_hospitalization_prob()
         agent = LEAP.Agent(
             sex=true,
             age=90,
-            cal_year=cal_year,
-            cal_year_index=cal_year_index,
+            year=year,
+            year_index=year_index,
             family_hist=LEAP.FamilyHistory(config["family_history"]),
             antibiotic_exposure=LEAP.AntibioticExposure(config["antibiotic_exposure"]),
             province=province,

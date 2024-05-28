@@ -24,9 +24,9 @@ function test_get_num_new_immigrants()
         population_growth_type = "LG"
         max_age = 111
         immigration = LEAP.Immigration(starting_year, province, population_growth_type, max_age)
-        cal_year_index = 2
+        year_index = 2
         num_new_born = 1000
-        @test LEAP.get_num_new_immigrants(immigration, num_new_born, cal_year_index) == 1013
+        @test LEAP.get_num_new_immigrants(immigration, num_new_born, year_index) == 1013
     end
 end
 
