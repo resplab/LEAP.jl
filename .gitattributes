@@ -3,3 +3,7 @@ src/processed_data/census_divisions/census_division_boundaries/lcd_000b21a_e.dbf
 src/processed_data/census_divisions/census_division_boundaries/lcd_000b21a_e.xml filter=lfs diff=lfs merge=lfs -text
 src/processed_data/census_divisions/census_division_boundaries/lcd_000b21a_e.shx filter=lfs diff=lfs merge=lfs -text
 src/processed_data/census_divisions/census_division_boundaries/lcd_000b21a_e.prj filter=lfs diff=lfs merge=lfs -text
+data_generation/public_dataset/17100057.csv filter=lfs diff=lfs merge=lfs -text
+data_generation/public_dataset/17100005.csv filter=lfs diff=lfs merge=lfs -text
+data_generation/public_dataset/13100782.csv filter=lfs diff=lfs merge=lfs -text
+data_generation/public_dataset/13100096.csv filter=lfs diff=lfs merge=lfs -text
