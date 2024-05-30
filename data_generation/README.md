@@ -6,7 +6,7 @@ and update if new data needs to be added.
 
 ## Birth Data
 
-To obtain the population data for each year, we used two tables from `StatsCan`:
+To obtain the population data for each year, we used two tables from `StatCan`:
 
 1. 1999 - 2021
 
@@ -39,3 +39,23 @@ julia data_generation/birth_data.jl
 ```
 
 This will create a new file called `master_birth_estimate.csv` under the `processed_data` folder.
+
+
+# Death Data
+
+To obtain the mortality data for each year, we used one table from `StatCan`:
+
+1. 1996 - 2021
+
+For past years, we used Table 13-10-00837-01 from StatCan:
+https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1310083701
+
+The `*.csv` file can be downloaded from here:
+https://www150.statcan.gc.ca/n1/tbl/csv/13100837-eng.zip
+
+and is saved as:
+`LEAP.jl/data_generation/public_dataset/13100837.csv`
+
+2. 2021 - 2068
+
+TODO.
