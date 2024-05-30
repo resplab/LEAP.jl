@@ -1,33 +1,10 @@
 using CSV, DataFrames, Logging
+include("utils.jl")
 
 DATA_PATH = joinpath(dirname(@__FILE__), "public_dataset")
 PROCESSED_DATA_PATH = joinpath(dirname(dirname(@__FILE__)), "src/processed_data")
 STARTING_YEAR = 1999
 
-PROVINCE_MAP = Dict(
-    "Canada" => "CA",
-    "British Columbia" => "BC",
-    "Alberta" => "AB",
-    "Saskatchewan" => "SK",
-    "Manitoba" => "MB",
-    "Ontario" => "ON",
-    "Quebec" => "QC",
-    "Newfoundland and Labrador" => "NL",
-    "Nova Scotia" => "NS",
-    "New Brunswick" => "NB",
-    "Prince Edward Island" => "PE",
-    "Yukon" => "YT",
-    "Northwest Territories" => "NT",
-    "Nunavut" => "NU"
-)
-
-function get_province_id(province)
-    return PROVINCE_MAP[province]
-end
-
-function get_sex_id(sex)
-    return sex[1:1]
-end
 
 function get_projection_scenario_id(projection_scenario)
     projection_scenario_id = replace(projection_scenario, "Projection scenario " => "")
@@ -44,19 +21,6 @@ function filter_age_group(age_group::AbstractString)
             && !occursin("Average", age_group)
         )
     end
-end
-
-function format_age_group(age_group::AbstractString)
-    if age_group == "100 years and over"
-        age = 100
-    elseif age_group == "Under 1 year"
-        age = 0
-    else
-        age = replace(age_group, " years" => "")
-        age = replace(age, " year" => "")
-        age = tryparse(Int, age)
-    end
-    return age
 end
 
 
