@@ -223,11 +223,11 @@ function load_past_initial_population_data()
 
     # keep only male entries
     df = filter(([:sex] => (x) -> x == "M"), df)
-    df = select(df, Not([:sex]))
+    df = select(df, Not([:sex, :N]))
 
     # add :projection_scenario column, all values = "past"
     df[:, "projection_scenario"] = repeat(["past"], size(df)[1])
-
+    sort!(df, [:province, :year, :age])
     return df
 end
 
@@ -302,7 +302,9 @@ function load_projected_initial_population_data(min_year::Integer)
 
     # keep only male entries
     df = filter(([:sex] => (x) -> x == "M"), df)
-    df = select(df, Not([:sex]))
+    df = select(df, Not([:sex, :N]))
+
+    sort!(df, [:province, :year, :age])
     return df
 end
 
@@ -312,7 +314,7 @@ function process_birth_estimate_data()
     min_year = findmax(past_population_data.year)[1] + 1
     projected_population_data = load_projected_population_data(min_year)
     birth_estimate = vcat(past_population_data, projected_population_data)
-    file_path = joinpath(PROCESSED_DATA_PATH, "master_birth_estimate.csv")
+    file_path = joinpath(PROCESSED_DATA_PATH, "master_birth_estimate2.csv")
     @info "Saving data to $file_path"
     CSV.write(file_path, birth_estimate)
 end
@@ -323,7 +325,7 @@ function process_initial_population_data()
     min_year = findmax(past_population_data.year)[1]
     projected_population_data = load_projected_initial_population_data(min_year)
     initial_population = vcat(past_population_data, projected_population_data)
-    file_path = joinpath(PROCESSED_DATA_PATH, "master_initial_pop_distribution_prop.csv")
+    file_path = joinpath(PROCESSED_DATA_PATH, "master_initial_pop_distribution_prop2.csv")
     @info "Saving data to $file_path"
     CSV.write(file_path, initial_population)
 end
