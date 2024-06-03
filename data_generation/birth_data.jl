@@ -209,17 +209,17 @@ function load_past_initial_population_data()
 
     # get the total population for a given year, province, and age
     df = groupby(df, [:year, :age, :province])
-    df = select(df, :, :N => ((x) -> sum(x)) => :N_age, ungroup=false)
-    df = transform(df, [:N, :N_age] => ByRow((x, y) -> x / y) => :prop_male, ungroup=true)
+    df = select(df, :, :N => ((x) -> sum(x)) => :n_age, ungroup=false)
+    df = transform(df, [:N, :n_age] => ByRow((x, y) -> x / y) => :prop_male, ungroup=true)
 
     # get the total number of births for a given year and province
     df_birth = filter(([:age] => (x) -> x == 0), df)
-    df_birth = transform(df_birth, [:N_age] => ByRow((x) -> x) => :N_birth)
-    df_birth = select(df_birth, Not([:age, :N, :N_age, :prop_male]))
+    df_birth = transform(df_birth, [:n_age] => ByRow((x) -> x) => :N_birth)
+    df_birth = select(df_birth, Not([:age, :N, :n_age, :prop_male]))
 
     # add the births column to the main df
     df = leftjoin(df, df_birth, on=[:province, :sex, :year])
-    df = transform(df, [:N_age, :N_birth] => ByRow((x, y) -> x / y) => :prop)
+    df = transform(df, [:n_age, :N_birth] => ByRow((x, y) -> x / y) => :prop)
 
     # keep only male entries
     df = filter(([:sex] => (x) -> x == "M"), df)
@@ -288,17 +288,17 @@ function load_projected_initial_population_data(min_year::Integer)
 
     # get the total population for a given year, province, age, and projection scenario
     df = groupby(df, [:year, :age, :province, :projection_scenario])
-    df = select(df, :, :N => ((x) -> sum(x)) => :N_age, ungroup=false)
-    df = transform(df, [:N, :N_age] => ByRow((x, y) -> x / y) => :prop_male, ungroup=true)
+    df = select(df, :, :N => ((x) -> sum(x)) => :n_age, ungroup=false)
+    df = transform(df, [:N, :n_age] => ByRow((x, y) -> x / y) => :prop_male, ungroup=true)
 
     # get the total number of births for a given year, province, and projection scenario
     df_birth = filter(([:age] => (x) -> x == 0), df)
-    df_birth = transform(df_birth, [:N_age] => ByRow((x) -> x) => :N_birth)
-    df_birth = select(df_birth, Not([:age, :N, :N_age, :prop_male]))
+    df_birth = transform(df_birth, [:n_age] => ByRow((x) -> x) => :N_birth)
+    df_birth = select(df_birth, Not([:age, :N, :n_age, :prop_male]))
 
     # add the births column to the main df
     df = leftjoin(df, df_birth, on=[:province, :sex, :year, :projection_scenario])
-    df = transform(df, [:N_age, :N_birth] => ByRow((x, y) -> x / y) => :prop)
+    df = transform(df, [:n_age, :N_birth] => ByRow((x, y) -> x / y) => :prop)
 
     # keep only male entries
     df = filter(([:sex] => (x) -> x == "M"), df)
