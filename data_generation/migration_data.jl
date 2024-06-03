@@ -10,7 +10,26 @@ PROVINCES = ["CA", "BC"]
 
 
 
-function get_prev_year_population(df, sex, year, age, min_year, min_age)
+function get_prev_year_population(
+    df::DataFrame, sex::AbstractString, year::Integer, age::Integer,
+    min_year::Integer, min_age::Integer
+)
+    """
+        get_prev_year_population(df, sex, year, age, min_year, min_age)
+
+    Get the age, sex, probability of death, and population for the previous year.
+
+    # Arguments
+    - `df::DataFrame`: TODO.
+    - `sex::AbstractString`: One of "F" = female, "M" = male.
+    - `year::Integer`: The calenar year.
+    - `age::Integer`: The integer age.
+    - `min_year::Integer`: The minimum year in the dataframe.
+    - `min_age::Integer`: The minimum age in the dataframe.
+
+    # Returns
+    - `DataFrameRow`: The age, sex, probability of death, and population for the previous year.
+    """
     if year == min_year || age == min_age
         df = DataFrame(:year => missing, :age => missing, :N => missing, :prob_death => missing)
         return df[1, :]
@@ -26,13 +45,50 @@ function get_prev_year_population(df, sex, year, age, min_year, min_age)
 end
 
 
-function get_delta_n(n, n_prev, prob_death)
+function get_delta_n(n::Float64, n_prev::Float64, prob_death::Float64)::Float64
+    """
+        get_delta_n(n, n_prev, prob_death)
+
+    Get the population change due to migration for a given age and sex in a single year.
+
+    # Arguments
+    - `n::Float64`: The number of people living in Canada for a single age, sex, and year.
+    - `n_prev::Float64`: The number of people living in Canada for the same sex as `n`, in the
+        previous year and age. So if `n` is the number of females aged 10 in the year 2020,
+        `n_prev` is the number of females aged 9 in the year 2019.
+    - `prob_death::Float64`: The probability that a person with a given age and sex in a given
+        year will die between the previous year and this year. So if the person is a female
+        aged 10 in 2020, `prob_death` is the probability that a female aged 9 in 2019 will die
+        by the age of 10.
+
+    # Returns
+    - `Float64`: The change in population for a given year, age, and sex due to migration.
+    """
     return n - n_prev * (1 - prob_death)
 end
 
 
-function get_n_immigrants(n_migrants)
-    return n_migrants < 0 ? 0 : n_migrants
+function get_n_migrants(delta_N::Float64)::Array{1, Float64}
+    """
+        get_n_migrants(delta_N)
+
+    Get the number of immigrants and emigrants in a single year for a given age and sex.
+
+    TODO: This function is wrong. delta_N is the change in population due to migration. This
+        function currently assumes that if delta_N is less than zero, 100% of migration is
+        emigration, and if it is greater than zero, 100% of migration is immigration. This has
+        led to the data being very inaccurate (for example, it appears as though people in their
+        90s are emigrating a lot and people in their 20s are not). This will be remedied in a
+        separate PR.
+
+    # Arguments
+    - `delta_N::Float64`: The change in population for a given year, age, and sex due to migration.
+
+    # Returns
+    - `Array{1, Float64}`: A vector containing two values, the number of immigrants in a single
+        year and the number of emigrants in a single year.
+    """
+    return [delta_N < 0 ? 0 : delta_N, delta_N > 0 ? 0 : -delta_N]
 end
 
 
@@ -57,6 +113,17 @@ function load_migration_data()
         :n_immigrants => Float64[],
         :prop_immigrants_birth => Float64[],
         :prop_immigrants_year => Float64[]
+    )
+
+    df_emigration = DataFrame(
+        :year => Integer[],
+        :province => AbstractString[],
+        :age => Integer[],
+        :sex => AbstractString[],
+        :projection_scenario => AbstractString[],
+        :n_emigrants => Float64[],
+        :prop_emigrants_birth => Float64[],
+        :prop_emigrants_year => Float64[]
     )
 
     for province in PROVINCES
@@ -130,50 +197,81 @@ function load_migration_data()
             # add the :n_birth column to df_proj
             df_proj = leftjoin(df_proj, df_birth, on=[:year])
 
-            df_immigration_proj = transform(df_proj, [:delta_N] =>
-                ByRow((x) -> get_n_immigrants(x)) => :n_immigrants
+            # get the number of immigrants/emigrants
+            df_migration_proj = transform(df_proj, [:delta_N] =>
+                ByRow((x) -> get_n_migrants(x)) => [:n_immigrants, :n_emigrants]
             )
 
-            df_immigration_proj = transform(df_immigration_proj, [:n_immigrants, :n_birth] =>
-                ByRow((x, y) -> x / y) => :prop_immigrants_birth
+            # compute the proportion of immigrants/emigrants to the number of births in a year
+            df_migration_proj = transform(
+                df_migration_proj,
+                [:n_immigrants, :n_emigrants, :n_birth] =>
+                    ByRow(
+                        (x, y, z) -> [x / z, y / z]
+                    ) => [:prop_immigrants_birth, :prop_emigrants_birth]
             )
 
-            df_immigration_proj = select(
-                df_immigration_proj,
+            df_migration_proj = select(
+                df_migration_proj,
                 [
                     :province, :year, :age, :sex, :projection_scenario,
-                    :prop_immigrants_birth, :n_immigrants
+                    :prop_immigrants_birth, :prop_emigrants_birth,
+                    :n_immigrants, :n_emigrants
                 ]
             )
 
-            # get the immigrants for a given age and sex relative to the immigrants for that year
-            df_immigration_proj = groupby(df_immigration_proj, [:year])
-            df_immigration_proj = select(
-                df_immigration_proj,
+            # get the migrants for a given age and sex relative to the migrants for that year
+            df_migration_proj = groupby(df_migration_proj, [:year])
+            df_migration_proj = select(
+                df_migration_proj,
                 :,
                 :n_immigrants => ((x) -> sum(x)) => :n_immigrants_year,
+                :n_emigrants => ((x) -> sum(x)) => :n_emigrants_year,
                 ungroup=false
             )
-            df_immigration_proj = transform(
-                df_immigration_proj,
-                [:n_immigrants, :n_immigrants_year] =>
-                    ByRow((x, y) -> x / y) => :prop_immigrants_year,
+            df_migration_proj = transform(
+                df_migration_proj,
+                [:n_immigrants, :n_immigrants_year, :n_emigrants, :n_emigrants_year] =>
+                    ByRow(
+                        (x, y, z, w) -> [x / y, z / w]) =>
+                        [:prop_immigrants_year, :prop_emigrants_year],
                 ungroup=true
             )
 
-            df_immigration_proj = select(df_immigration_proj, Not([:n_immigrants_year]))
-            df_immigration_proj = transform(
-                df_immigration_proj,
+            # remove :n_immigrants_year, :n_emigrants_year
+            df_migration_proj = select(
+                df_migration_proj, Not([:n_immigrants_year, :n_emigrants_year])
+            )
+
+            # convert the "past" projection scenario to the given projection scenario
+            df_migration_proj = transform(
+                df_migration_proj,
                 [:projection_scenario] => ByRow((x) -> projection_scenario) => :projection_scenario
             )
 
+            # create separate immigration and emigration dataframes
+            df_immigration_proj = select(
+                df_migration_proj,
+                Not([:n_emigrants, :prop_emigrants_year, :prop_emigrants_birth])
+            )
+            df_emigration_proj = select(
+                df_migration_proj,
+                Not([:n_immigrants, :prop_immigrants_year, :prop_immigrants_birth])
+            )
+
+            # append the immigration and emigration dataframes for the current projection scenario
             append!(df_immigration, df_immigration_proj)
+            append!(df_emigration, df_emigration_proj)
         end
     end
 
-    file_path = joinpath(PROCESSED_DATA_PATH, "migration/master_immigration_table2.csv")
+    file_path = joinpath(PROCESSED_DATA_PATH, "migration/master_immigration_table.csv")
     @info "Saving data to $file_path"
     CSV.write(file_path, df_immigration)
+
+    file_path = joinpath(PROCESSED_DATA_PATH, "migration/master_emigration_table.csv")
+    @info "Saving data to $file_path"
+    CSV.write(file_path, df_emigration)
 end
 
 
