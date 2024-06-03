@@ -11,9 +11,9 @@ function test_immigration()
         population_growth_type = "LG"
         max_age = 111
         immigration = LEAP.Immigration(starting_year, province, population_growth_type, max_age)
-        @test round(immigration.table[(2026,)][7, :n_prop_birth], sigdigits=4) == 0.004980
+        @test round(immigration.table[(2026,)][7, :prop_immigrants_birth], sigdigits=4) == 0.004980
         @test immigration.table[(2026,)][5, :age] == ceil(Int, 5/2)
-        @test round(immigration.table[(2025,)][8, :weights], sigdigits=4) == 0.007294
+        @test round(immigration.table[(2025,)][8, :prop_immigrants_year], sigdigits=4) == 0.007294
     end
 end
 

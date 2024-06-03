@@ -243,7 +243,7 @@ function get_new_agents(; simulation::SimulationModule, year::Integer, year_inde
     else
         immigrant_indices = sample(
             1:nrow(simulation.immigration.table[year_index]),
-            Weights(simulation.immigration.table[year_index].weights),
+            Weights(simulation.immigration.table[year_index].prop_immigrants_year),
             num_immigrants
         )
         sexes_immigrant = [

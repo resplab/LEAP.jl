@@ -9,11 +9,11 @@ A struct containing information about immigration to Canada.
         `year`: integer year the range 2001 - 2065.
         `age`: integer age.
         `sex`: integer, 0 = female, 1 = male.
-        `n_prop_birth`: the number of immigrants relative to the number of births in that year. To
-            compute the number of immigrants in a given year, multiply the number of births by
-            `n_prop_birth`.
-        `weights`: the proportion of immigrants for a given age and sex relative to the total
-            number of immigrants for a given year and projection scenario.
+        `prop_immigrants_birth`: the number of immigrants relative to the number of births
+            in that year. To compute the number of immigrants in a given year, multiply the number
+            of births by `prop_immigrants_birth`.
+        `prop_immigrants_year`: the proportion of immigrants for a given age and sex relative to
+            the total number of immigrants for a given year and projection scenario.
     See `master_immigration_table.csv`.
 """
 struct Immigration <: ImmigrationModule
@@ -96,7 +96,7 @@ Get the number of new immigrant to Canada in a given year.
 function get_num_new_immigrants(immigration::Immigration, num_new_born::Integer, year_index::Integer)
     num_new_immigrants = ceil(
         Int,
-        num_new_born * sum(immigration.table[year_index].n_prop_birth)
+        num_new_born * sum(immigration.table[year_index].prop_immigrants_birth)
     )
     return num_new_immigrants
 end
