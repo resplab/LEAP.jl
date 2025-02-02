@@ -117,7 +117,7 @@ life_table_list <- rbind(life_table_list,life_table)
 
 # pop growth --------------------------------------------------------------
 
-pop_est <- read_csv("master_initial_pop_distribution_prop.csv") %>% 
+    df_population <- read_csv("master_initial_pop_distribution_prop.csv") %>% 
   filter(province==chosen_province) %>%
   filter(year >= baseline_year) %>% 
   mutate(Male = prop_male*n,
@@ -128,13 +128,13 @@ pop_est <- read_csv("master_initial_pop_distribution_prop.csv") %>%
   select(year,sex,age,province,n,projection_scenario) %>% 
   arrange(year,desc(sex),age,province,projection_scenario)
 
-pop_scenarios <- pop_est$projection_scenario %>% unique()
+    pop_scenarios <- df_population$projection_scenario %>% unique()
 pop_scenarios <- pop_scenarios[-which(pop_scenarios=="past")]
 
-    max_pop_year <- min(max(pop_est$year), 2065)
+    max_pop_year <- min(max(df_population$year), 2065)
 
 for(i in 1:length(pop_scenarios)){
-  tmp_pop <- pop_est %>% 
+        tmp_pop <- df_population %>% 
     filter(projection_scenario %in% c("past",pop_scenarios[i])) %>% 
     filter(!(year==2021 & projection_scenario %in% c(pop_scenarios[i]))) %>% 
     select(-projection_scenario)
