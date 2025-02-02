@@ -26,24 +26,25 @@ life_table <- read_csv("life_table.csv") %>%
 
 death_final_year <- max(life_table$year)
 
-ref_life_table <- life_table %>% 
-  filter(year==death_final_year)
+    ref_life_table <- life_table %>% filter(year==death_final_year)
 
-death_adjustment <- function(p,year,beta){
+    death_adjustment <- function(p, year, beta){
         p <- pmin(p, 0.9999999999)
         odds <- p/(1 - p)*exp(year*beta)
-  pmax(pmin(odds/(1+odds),1),0)
+        pmax(pmin(odds/(1 + odds), 1), 0)
 }
 
     project_life_year <- function(
         ref_lt, proj_year, baseyear, beta_year
     ){
-        tmp <- death_adjustment(ref_lt$prob_death,  proj_year-baseyear,beta_year)
+        tmp <- death_adjustment(ref_lt$prob_death, proj_year-baseyear, beta_year)
   tmp_factor <- tmp/ref_lt$prob_death
   ref_lt %>% 
-    mutate(prob_death = tmp_factor*prob_death,
-           se = tmp_factor*se,
-           year = proj_year)
+            mutate(
+                prob_death=tmp_factor*prob_death,
+                se=tmp_factor*se,
+                year=proj_year
+            )
 }
 
 projected_life_table <- c()
@@ -75,12 +76,11 @@ projected_life_table <- c()
       sol$E[1]
   }
   
-  
-  projected_life_table <- do.call(rbind,projected_life_table)
+        projected_life_table <- do.call(rbind, projected_life_table)
   
   projected_life_table %>% 
     filter(sex==SEX & year==calibration_year) %>% 
-            select(age,prob_death) %>% 
+            select(age, prob_death) %>% 
             rename(q=prob_death) -> lf
   
   return(life_expectancy_calculator(lf) - desired_life_expectancy[as.numeric(SEX=="F")+1])
@@ -97,8 +97,7 @@ for(yr in 1:(projected_last_year-death_final_year)){
         )
 } 
 
-projected_life_table_male <- do.call(rbind,projected_life_table_male) %>% 
-  filter(sex=="M")
+    projected_life_table_male <- do.call(rbind, projected_life_table_male) %>% filter(sex=="M")
 
 for(yr in 1:(projected_last_year-death_final_year)){
         projected_life_table_female[[yr]] <- project_life_year(
@@ -107,13 +106,11 @@ for(yr in 1:(projected_last_year-death_final_year)){
                                                        baseyear=death_final_year,
             beta_year=uniroot(obj_function, SEX="F", interval=c(-0.03,-0.01), tol=0.00001)$root
         )
-
 } 
 
-projected_life_table_female <- do.call(rbind,projected_life_table_female) %>% 
-  filter(sex=="F")
+    projected_life_table_female <- do.call(rbind, projected_life_table_female) %>% filter(sex=="F")
 
-projected_life_table <- rbind(projected_life_table_male,projected_life_table_female)
+    projected_life_table <- rbind(projected_life_table_male, projected_life_table_female)
 
 life_table <- rbind(life_table,projected_life_table)
 life_table_list <- rbind(life_table_list,life_table)
