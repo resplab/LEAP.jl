@@ -147,14 +147,14 @@ for(i in 1:length(pop_scenarios)){
 
         tmp_combined <- df_proj %>% left_join(life_table, by=c("age",'sex','year','province'))
   
-  mclapply(X=1:nrow(df_diff),mc.cores = 7,FUN = function(j){
-    YEAR <- df_diff$year[j]
-    AGE <- df_diff$age[j]
-    SEX <- df_diff$sex[j]
+        tmp_n <- mclapply(X=split(df_diff, 1:nrow(df_diff)), mc.cores=7, FUN=function(row, tmp_combined){
+            YEAR <- row$year
+            AGE <- row$age
+            SEX <- row$sex
     tmp <- tmp_combined %>% 
-    filter((year %in% c(YEAR,YEAR-1) & age %in% c(AGE,AGE-1) & sex==SEX) )
+                filter((year %in% c(YEAR, YEAR-1) & age %in% c(AGE, AGE-1) & sex==SEX))
     tmp$n[nrow(tmp)] - tmp$n[1]*(1-tmp$prob_death[1])
-  } ) -> tmp_n
+        }, tmp_combined=tmp_combined)
   
   df_diff$n <- unlist(tmp_n)
   
