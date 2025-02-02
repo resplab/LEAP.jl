@@ -134,8 +134,8 @@ pop_scenarios <- pop_scenarios[-which(pop_scenarios=="past")]
     max_pop_year <- min(max(df_population$year), 2065)
 
 for(i in 1:length(pop_scenarios)){
-        tmp_pop <- df_population %>% 
-    filter(projection_scenario %in% c("past",pop_scenarios[i])) %>% 
+        df_proj <- df_population %>% 
+            filter(projection_scenario %in% c("past", pop_scenarios[i])) %>% 
     filter(!(year==2021 & projection_scenario %in% c(pop_scenarios[i]))) %>% 
     select(-projection_scenario)
   
@@ -145,8 +145,7 @@ for(i in 1:length(pop_scenarios)){
     mutate(n = 0)
   
 
-  tmp_combined <- tmp_pop %>% 
-    left_join(life_table,by=c("age",'sex','year','province'))
+        tmp_combined <- df_proj %>% left_join(life_table, by=c("age",'sex','year','province'))
   
   mclapply(X=1:nrow(df_diff),mc.cores = 7,FUN = function(j){
     YEAR <- df_diff$year[j]
@@ -163,7 +162,7 @@ for(i in 1:length(pop_scenarios)){
     arrange(year,age,sex) %>%
     filter(age<=100) -> look
   
-  tmp_pop_birth <- tmp_pop %>% 
+        tmp_pop_birth <- df_proj %>% 
     filter(age==0) %>% 
     select(1,2,5) %>% 
     rename(n_birth = n) %>% 
@@ -187,7 +186,7 @@ for(i in 1:length(pop_scenarios)){
   
   emigration_n <- look %>% 
     mutate(n= ifelse(n>0,0,-n)) %>% 
-    left_join(tmp_pop,by=c("year",'sex','age')) %>% 
+            left_join(df_proj,by=c("year",'sex','age')) %>% 
     mutate(prob = n.x/n.y) %>% 
     select(year,age,sex,n.x,prob) %>% 
     rename(n=n.x) %>% 
