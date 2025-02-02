@@ -13,6 +13,16 @@ provinces <- c("BC","CA")
 desired_life_expectancys <- list(c(84.6,88.0),c(87,90.1)) # BC: male, female; CANADA: male, female
 calibration_years <- c(2043, 2068)
 
+
+get_prev_year_population <- function(row, tmp_combined){
+    YEAR <- row$year
+    AGE <- row$age
+    SEX <- row$sex
+    tmp <- tmp_combined %>% 
+        filter((year %in% c(YEAR, YEAR-1) & age %in% c(AGE, AGE-1) & sex==SEX))
+    tmp$n[nrow(tmp)] - tmp$n[1]*(1-tmp$prob_death[1])
+}
+
 for(province_index in 1:length(provinces)) {
   chosen_province <- provinces[province_index]
   calibration_year <- calibration_years[province_index]
@@ -147,14 +157,12 @@ for(i in 1:length(pop_scenarios)){
 
         tmp_combined <- df_proj %>% left_join(life_table, by=c("age",'sex','year','province'))
   
-        tmp_n <- mclapply(X=split(df_diff, 1:nrow(df_diff)), mc.cores=7, FUN=function(row, tmp_combined){
-            YEAR <- row$year
-            AGE <- row$age
-            SEX <- row$sex
-    tmp <- tmp_combined %>% 
-                filter((year %in% c(YEAR, YEAR-1) & age %in% c(AGE, AGE-1) & sex==SEX))
-    tmp$n[nrow(tmp)] - tmp$n[1]*(1-tmp$prob_death[1])
-        }, tmp_combined=tmp_combined)
+        tmp_n <- mclapply(
+            X=split(df_diff, 1:nrow(df_diff)),
+            mc.cores=7,
+            FUN=get_prev_year_population,
+            tmp_combined=tmp_combined
+        )
   
   df_diff$n <- unlist(tmp_n)
   
