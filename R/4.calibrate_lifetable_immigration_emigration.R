@@ -48,12 +48,14 @@ death_adjustment <- function(p,year,beta){
 
 projected_life_table <- c()
 
-    obj_function_female <- function(mortality_year_adjustment, SEX="F"){
+    obj_function <- function(mortality_year_adjustment, SEX){
 
-  for(yr in 1:(projected_last_year-death_final_year)){
+        for(yr in 1:(projected_last_year - death_final_year)){
             projected_life_table[[yr]] <- project_life_year(
-                ref_life_table, yr+death_final_year, baseyear=death_final_year,
-                beta_year = mortality_year_adjustment
+                ref_life_table,
+                yr+death_final_year,
+                baseyear=death_final_year,
+                beta_year=mortality_year_adjustment
             )
   }
   
@@ -64,12 +66,12 @@ projected_life_table <- c()
         lf$I[i] <- lf$I[i-1]*(1-lf$q[i-1])
       }
       
-            lf %>% mutate(d = I*q, L = lead(I)+0.5*d) -> lf
+            lf %>% mutate(d=I*q, L=lead(I) + 0.5*d) -> lf
     lf$L[1] <- lf$L[2] + 0.1*lf$d[1]
     lf$L[111] <- lf$I[111]*1.4
       
     lf$TT <- rev(cumsum(rev(lf$L)))
-            lf %>% mutate(E = TT/I) -> sol
+            lf %>% mutate(E=TT/I) -> sol
       sol$E[1]
   }
   
@@ -78,45 +80,8 @@ projected_life_table <- c()
   
   projected_life_table %>% 
     filter(sex==SEX & year==calibration_year) %>% 
-    select(age,prob_death) %>% 
-    rename(q = prob_death) -> lf
-  
-  return(life_expectancy_calculator(lf) - desired_life_expectancy[as.numeric(SEX=="F")+1])
-}
-
-
-obj_function_male <- function(mortality_year_adjustment,SEX="M"){
-  
-  for(yr in 1:(projected_last_year-death_final_year)){
-    projected_life_table[[yr]] <- project_life_year(ref_life_table,
-                                                    yr+death_final_year,
-                                                    baseyear=death_final_year,
-                                                    beta_year = mortality_year_adjustment)
-  }
-  
-  life_expectancy_calculator <- function(lf){
-    lf$I <- NA
-    lf$I[1] <- 100000
-    for(i in 2:nrow(lf)){
-      lf$I[i] <- lf$I[i-1]*(1-lf$q[i-1])
-    }
-    
-    lf %>% 
-            mutate(d = I*q, L = lead(I)+0.5*d) -> lf
-    lf$L[1] <- lf$L[2] + 0.1*lf$d[1]
-    lf$L[111] <- lf$I[111]*1.4
-    
-    lf$TT <- rev(cumsum(rev(lf$L)))
-            lf %>% mutate(E = TT/I) -> sol
-    sol$E[1]
-  }
-  
-  projected_life_table <- do.call(rbind,projected_life_table)
-  
-  projected_life_table %>% 
-    filter(sex==SEX & year==calibration_year) %>% 
-    select(age,prob_death) %>% 
-    rename(q = prob_death) -> lf
+            select(age,prob_death) %>% 
+            rename(q=prob_death) -> lf
   
   return(life_expectancy_calculator(lf) - desired_life_expectancy[as.numeric(SEX=="F")+1])
 }
@@ -128,7 +93,7 @@ for(yr in 1:(projected_last_year-death_final_year)){
             ref_life_table,
                                                   yr+death_final_year,
                                                   baseyear=death_final_year,
-            beta_year=  uniroot(obj_function_male, interval = c(-0.03,-0.01),tol = 0.00001)$root
+            beta_year=uniroot(obj_function, SEX="M", interval=c(-0.03,-0.01), tol=0.00001)$root
         )
 } 
 
@@ -140,7 +105,7 @@ for(yr in 1:(projected_last_year-death_final_year)){
             ref_life_table,
                                                        yr+death_final_year,
                                                        baseyear=death_final_year,
-            beta_year=uniroot(obj_function_female,interval = c(-0.03,-0.01),tol = 0.00001)$root
+            beta_year=uniroot(obj_function, SEX="F", interval=c(-0.03,-0.01), tol=0.00001)$root
         )
 
 } 
