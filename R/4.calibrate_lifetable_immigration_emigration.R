@@ -188,7 +188,7 @@ for(i in 1:length(pop_scenarios)){
     group_by(year) %>% 
     summarise(n_birth=sum(n_birth))
   
-  immigration_n <- look %>% 
+        df_immigration <- look %>% 
     mutate(n= ifelse(n<0,0,n)) %>% 
     left_join(tmp_pop_birth,by=c("year")) %>% 
     mutate(n_prop_birth = n/n_birth) %>% 
@@ -201,9 +201,9 @@ for(i in 1:length(pop_scenarios)){
     mutate(sex=as.numeric(sex=="M")) %>% 
             mutate(province=chosen_province, proj_scenario = pop_scenarios[i])
   
-  immigration_list <- rbind(immigration_list,immigration_n)
+        immigration_list <- rbind(immigration_list, df_immigration)
   
-  emigration_n <- look %>% 
+        df_emigration <- look %>% 
     mutate(n= ifelse(n>0,0,-n)) %>% 
             left_join(df_proj,by=c("year",'sex','age')) %>% 
     mutate(prob = n.x/n.y) %>% 
@@ -213,7 +213,7 @@ for(i in 1:length(pop_scenarios)){
     pivot_wider(names_from=sex,values_from=prob) %>%
             mutate(province=chosen_province, proj_scenario = pop_scenarios[i])
   
-  emigration_list <- rbind(emigration_list,emigration_n)
+        emigration_list <- rbind(emigration_list, df_emigration)
     }
 }
 
