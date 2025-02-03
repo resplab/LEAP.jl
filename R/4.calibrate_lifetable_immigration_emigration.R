@@ -1,5 +1,6 @@
 library(tidyverse)
 library(parallel)
+library(here)
 
 baseline_year <- 2000
 last_year <- 2020
@@ -127,16 +128,26 @@ life_table_list <- rbind(life_table_list,life_table)
 
 # pop growth --------------------------------------------------------------
 
-    df_population <- read_csv("master_initial_pop_distribution_prop.csv") %>% 
+    df_population <- read_csv(here("src/processed_data", "master_initial_pop_distribution_prop.csv"))
+
+    # Select province and years
+    df_population <- df_population %>% 
   filter(province==chosen_province) %>%
-  filter(year >= baseline_year) %>% 
-  mutate(Male = prop_male*n,
-         Female = (1-prop_male)*n) %>% 
-  select(year,age,province,Male,Female,projection_scenario) %>% 
-  pivot_longer(4:5,names_to="sex",values_to="n") %>% 
-  mutate(sex=ifelse(sex=="Male","M","F")) %>% 
-  select(year,sex,age,province,n,projection_scenario) %>% 
-  arrange(year,desc(sex),age,province,projection_scenario)
+        filter(year >= baseline_year)
+
+    # Get the total number of male / female population for given year/age/projection_scenario
+    df_population <- df_population %>% 
+        mutate(M=prop_male*n, F=(1-prop_male)*n)
+        
+    df_population <- df_population %>% 
+        select(year, age, province, M, F, projection_scenario)
+        
+    df_population <- df_population %>% 
+        pivot_longer(4:5, names_to="sex", values_to="n")
+        
+    df_population <- df_population %>%
+        select(year, sex, age, province, n, projection_scenario) %>% 
+        arrange(year, desc(sex), age, province, projection_scenario)
 
     pop_scenarios <- df_population$projection_scenario %>% unique()
 pop_scenarios <- pop_scenarios[-which(pop_scenarios=="past")]
@@ -149,11 +160,11 @@ for(i in 1:length(pop_scenarios)){
     filter(!(year==2021 & projection_scenario %in% c(pop_scenarios[i]))) %>% 
     select(-projection_scenario)
   
-  df_diff <- expand.grid(year=(baseline_year+1):max_pop_year,
-                         age = 1:100,
-                         sex = c("F","M")) %>% 
-    mutate(n = 0)
-  
+        df_diff <- expand.grid(
+            year=(baseline_year+1):max_pop_year,
+            age=1:100,
+            sex=c("F","M")
+        ) %>% mutate(n = 0)
 
         tmp_combined <- df_proj %>% left_join(life_table, by=c("age",'sex','year','province'))
   
@@ -166,9 +177,9 @@ for(i in 1:length(pop_scenarios)){
   
   df_diff$n <- unlist(tmp_n)
   
-  df_diff %>% 
-    arrange(year,age,sex) %>%
-    filter(age<=100) -> look
+        look <- df_diff %>%
+            arrange(year, age, sex) %>%
+            filter(age<=100)
   
         tmp_pop_birth <- df_proj %>% 
     filter(age==0) %>% 
