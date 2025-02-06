@@ -2,224 +2,297 @@
 
 library(tidyverse)
 library(here)
+library(grid)
+library(gridExtra)
+library(mgcv)
+library(ggpubr)
+
 max_year <- 2019
-df_raw <- read_csv(here("public_dataset","13100096.csv"))
+DF_STATCAN <- read_csv(here("R/public_dataset", "13100096.csv"))
 chosen_province <- "British Columbia"
 baseline_year <- 2000
-# chosen_province <- "Canada"
 
-survey_data_processor <- function(chosen_province){
-  df <- df_raw %>% 
-    filter(str_detect(GEO,chosen_province) & str_detect(Characteristics,"Percent|percent") & !str_detect(`Age group`,"Total") & Indicators == 'Asthma') %>% 
-    select(REF_DATE,Characteristics,`Age group`,Sex,VALUE) %>% 
-    rename(year=REF_DATE,
-           sex=Sex,
-           age_group = `Age group`,
-           prop = VALUE) %>% 
-    mutate(sex=str_sub(sex,1,1),
-           prop = prop/100,
-           age_group = str_remove(age_group," years and over| years")) %>% 
-    filter(year <= max_year)
-  ag <- do.call(rbind,str_split(df$age_group, ' to '))
-  df$age_lower <- as.numeric(ag[,1])
-  df$age_upper <- as.numeric(ag[,2])
-  df <- df %>% 
-    mutate(age_upper = if_else(age_lower==age_upper,100,age_upper)) %>% 
-    pivot_wider(names_from=Characteristics,values_from=prop) %>% 
-    rename(prop=Percent,
-           prop_lower = `Low 95% confidence interval, percent`,
-           prop_upper = `High 95% confidence interval, percent`)
-  
-  df %>% 
-    mutate(sd = (prop_upper-prop)/qnorm(0.975),
-           var = sd^2,
-           sanity=prop+sd*qnorm(0.975),
-           alpha = ((1-prop)/var - 1/prop)*prop^2,
-           beta = alpha * (1/prop-1)) %>% 
-    select(-age_group,-sanity) %>% 
-    filter(sex!="B") %>% 
-    mutate(age=floor((age_lower+age_upper)/2)) -> df
-  
-  # CHILD STUDY DATA (restricted access)
-  
-  CHILD <- readxl::read_xlsx("private_data","CHILD_Master.xlsx",1) 
-  CHILD <- CHILD[,c(1,which(str_detect(colnames(CHILD),"asthma")),147)]
-  CHILD <- CHILD[,c(1,3,27)]
-  with(CHILD %>% na.omit(),table(`5.Years.Has.your.child.EVER.been.diagnosed.with.asthma.`,Birth.Baby.s.sex))
-  144/(144+2076) # 6.49%; 5 years prev
-  table(CHILD$Birth.Baby.s.sex) # 1: Male; 2: Female
-  
-  # Asthma    M      F
-  # No      1072  1004
-  # Yes      90    54
-  
-  
-  # 90/(1072+90) # 0.07745267%
-  sd_M <- sqrt(90)* qnorm(0.975)
-  
-  # 54/(1004+54) # 0.05104
-  sd_F <-  sqrt(54)* qnorm(0.975)
-  
-  M5 <- data.frame(year=2015,sex="M",
-                   age=5,
-                   prop=90/(1072+90),
-                   prop_upper = 1/(1072+90)*(90+sd_M),
-                   prop_lower = 1/(1072+90)*(90-sd_M))
-  
-  F5 <- data.frame(year=2015,sex="F",
-                   age=5,
-                   prop=54/(1004+54),
-                   prop_upper = 1/(1004+54)*(54+sd_F),
-                   prop_lower = 1/(1004+54)*(54-sd_F))
-  library(mgcv)
-  
-  # do a spline stratified by sex
-  
-  df_female <- df %>% 
-    select(year,sex,age,prop,prop_lower,prop_upper) %>% 
-    rbind(M5) %>% 
-    rbind(F5) %>% 
-    filter(sex=="F")
-  
-  spline_female <- gam(prop~s(age,bs='cs',k=6)+year,data=df_female)
-  
-  tmp_data_female <- expand.grid(year=2015:2025,
-                                 age=3:110,
-                                 sex=c("F"))
-  
-  tmp_data_female$pred <- predict(spline_female,newdata = tmp_data_female)
-  
-  tmp_data_female <- tmp_data_female %>% 
-    left_join(df %>%  select(year,age,sex,prop,prop_upper,prop_lower) %>% rbind(F5)
-              ,by=c("year","age","sex")) %>% 
-    select(-sex)
-  
-  linear_model_female <- lm(pred~age+I(age^2)+I(age^3)+I(age^4)+I(age^5)+I(age^6)+I(age^7)+I(age^8)+I(age^9)+I(age^10)+I(age^11)+
-                              I(age^12)+year,data=tmp_data_female)
-  lin_data <- cbind(tmp_data_female,fitted=linear_model_female$fitted.values)
-  results_female <- c()
-  counter <- 1
-  for(Year in 2015:2020){
-    look2 <- tmp_data_female %>% 
-      filter(year==Year) %>% 
-      mutate(pred = pred*100,
-             prop = prop*100,
-             prop_upper = prop_upper*100,
-             prop_lower = prop_lower *100)
+
+generate_plots <- function(df, linear_model) {
+    lin_data <- cbind(df, fitted=linear_model$fitted.values)
+    plot_list <- c()
+    counter <- 1
+    for(Year in 2015:2020) {
+        look2 <- df %>% 
+        filter(year==Year) %>% 
+        mutate(
+            pred=pred*100,
+            prop=prop*100,
+            prop_upper=prop_upper*100,
+            prop_lower=prop_lower *100
+        )
+
+        plot_list[[counter]] <-   
+            ggplot(data=look2, aes(x=age,y=pred))+
+            geom_line(size=2, alpha=0.7) +
+            ylim(c(0,20)) +
+            geom_point(
+                data=look2 %>% filter(!is.na(prop)),
+                aes(x=age,y=prop)
+            ) +
+            geom_errorbar(
+                data=look2 %>% filter(!is.na(prop)),
+                aes(ymin=prop_lower, ymax=prop_upper, x=age),alpha=0.8,width=3
+            ) +
+            geom_line(
+                data=lin_data %>% filter(year==Year) %>% 
+                    mutate(fitted=fitted*100),
+                aes(y=fitted,x=age),col='red',size=1.5,alpha=0.4
+            )+
+            ggtitle(Year)
+            counter <- counter+1
+    }
+    return(plot_list)
+}
+
+
+survey_data_processor <- function(chosen_province) {
+    # Rename columns
+    df <- DF_STATCAN %>%
+        rename(
+            year=REF_DATE,
+            sex=Sex,
+            age_group=`Age group`,
+            prop=VALUE,
+            characteristics=Characteristics,
+            province=GEO
+        )
+    # Filter for the year, chosen province, characteristics, indicators, and remove age group "Total"
+    df <- df %>% 
+        filter(
+            str_detect(province, chosen_province) &
+            str_detect(characteristics, "Percent|percent") &
+            !str_detect(age_group, "Total") &
+            Indicators == 'Asthma' &
+            year <= max_year
+        )
+    # Select year, characteristics, age_group, sex, and prop columns
+    df <- df %>%
+        select(year, characteristics, age_group, sex, prop)
+    df <- df %>%
+        mutate(
+            sex=str_sub(sex,1,1),
+            prop=prop/100,
+            age_group=str_remove(age_group," years and over| years")
+        )
+    age_ranges <- do.call(rbind, str_split(df$age_group, ' to '))
+    df$age_lower <- as.numeric(age_ranges[,1])
+    df$age_upper <- as.numeric(age_ranges[,2])
+    # If the upper age is the same as the lower age, set the upper age to 100
+    # (this is the 65+ category)
+    df <- df %>% 
+        mutate(age_upper=if_else(age_lower==age_upper, 100, age_upper))
     
+    # Convert 95% upper and lower intervals to columns
+    df <- df %>%
+        pivot_wider(names_from=characteristics, values_from=prop) %>% 
+        rename(
+            prop=Percent,
+            prop_lower=`Low 95% confidence interval, percent`,
+            prop_upper=`High 95% confidence interval, percent`
+        )
+  
+    # Calculate the standard deviation, variance, and the alpha and beta parameters
+    df <- df %>%
+        mutate(
+            sd=(prop_upper-prop)/qnorm(0.975),
+            var=sd^2,
+            sanity=prop+sd*qnorm(0.975),
+            alpha=((1-prop)/var - 1/prop)*prop^2,
+            beta=alpha * (1/prop-1)
+        )
+        
+    # Remove age_group and sanity columns
+    df <- df %>% select(-age_group, -sanity)
     
+    # Remove "Both" sexes from the data
+    df <- df %>% 
+        filter(sex!="B")
+
+    # Set the age group to the middle of the range
+    df <- df %>%
+        mutate(age=floor((age_lower + age_upper) / 2)
+    )
+  
+    # CHILD STUDY DATA (restricted access)
     
-    results_female[[counter]] <-   
-      ggplot(data=look2,aes(x=age,y=pred))+
-      geom_line(size=2,alpha=0.7) +
-      ylim(c(0,20))+
-      geom_point(data=look2 %>% filter(!is.na(prop)),
-                 aes(x=age,y=prop)) +
-      geom_errorbar(data=look2 %>% filter(!is.na(prop)),
-                    aes(ymin=prop_lower,ymax=prop_upper,x=age),alpha=0.8,width=3) +
-      geom_line(data=lin_data %>% filter(year==Year) %>% 
-                  mutate(fitted=fitted*100),aes(y=fitted,x=age),col='red',size=1.5,alpha=0.4)+
-      ggtitle(Year)
-    counter <- counter+1
-  }
+    df_child <- readxl::read_xlsx(
+        here("R/private_dataset/child_dataset/AJ_Cohort_Creation","CHILD_Master.xlsx"),
+        1
+    )
+    # Column 1: Study_ID
+    # Columns with "asthma" in the name
+    # Column 147: Birth.Baby.s.sex
+    df_child <- df_child[,c(1, which(str_detect(colnames(df_child), "asthma")), 147)]
+
+    # Column 1: Study_ID
+    # Column 3: 5.Years.Has.your.child.EVER.been.diagnosed.with.asthma.
+    # Column 27: Birth.Baby.s.sex
+    df_child <- df_child[, c(1,3,27)]
+    with(
+        df_child %>% na.omit(),
+        table(`5.Years.Has.your.child.EVER.been.diagnosed.with.asthma.`, Birth.Baby.s.sex)
+    )
+    # Asthma    M      F
+    # No      1072  1004
+    # Yes      90    54
+
+    n_asthma_M <- 90
+    n_asthma_F <- 54
+    n_no_asthma_M <- 1072
+    n_no_asthma_F <- 1004
+
+    144/(144+2076) # 6.49%; 5 years prev
+    table(df_child$Birth.Baby.s.sex) # 1: Male; 2: Female
   
-  spline_male <- gam(prop~s(age,bs="ps",m=1)+year,data=df %>% 
-                       select(year,sex,age,prop,prop_lower,prop_upper) %>% 
-                       rbind(M5) %>% 
-                       rbind(F5) %>% 
-                       filter(sex=="M"))
-  
-  tmp_data_male <- expand.grid(year=2015:2025,
-                               age=3:110,
-                               sex=c("M"))
-  
-  tmp_data_male$pred <- predict(spline_male,newdata = tmp_data_male)
-  
-  tmp_data_male <- tmp_data_male %>% 
-    left_join(df %>% select(year,age,sex,prop,prop_upper,prop_lower) %>% rbind(M5)
-              ,by=c("year","age","sex")) %>% 
-    select(-sex)
-  
-  linear_model_male <- lm(pred~year+age+I(age^2)+I(age^3)+I(age^4)+I(age^5)+I(age^6)+I(age^7)+I(age^8)+I(age^9)+I(age^10)+I(age^11)+
-                            I(age^12),data=tmp_data_male)
-  
-  lin_data <- cbind(tmp_data_male,fitted=linear_model_male$fitted.values)
-  results_male <- c()
-  counter <- 1
-  for(Year in 2015:2020){
-    look2 <- tmp_data_male %>% 
-      filter(year==Year) %>% 
-      mutate(pred = pred*100,
-             prop = prop*100,
-             prop_upper = prop_upper*100,
-             prop_lower = prop_lower *100)
+    # 90/(1072+90) = 0.07745267 (expectation value)
+    sd_M <- sqrt(n_asthma_M)* qnorm(0.975)
     
+    # 54/(1004+54) # 0.05104
+    sd_F <-  sqrt(n_asthma_F)* qnorm(0.975)
     
-    results_male[[counter]] <-   
-      ggplot(data=look2,aes(x=age,y=pred))+
-      geom_line(size=2,alpha=0.7) +
-      ylim(c(0,20))+
-      geom_point(data=look2 %>% filter(!is.na(prop)),
-                 aes(x=age,y=prop)) +
-      geom_errorbar(data=look2 %>% filter(!is.na(prop)),
-                    aes(ymin=prop_lower,ymax=prop_upper,x=age),alpha=0.8,width=3) +
-      geom_line(data=lin_data %>% filter(year==Year) %>% 
-                  mutate(fitted=fitted*100),aes(y=fitted,x=age),col='red',size=1.5,alpha=0.4)+
-      ggtitle(Year)
-    counter <- counter+1
-  }
+    M5 <- data.frame(
+        year=2015,
+        sex="M",
+        age=5,
+        prop=n_asthma_M/(n_no_asthma_M + n_asthma_M),
+        prop_upper = 1/(n_no_asthma_M + n_asthma_M)*(n_asthma_M+sd_M),
+        prop_lower = 1/(n_no_asthma_M + n_asthma_M)*(n_asthma_M-sd_M)
+    )
   
-  library(grid)
-  library(gridExtra)
-  results_CA <- c()
-  for(j in 1:length(results_male)){
-    results_CA[[(2*(j-1)+1)]] <- results_female[[j]]+ xlab("") + ylab("") + ggtitle("") + theme(text=element_text(size=15))
-    results_CA[[(2*(j-1)+2)]] <- results_male[[j]] + xlab("") + ylab("") + ggtitle("") + theme(text=element_text(size=15))
-  }
+    F5 <- data.frame(
+        year=2015,
+        sex="F",
+        age=5,
+        prop=n_asthma_F/(n_no_asthma_F + n_asthma_F),
+        prop_upper = 1/(n_no_asthma_F + n_asthma_F)*(n_asthma_F+sd_F),
+        prop_lower = 1/(n_no_asthma_F + n_asthma_F)*(n_asthma_F-sd_F)
+    )
+    
+    # do a spline stratified by sex
   
-  # left: female; right: male
-  grid.arrange( arrangeGrob(results_CA[[1]], results_CA[[2]], top="2015",nrow=1),
-                # arrangeGrob(results_CA[[3]], results_CA[[4]], top="2016",nrow=1),
-                # arrangeGrob(results_CA[[5]], results_CA[[6]], top="2017",nrow=1),
-                # arrangeGrob(results_CA[[7]], results_CA[[8]], top="2018",nrow=1),
-                # arrangeGrob(results_CA[[9]], results_CA[[10]], top="2019",nrow=1),
-                arrangeGrob(results_CA[[11]], results_CA[[12]], top="2020",nrow=1),ncol=1,
-                bottom=textGrob("Age (years)",gp = gpar(fontsize=20)),
-                left = textGrob("Asthma prevalence (per 100)",rot = "90",gp=gpar(fontsize=20)))
+    df_female <- df %>% 
+        select(year,sex,age,prop,prop_lower,prop_upper) %>% 
+        # rbind(M5) %>% 
+        rbind(F5) %>% 
+        filter(sex=="F")
+    
+    spline_female <- mgcv::gam(prop~s(age, bs='cs', k=6) + year, data=df_female)
+    
+    tmp_data_female <- expand.grid(
+        year=2015:2025,
+        age=3:110,
+        sex=c("F")
+    )
   
-  summ_male <- summary(linear_model_male)
-  male_coef <- summ_male$coefficients %>% 
-    as.data.frame() %>%  
-    select(1,2) %>%
-    mutate(sex="M")
-  colnames(male_coef)[1:2] <- c("est","std")
-  male_coef %>% 
-    rbind(sigma=data.frame(est=summ_male$sigma,std=0,sex="F")) ->male_coef
-  summ_female <- summary(linear_model_female)
-  female_coef <- summ_female$coefficients %>% 
-    as.data.frame() %>%  
-    select(1,2) %>%
-    mutate(sex="F")
-  colnames(female_coef)[1:2] <- c("est","std")
+    tmp_data_female$pred <- predict(spline_female, newdata=tmp_data_female)
+    
+    tmp_data_female <- tmp_data_female %>% 
+        left_join(
+            df %>% select(year,age,sex,prop,prop_upper,prop_lower) %>% rbind(F5),
+            by=c("year","age","sex")
+        ) %>% 
+        select(-sex)
+    
+    linear_model_female <- stats::lm(
+        pred~age+I(age^2)+I(age^3)+I(age^4)+I(age^5)+I(age^6)+I(age^7)+I(age^8)+I(age^9)+I(age^10)+I(age^11)+
+            I(age^12)+year,
+        data=tmp_data_female
+    )
+
+    df_male = df %>%
+        select(year,sex,age,prop,prop_lower,prop_upper) %>%
+        rbind(M5) %>%
+        # rbind(F5) %>%
+        filter(sex=="M")
   
-  female_coef %>% 
-    rbind(sigma=data.frame(est=summ_female$sigma,std=0,sex="F")) ->female_coef
+    spline_male <- mgcv::gam(prop~s(age, bs="ps", m=1) + year, data=df_male)
   
-  CA_prev_coef <- rbind(female_coef,
-                        male_coef)
+    tmp_data_male <- expand.grid(year=2015:2025,
+                                age=3:110,
+                                sex=c("M"))
   
-  return(list(results_male=results_male,
-              results_female=results_female,
-              prev_coef = CA_prev_coef))
+    tmp_data_male$pred <- predict(spline_male,newdata = tmp_data_male)
+    
+    tmp_data_male <- tmp_data_male %>% 
+        left_join(
+            df %>% select(year,age,sex,prop,prop_upper,prop_lower) %>% rbind(M5),
+            by=c("year","age","sex")
+        ) %>% 
+        select(-sex)
+    
+    linear_model_male <- lm(
+        pred~year+age+I(age^2)+I(age^3)+I(age^4)+I(age^5)+I(age^6)+I(age^7)+I(age^8)+I(age^9)+I(age^10)+I(age^11)+
+            I(age^12),
+        data=tmp_data_male
+    )
+
+    # Get Coefficients
+
+    summ_female <- summary(linear_model_female)
+    female_coef <- summ_female$coefficients %>% 
+        as.data.frame() %>%  
+        select(1,2) %>%
+        mutate(sex="F")
+    colnames(female_coef)[1:2] <- c("est","std")
+  
+    female_coef <- female_coef %>% 
+        rbind(sigma=data.frame(est=summ_female$sigma, std=0, sex="F"))
+    
+    summ_male <- summary(linear_model_male)
+    male_coef <- summ_male$coefficients %>% 
+        as.data.frame() %>%  
+        select(1,2) %>%
+        mutate(sex="M")
+    colnames(male_coef)[1:2] <- c("est","std")
+    male_coef <- male_coef %>%
+        rbind(sigma=data.frame(est=summ_male$sigma, std=0, sex="F"))
+
+    CA_prev_coef <- rbind(female_coef, male_coef)
+
+    # Create Plots
+
+    plot_list_female <- generate_plots(df=tmp_data_female, linear_model=linear_model_female)
+    plot_list_male <- generate_plots(df=tmp_data_male, linear_model=linear_model_male)
+
+    plot_list <- c()
+    for(j in 1:length(plot_list_male)) {
+        plot_list[[(2*(j-1)+1)]] <- plot_list_female[[j]]+ xlab("") + ylab("") + ggtitle("") + theme(text=element_text(size=15))
+        plot_list[[(2*(j-1)+2)]] <- plot_list_male[[j]] + xlab("") + ylab("") + ggtitle("") + theme(text=element_text(size=15))
+    }
+  
+    # left: female; right: male
+    grid.arrange(
+        arrangeGrob(plot_list[[1]], plot_list[[2]], top="2015",nrow=1),
+        # arrangeGrob(plot_list[[3]], plot_list[[4]], top="2016",nrow=1),
+        # arrangeGrob(plot_list[[5]], plot_list[[6]], top="2017",nrow=1),
+        # arrangeGrob(plot_list[[7]], plot_list[[8]], top="2018",nrow=1),
+        # arrangeGrob(plot_list[[9]], plot_list[[10]], top="2019",nrow=1),
+        arrangeGrob(plot_list[[11]], plot_list[[12]], top="2020",nrow=1),
+        ncol=1,
+        bottom=textGrob("Age (years)", gp=gpar(fontsize=20)),
+        left=textGrob("Asthma prevalence (per 100)", rot="90", gp=gpar(fontsize=20))
+    )
+
+    return(list(
+        plot_list_male=plot_list_male,
+        plot_list_female=plot_list_female,
+        prev_coef=CA_prev_coef
+    ))
 }
 
 # BC ----------------------------------------------------------------------
 tmp <- readxl::read_xlsx("private_dataset/asthma_inc_prev.xlsx",sheet=1) %>% 
-  filter(age_group_desc != "<1 year") %>% 
-  mutate(year=substr(fiscal_year,1,4) %>% as.numeric()) %>% 
-  rename(sex=gender) %>% 
-  filter(year>=baseline_year) %>% 
-  rename(age_group = age_group_desc)
+    filter(age_group_desc != "<1 year") %>% 
+    mutate(year=substr(fiscal_year,1,4) %>% as.numeric()) %>% 
+    rename(sex=gender) %>% 
+    filter(year>=baseline_year) %>% 
+    rename(age_group = age_group_desc)
   
 lapply(tmp$age_group,function(x){
   ceiling(mean(parse_number(str_split(x,"-")[[1]])))
@@ -227,10 +300,10 @@ lapply(tmp$age_group,function(x){
 
 # Key assumption: set the incidence level at age 3 to the prevelance level
 tmp <- tmp %>% 
-  mutate(incidence = ifelse(age==3,prevalence,incidence)) %>% 
-  mutate(age= ifelse(age==90,100,age))
+    mutate(incidence = ifelse(age==3,prevalence,incidence)) %>% 
+    mutate(age= ifelse(age==90,100,age))
 
-plotter <- function(SEX,years){
+plotter <- function(SEX, years){
   df <- tmp %>%
     filter(sex==SEX) %>%
     select(-sex)
@@ -243,41 +316,23 @@ plotter <- function(SEX,years){
     tmp_data$pred <- predict(spline_model,newdata = tmp_data)
 
 
-    linear_model <- lm(pred~age+year+I(age^2)+I(age^3)+I(age^4)+I(age^5)+I(age^6)+I(age^7)+I(age^8)+I(age^9)+I(age^10)+I(age^11)+
-                                I(age^12),data=tmp_data)
+    linear_model <- lm(
+        pred~age+year+I(age^2)+I(age^3)+I(age^4)+I(age^5)+I(age^6)+I(age^7)+I(age^8)+I(age^9)+I(age^10)+I(age^11)+
+        I(age^12),
+        data=tmp_data
+    )
 
-    lin_data <- cbind(tmp_data,fitted=linear_model$fitted.values)
+    lin_data <- cbind(tmp_data, fitted=linear_model$fitted.values)
 
     tmp_data %>%
-      left_join(df %>% select(year,age,prevalence,prev_lower,prev_upper),
-                by=c("year","age")) -> tmp_data
+        left_join(
+            df %>% select(year,age,prevalence,prev_lower,prev_upper),
+            by=c("year","age")
+        ) -> tmp_data
 
     results <- c()
     counter <- 1
     for(Year in years){
-      
-      # df <- tmp %>% 
-      #   filter(sex==SEX) %>% 
-      #   select(-sex) %>% 
-      #   filter(year==Year) %>% 
-      #   select(-year)
-      # 
-      # spline_model <- gam(prevalence~s(age,bs='bs'),data=df)
-      # 
-      # tmp_data <- expand.grid(year=Year, age=3:100)
-      # 
-      # tmp_data$pred <- predict(spline_model,newdata = tmp_data)
-      # 
-      # 
-      # linear_model <- lm(pred~age+I(age^2)+I(age^3)+I(age^4)+I(age^5)+I(age^6)+I(age^7)+I(age^8)+I(age^9)+I(age^10)+I(age^11)+
-      #                      I(age^12),data=tmp_data)
-      # 
-      # lin_data <- cbind(tmp_data,fitted=linear_model$fitted.values)
-      # 
-      # tmp_data %>% 
-      #   left_join(df %>% select(age,prevalence,prev_lower,prev_upper),
-      #             by=c("age")) -> tmp_data
-      # 
       
       look2 <- tmp_data %>% 
         filter(year==Year) %>% 
@@ -303,23 +358,21 @@ plotter <- function(SEX,years){
 
 
 BC_survey_results <- survey_data_processor("British Columbia")
-CA_survey_results <-survey_data_processor("Canada")
+CA_survey_results <- survey_data_processor("Canada")
 
 # obtain multiplier for each age; averaged across years
 tmp <- c()
-for(yr in 1:length(CA_survey_results[[1]])){
-    tmp[[yr]] <- cbind(BC_survey_results$results_male[[yr]]$data[,3]/CA_survey_results$results_male[[yr]]$data[,3],
-                       BC_survey_results$results_female[[yr]]$data[,3]/CA_survey_results$results_female[[yr]]$data[,3])
+for(yr in 1:length(CA_plots[[1]])){
+    tmp[[yr]] <- cbind(
+        BC_survey_results$plot_list_male[[yr]]$data[,3]/CA_survey_results$plot_list_male[[yr]]$data[,3],
+        BC_survey_results$plot_list_female[[yr]]$data[,3]/CA_survey_results$plot_list_female[[yr]]$data[,3])
 }
 
 multiplier <- 1/apply(simplify2array(tmp), 1:2, mean)
 
-library(ggpubr)
-
-
 
 # BC asthma prev and inc equation -----------------------------------------
-master_BC_asthma <- readxl::read_xlsx("private_dataset/asthma_inc_prev.xlsx",sheet=1) %>% 
+master_BC_asthma <- readxl::read_xlsx(here("R/private_dataset/asthma_inc_prev.xlsx"), sheet=1) %>% 
   filter(age_group_desc != "<1 year") %>% 
   mutate(year=substr(fiscal_year,1,4) %>% as.numeric()) %>% 
   rename(sex=gender) %>% 
@@ -327,9 +380,7 @@ master_BC_asthma <- readxl::read_xlsx("private_dataset/asthma_inc_prev.xlsx",she
   rename(age_group = age_group_desc) %>% 
   mutate(prev_sd = sqrt(prevalence_numerator)*qnorm(0.975),
          prev_upper = (prevalence_numerator+prev_sd)/pop,
-         prev_lower = (prevalence_numerator-prev_sd)/pop)
-
-# select(year,sex,age_group,prevalence,incidence) %>% 
+         prev_lower = (prevalence_numerator-prev_sd)/pop) 
 
 lapply(master_BC_asthma$age_group,function(x){
   ceiling(mean(parse_number(str_split(x,"-")[[1]])))
