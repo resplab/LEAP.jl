@@ -120,13 +120,6 @@ OR_abx_calculator <- function(
     }
 }
 
-OR_fam_calculator <- function(age,fam_hist,params=c(log(1.13),(log(2.4)+log(1.13))/2)){
-  ifelse(age<3 | fam_hist==0 | age > 7,1,exp(params[1] + params[2]*(pmin(age,5)-3)))
-}
-
-OR_risk_factor_calculator <- function(fam_hist,age,dose,params=list(c(log(1.13),(log(1.13)+log(2.4))/2-log(1.13)),c(1.711+0.115,-0.225,0.053))){
-  ifelse(age<3,1,exp(log(OR_fam_calculator(age,fam_hist,params[[1]])) + log(OR_abx_calculator(age,dose,params[[2]]))))
-}
 
 OR_fam_calculator <- function(
     age, fam_hist, params=c(log(1.13), (log(2.4)+log(1.13))/2)
