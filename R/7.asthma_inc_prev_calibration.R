@@ -2,7 +2,7 @@ library(tidyverse)
 library(here)
 library(mgcv)
 library(roptim)
-source("calibration_helper_function.R")
+source(here("R/calibration_helper_function.R"))
 options(dplyr.summarise.inform = FALSE)
 
 # inputs
@@ -14,8 +14,8 @@ stabilization_year <- 2025
 
 # asthma prev and inc -----------------------------------------------------
 
-asthma_inc_model <- read_rds("asthma_incidence_model.rds")
-asthma_prev_model <- read_rds("asthma_prevalence_model.rds")
+asthma_inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
+asthma_prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
 asthma_max_age <- 62
 
 asthma_predictor <- function(age,sex,year,type){
@@ -68,7 +68,7 @@ prev$province <- chosen_province
 # Dx$`F` <- 1
 # Dx$M <- 1
 
-RA <- read_csv("../src/processed_data/master_asthma_reassessment.csv")%>% 
+RA <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
   filter(province==chosen_province)
 
 
@@ -79,7 +79,7 @@ p_fam_distribution <- data.frame(fam_history=c(0,1),
 
 # Abx exposure: 0 1 2 3 4 5+
 # differs by year
-Abx_count_model <- read_rds("BC_count_model.rds")
+Abx_count_model <- read_rds(here("R/BC_count_model.rds"))
 p_antibiotic_exposure <- function(chosen_year,chosen_sex){
   # 2025 for females
   # 2028 for males
@@ -130,7 +130,7 @@ OR_risk_factor_calculator <- function(fam_hist,age,dose,params=list(c(log(1.13),
 # fam_history + \beta_age * (age-3) + dose()
 # free parameters are : age
 
-OR_Abx <- read_csv("dose_response_log_aOR.csv") 
+OR_Abx <- read_csv(here("R/dose_response_log_aOR.csv"))
 colnames(OR_Abx) <- c("age",paste0("OR",c(1:5)))
 OR_Abx$OR0 <- 0
 OR_Abx <- OR_Abx %>% 
@@ -497,12 +497,12 @@ inc_beta_solver <- function(baseline_year=2001,stabilization_year=2025,max_age=6
   
   res_optim <- optim(unlist(inc_beta_parameters),fn=obj,method='BFGS')
   res_nlm <- nlm(obj,unlist(inc_beta_parameters),steptol=1e-6,gradtol=1e-6,print.level=2)
-  write_rds(res_optim,"res_optim.rds")
+  write_rds(res_optim, here("R/res_optim.rds"))
 }
   
 
 # incorporate the estimates of the risk factors and correction terms ----------
-res_optim <- read_rds("res_optim.rds") 
+res_optim <- read_rds(here("R/res_optim.rds"))
 optimized_inc_beta <- res_optim$par
 
 cal_years <- (baseline_year-1):(stabilization_year+1)
@@ -796,7 +796,8 @@ master_correct <- rbind(df_correct_prev,
                         df_correct_inc)
 
 write_csv(master_correct %>% 
-            mutate(correction=ifelse(is.na(correction),0,correction)),"../src/processed_data/master_asthma_occurrence_correction.csv")
+            mutate(correction=ifelse(is.na(correction),0,correction)),
+            here("src/processed_data/master_asthma_occurrence_correction.csv"))
 
 # examine_results <- df_correct %>% 
 #   filter(age !=3)
