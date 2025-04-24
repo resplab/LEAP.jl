@@ -17,6 +17,7 @@ stabilization_year <- 2025
 asthma_inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
 asthma_prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
 MAX_ASTHMA_AGE <- 62
+MIN_ASTHMA_AGE <- 3
 
 asthma_predictor <- function(age, sex, year, type) {
   
@@ -128,6 +129,32 @@ OR_fam_calculator <- function(age,fam_hist,params=c(log(1.13),(log(2.4)+log(1.13
 
 OR_risk_factor_calculator <- function(fam_hist,age,dose,params=list(c(log(1.13),(log(1.13)+log(2.4))/2-log(1.13)),c(1.711+0.115,-0.225,0.053))){
   ifelse(age<3,1,exp(log(OR_fam_calculator(age,fam_hist,params[[1]])) + log(OR_abx_calculator(age,dose,params[[2]]))))
+}
+
+OR_fam_calculator <- function(
+    age, fam_hist, params=c(log(1.13), (log(2.4)+log(1.13))/2)
+){
+    if (age < MIN_ASTHMA_AGE | fam_hist == 0 | age > 7) {
+        return(1)
+    } else {
+        return(exp(params[1] + params[2] * (pmin(age, 5) - 3)))
+    }
+}
+
+OR_risk_factor_calculator <- function(
+    fam_hist,
+    age,
+    dose,
+    params=list(c(log(1.13), (log(1.13) + log(2.4))/2 - log(1.13)), c(1.711 + 0.115, -0.225, 0.053))
+){
+    if (age < MIN_ASTHMA_AGE) {
+        return(1)
+    } else {
+        return(exp(
+            log(OR_fam_calculator(age, fam_hist, params[[1]])) + 
+            log(OR_abx_calculator(age, dose, params[[2]]))
+        ))
+    }
 }
 
 # fam_history + \beta_age * (age-3) + dose()
