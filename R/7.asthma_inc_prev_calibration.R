@@ -117,7 +117,7 @@ OR_risk_factor_calculator <- function(
 }
 
 risk_factor_generator <- function(
-    chosen_year, chosen_sex, chosen_age, model_abx, df_fam_history_or, df_abx_or
+    chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
 ){
     risk_set <- expand.grid(
         fam_history = c(0,1),
@@ -262,6 +262,7 @@ calibrator <- function(
                        chosen_sex,
                        chosen_age,
     model_abx,
+    p_fam_distribution,
     df_fam_history_or,
     df_abx_or
 ){
@@ -275,7 +276,7 @@ calibrator <- function(
   
   if(chosen_age<=7){
     tmp_risk_set <- risk_factor_generator(
-        chosen_year, chosen_sex, chosen_age, model_abx, df_fam_history_or, df_abx_or
+        chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
     )
     
   target_prev <- tmp_prev %>% 
@@ -321,7 +322,7 @@ calibrator <- function(
     unlist()
   
       past_risk_set <- risk_factor_generator(
-        max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, df_fam_history_or, df_abx_or
+        max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
       )
   past_target_OR <- past_risk_set$OR
   past_target_risk_p <- past_risk_set$prob
@@ -337,7 +338,7 @@ calibrator <- function(
       target_misDx <- 0
       
       inc_risk_set <- risk_factor_generator(
-        chosen_year,chosen_sex,chosen_age, model_abx, df_fam_history_or, df_abx_or
+        chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         ) %>% 
         select(fam_history,abx_exposure,year,sex,age,prob)
       
@@ -365,7 +366,7 @@ calibrator <- function(
   else{
     
     tmp_risk_set <- risk_factor_generator(
-        chosen_year,chosen_sex,chosen_age, model_abx, df_fam_history_or, df_abx_or
+        chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         ) %>% 
       group_by(fam_history,year,sex,age) %>% 
       summarise(prob = sum(prob),
@@ -408,15 +409,14 @@ calibrator <- function(
         unlist()
       if(chosen_age != 8){
         past_risk_set <- risk_factor_generator(
-            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, df_fam_history_or, df_abx_or
-            ) %>% 
+            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
           group_by(fam_history) %>% 
           summarise(prob = sum(prob),
                     OR = mean(OR))
       } else{
         
         past_risk_set <- risk_factor_generator(
-            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, df_fam_history_or, df_abx_or
+            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         )
         
         
@@ -451,7 +451,7 @@ calibrator <- function(
       target_misDx <- 0
   
       inc_risk_set <- risk_factor_generator(
-        chosen_year,chosen_sex,chosen_age, model_abx, df_fam_history_or, df_abx_or
+        chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         ) %>% 
         filter(abx_exposure==0) %>% 
         select(fam_history,abx_exposure,year,sex,age,prob)
@@ -503,7 +503,7 @@ inc_beta_solver <- function(
   
   obj <- function(inc_beta_params){
     apply(covar,1,FUN = function(x){
-      calibrator(inc_beta_params, x[1], x[2], x[3], model_abx, df_fam_history_or, df_abx_or)
+      calibrator(inc_beta_params, x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or, df_abx_or)
     }) %>% mean()
     
   }
@@ -531,7 +531,8 @@ calculate_correction <- function(
                        chosen_year,
                        chosen_sex,
                        chosen_age,
-    model_abx
+    model_abx,
+    p_fam_distribution,
     df_fam_history_or,
     df_abx_or
 ){
@@ -552,7 +553,7 @@ calculate_correction <- function(
   
   if(chosen_age<=7){
     tmp_risk_set <- risk_factor_generator(
-        chosen_year,chosen_sex,chosen_age, model_abx, df_fam_history_or, df_abx_or
+        chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
     )
     
     target_prev <- tmp_prev %>% 
@@ -602,7 +603,7 @@ calculate_correction <- function(
         unlist()
       
       past_risk_set <- risk_factor_generator(
-        max(min_cal_year,chosen_year-1), chosen_sex, chosen_age-1, model_abx, df_fam_history_or, df_abx_or
+        max(min_cal_year,chosen_year-1), chosen_sex, chosen_age-1, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
       )
       past_target_OR <- past_risk_set$OR
       past_target_risk_p <- past_risk_set$prob
@@ -652,7 +653,7 @@ calculate_correction <- function(
   else{
     
     tmp_risk_set <- risk_factor_generator(
-        chosen_year,chosen_sex,chosen_age, model_abx, df_fam_history_or, df_abx_or
+        chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         ) %>% 
       group_by(fam_history,year,sex,age) %>% 
       summarise(prob = sum(prob),
@@ -697,7 +698,7 @@ calculate_correction <- function(
         unlist()
       if(chosen_age != 8){
         past_risk_set <- risk_factor_generator(
-            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, df_fam_history_or, df_abx_or
+            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
             ) %>% 
         group_by(fam_history) %>% 
         summarise(prob = sum(prob),
@@ -705,7 +706,7 @@ calculate_correction <- function(
       } else{
         
         past_risk_set <- risk_factor_generator(
-            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, df_fam_history_or, df_abx_or
+            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         )
         
         
@@ -740,7 +741,7 @@ calculate_correction <- function(
       target_misDx <- 0
       
       inc_risk_set <- risk_factor_generator(
-        chosen_year,chosen_sex,chosen_age, model_abx, df_fam_history_or, df_abx_or
+        chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         ) %>% 
         filter(abx_exposure==0) %>% 
         select(fam_history,abx_exposure,year,sex,age,prob)
