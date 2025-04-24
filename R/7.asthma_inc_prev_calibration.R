@@ -64,6 +64,45 @@ p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx){
     return(data.frame(abx_exposure=c(0:5), prob_abx=prob))
 }
 
+
+OR_abx_calculator <- function(
+    age, dose, params=c(1.711 + 0.115, -0.225, 0.053)
+){
+    if (dose == 0) {
+        return(1)
+    } else {
+        return(exp(sum(params * c(1, pmin(age, 7), pmin(dose, 3)))))
+    }
+}
+
+
+OR_fam_calculator <- function(
+    age, fam_hist, params=c(log(1.13), (log(2.4)+log(1.13))/2)
+){
+    if (age < MIN_ASTHMA_AGE | fam_hist == 0 | age > 7) {
+        return(1)
+    } else {
+        return(exp(params[1] + params[2] * (pmin(age, 5) - 3)))
+    }
+}
+
+
+OR_risk_factor_calculator <- function(
+    fam_hist,
+    age,
+    dose,
+    params=list(c(log(1.13), (log(1.13) + log(2.4))/2 - log(1.13)), c(1.711 + 0.115, -0.225, 0.053))
+){
+    if (age < MIN_ASTHMA_AGE) {
+        return(1)
+    } else {
+        return(exp(
+            log(OR_fam_calculator(age, fam_hist, params[[1]])) + 
+            log(OR_abx_calculator(age, dose, params[[2]]))
+        ))
+    }
+}
+
 df_asthma <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
   as.data.frame()
 
@@ -111,43 +150,6 @@ colnames(OR_fam_history)[-1] <- c(0,1)
 OR_fam_history <- pivot_longer(OR_fam_history,cols=-1,names_to="fam_history",values_to="OR_fam") %>% 
   mutate(fam_history = as.numeric(fam_history))
 
-
-OR_abx_calculator <- function(
-    age, dose, params=c(1.711 + 0.115, -0.225, 0.053)
-){
-    if (dose == 0) {
-        return(1)
-    } else {
-        return(exp(sum(params * c(1, pmin(age, 7), pmin(dose, 3)))))
-    }
-}
-
-
-OR_fam_calculator <- function(
-    age, fam_hist, params=c(log(1.13), (log(2.4)+log(1.13))/2)
-){
-    if (age < MIN_ASTHMA_AGE | fam_hist == 0 | age > 7) {
-        return(1)
-    } else {
-        return(exp(params[1] + params[2] * (pmin(age, 5) - 3)))
-    }
-}
-
-OR_risk_factor_calculator <- function(
-    fam_hist,
-    age,
-    dose,
-    params=list(c(log(1.13), (log(1.13) + log(2.4))/2 - log(1.13)), c(1.711 + 0.115, -0.225, 0.053))
-){
-    if (age < MIN_ASTHMA_AGE) {
-        return(1)
-    } else {
-        return(exp(
-            log(OR_fam_calculator(age, fam_hist, params[[1]])) + 
-            log(OR_abx_calculator(age, dose, params[[2]]))
-        ))
-    }
-}
 
 # fam_history + \beta_age * (age-3) + dose()
 # free parameters are : age
