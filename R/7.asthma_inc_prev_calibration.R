@@ -114,6 +114,48 @@ OR_risk_factor_calculator <- function(
     }
 }
 
+risk_factor_generator <- function(
+    chosen_year, chosen_sex, chosen_age, model_abx, df_fam_history_or, df_abx_or
+){
+    risk_set <- expand.grid(
+        fam_history = c(0,1),
+        abx_exposure = c(0,1,2,3,4,5)
+    )
+    tmp_p_fam <- p_fam_distribution
+    birth_year <- chosen_year - chosen_age
+    df_abx_exposure <- p_antibiotic_exposure(max(birth_year, 2000), chosen_sex, model_abx)
+    tmp_OR_fam <- df_fam_history_or %>% 
+        filter(age==min(chosen_age, 5)) %>% 
+        select(-age)
+    tmp_OR_abx <- df_abx_or %>% 
+        filter(age == min(chosen_age, 8)) %>% 
+        select(-age)
+    df_abx_exposure$prob_abx[4] <- sum(df_abx_exposure$prob_abx[4:6])
+    
+    tmp_OR_abx <- tmp_OR_abx %>% 
+        filter(abx_exposure<=3)
+    df_abx_exposure <- df_abx_exposure %>% 
+        filter(abx_exposure<=3)
+  
+    risk_set <- risk_set %>%
+        mutate(
+            year=chosen_year,
+            sex=chosen_sex,
+            age=chosen_age
+        ) %>%
+        filter(abx_exposure <= 3) %>% 
+        left_join(tmp_p_fam, by=c("fam_history")) %>%
+        left_join(df_abx_exposure, by=c("abx_exposure")) %>%
+        left_join(tmp_OR_fam, by = c("fam_history")) %>%
+        left_join(tmp_OR_abx, by =c("abx_exposure")) %>% 
+        mutate(
+            prob=prob_fam * prob_abx,
+            OR=OR_abx * OR_fam
+        ) %>%
+        select(fam_history, abx_exposure,year,sex,age,prob,OR)
+    return(risk_set)
+}
+
 df_asthma <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
   as.data.frame()
 
@@ -185,48 +227,6 @@ df_abx_or <- pivot_longer(
 ) %>% 
     mutate(abx_exposure=as.numeric(str_remove(abx_exposure, "OR")))
 
-
-risk_factor_generator <- function(
-    chosen_year, chosen_sex, chosen_age, model_abx, df_fam_history_or, df_abx_or
-){
-    risk_set <- expand.grid(
-        fam_history = c(0,1),
-        abx_exposure = c(0,1,2,3,4,5)
-    )
-  tmp_p_fam <- p_fam_distribution
-  birth_year <- chosen_year - chosen_age
-    df_abx_exposure <- p_antibiotic_exposure(max(birth_year, 2000), chosen_sex, model_abx)
-    tmp_OR_fam <- df_fam_history_or %>% 
-        filter(age==min(chosen_age, 5)) %>% 
-    select(-age)
-    tmp_OR_abx <- df_abx_or %>% 
-        filter(age == min(chosen_age, 8)) %>% 
-    select(-age)
-    df_abx_exposure$prob_abx[4] <- sum(df_abx_exposure$prob_abx[4:6])
-  
-  tmp_OR_abx <- tmp_OR_abx %>% 
-    filter(abx_exposure<=3)
-    df_abx_exposure <- df_abx_exposure %>% 
-    filter(abx_exposure<=3)
-  
-    risk_set <- risk_set %>%
-        mutate(
-            year=chosen_year,
-            sex=chosen_sex,
-            age=chosen_age
-        ) %>%
-        filter(abx_exposure <= 3) %>% 
-        left_join(tmp_p_fam, by=c("fam_history")) %>%
-        left_join(df_abx_exposure, by=c("abx_exposure")) %>%
-    left_join(tmp_OR_fam, by = c("fam_history")) %>%
-    left_join(tmp_OR_abx, by =c("abx_exposure")) %>% 
-        mutate(
-            prob=prob_fam * prob_abx,
-            OR=OR_abx * OR_fam
-        ) %>%
-        select(fam_history, abx_exposure,year,sex,age,prob,OR)
-    return(risk_set)
-}
 
 # tmp <- risk_factor_generator(2002,1,4)
 # kk <- 8
