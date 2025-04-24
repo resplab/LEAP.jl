@@ -33,6 +33,37 @@ asthma_predictor <- function(age, sex, year, type) {
   }
 }
 
+#' Compute the probability of number of courses of antibiotics during infancy.
+#' 
+#' @param chosen_year The birth year of the infant.
+#' @param chosen_sex The sex of the infant; 0 = female, 1 = male.
+#' @param model_abx The fitted Negative Binomial model for the number of courses of antibiotics.
+#' @returns A dataframe with the probability of the number of courses of antibiotics,
+#' ranging from 0 - 5+.
+p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx){
+    # 2025 for females
+    # 2028 for males
+    # to cap it
+    if(chosen_sex == 1){
+        chosen_year <- min(2028 - 1, chosen_year)
+    }  else{
+        chosen_year <- min(2025 - 1, chosen_year)
+    }
+    df <- data.frame(
+        sex=chosen_sex,
+        year=chosen_year,
+        N=1,
+        after2005=as.numeric(chosen_year > 2005)
+    ) %>% 
+        mutate(after2005year=after2005*year)
+
+    mu <- exp(predict(model_abx, newdata=df, type='link'))
+    size <- exp(model_abx$family$getTheta())
+    prob <- dnbinom(c(0:5), mu=mu, size=size)
+    prob[6] <- 1 - sum(prob[1:5])
+    return(data.frame(abx_exposure=c(0:5), prob_abx=prob))
+}
+
 df_asthma <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
   as.data.frame()
 
@@ -68,36 +99,7 @@ p_fam_distribution <- data.frame(fam_history=c(0,1),
 # differs by year
 Abx_count_model <- read_rds(here("R/BC_count_model.rds"))
 
-#' Compute the probability of number of courses of antibiotics during infancy.
-#' 
-#' @param chosen_year The birth year of the infant.
-#' @param chosen_sex The sex of the infant; 0 = female, 1 = male.
-#' @param model_abx The fitted Negative Binomial model for the number of courses of antibiotics.
-#' @returns A dataframe with the probability of the number of courses of antibiotics,
-#' ranging from 0 - 5+.
-p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx){
-  # 2025 for females
-  # 2028 for males
-  # to cap it
-    if(chosen_sex == 1){
-        chosen_year <- min(2028 - 1, chosen_year)
-  }  else{
-        chosen_year <- min(2025 - 1, chosen_year)
-  }
-    df <- data.frame(
-        sex=chosen_sex,
-        year=chosen_year,
-        N=1,
-        after2005=as.numeric(chosen_year > 2005)
-    ) %>% 
-        mutate(after2005year=after2005*year)
 
-    mu <- exp(predict(model_abx, newdata=df, type='link'))
-    size <- exp(model_abx$family$getTheta())
-    prob <- dnbinom(c(0:5), mu=mu, size=size)
-    prob[6] <- 1 - sum(prob[1:5])
-    return(data.frame(abx_exposure=c(0:5), prob_abx=prob))
-}
 
 
 # prev eqn OR
