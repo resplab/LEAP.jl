@@ -112,10 +112,14 @@ OR_fam_history <- pivot_longer(OR_fam_history,cols=-1,names_to="fam_history",val
   mutate(fam_history = as.numeric(fam_history))
 
 
-
-
-OR_abx_calculator <- function(age,dose,params = c(1.711+0.115,-0.225,0.053)){
-  ifelse(dose==0,1,exp(sum(params*c(1,pmin(age,7),pmin(dose,3)))))
+OR_abx_calculator <- function(
+    age, dose, params=c(1.711 + 0.115, -0.225, 0.053)
+){
+    if (dose == 0) {
+        return(1)
+    } else {
+        return(exp(sum(params * c(1, pmin(age, 7), pmin(dose, 3)))))
+    }
 }
 
 OR_fam_calculator <- function(age,fam_hist,params=c(log(1.13),(log(2.4)+log(1.13))/2)){
