@@ -151,15 +151,19 @@ model_abx <- read_rds(here("R/BC_count_model.rds"))
 
 
 # prev eqn OR
-OR_fam_history <- list(
+df_fam_history_or <- list(
     c(1, OR_ASTHMA_AGE_3),
     c(1, exp((log(OR_ASTHMA_AGE_3) + log(OR_ASTHMA_AGE_5)) / 2)),
     c(1, OR_ASTHMA_AGE_5)
 )
-OR_fam_history<- data.frame(age=c(3,4,5),do.call(rbind,OR_fam_history))
-colnames(OR_fam_history)[-1] <- c(0,1)
-OR_fam_history <- pivot_longer(OR_fam_history,cols=-1,names_to="fam_history",values_to="OR_fam") %>% 
-  mutate(fam_history = as.numeric(fam_history))
+df_fam_history_or<- data.frame(
+    age=c(3, 4, 5), do.call(rbind, df_fam_history_or)
+)
+colnames(df_fam_history_or)[-1] <- c(0,1)
+df_fam_history_or <- pivot_longer(
+    df_fam_history_or, cols=-1, names_to="fam_history", values_to="OR_fam"
+) %>% 
+    mutate(fam_history=as.numeric(fam_history))
 
 
 # fam_history + \beta_age * (age-3) + dose()
@@ -188,7 +192,7 @@ risk_factor_generator <- function(
   tmp_p_fam <- p_fam_distribution
   birth_year <- chosen_year - chosen_age
     df_abx_exposure <- p_antibiotic_exposure(max(birth_year, 2000), chosen_sex, model_abx)
-  tmp_OR_fam <- OR_fam_history %>% 
+    tmp_OR_fam <- df_fam_history_or %>% 
         filter(age==min(chosen_age, 5)) %>% 
     select(-age)
   tmp_OR_abx <- OR_Abx %>% 
