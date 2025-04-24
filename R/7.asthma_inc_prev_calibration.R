@@ -18,6 +18,10 @@ asthma_inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
 asthma_prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
 MAX_ASTHMA_AGE <- 62
 MIN_ASTHMA_AGE <- 3
+# odds ratio between asthma prevalence at age 3 and family history (CHILD Study)
+OR_ASTHMA_AGE_3 <- 1.13
+# odds ratio between asthma prevalence at age 5 and family history (CHILD Study)
+OR_ASTHMA_AGE_5 <- 2.4
 
 asthma_predictor <- function(age, sex, year, type) {
   
@@ -77,7 +81,9 @@ OR_abx_calculator <- function(
 
 
 OR_fam_calculator <- function(
-    age, fam_hist, params=c(log(1.13), (log(2.4)+log(1.13))/2)
+    age,
+    fam_hist,
+    params=c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_5) + log(OR_ASTHMA_AGE_3)) / 2)
 ){
     if (age < MIN_ASTHMA_AGE | fam_hist == 0 | age > 7) {
         return(1)
@@ -91,7 +97,10 @@ OR_risk_factor_calculator <- function(
     fam_hist,
     age,
     dose,
-    params=list(c(log(1.13), (log(1.13) + log(2.4))/2 - log(1.13)), c(1.711 + 0.115, -0.225, 0.053))
+    params=list(
+        c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_3) + log(OR_ASTHMA_AGE_5)) / 2 - log(OR_ASTHMA_AGE_3)),
+        c(1.711 + 0.115, -0.225, 0.053)
+    )
 ){
     if (age < MIN_ASTHMA_AGE) {
         return(1)
@@ -142,9 +151,11 @@ Abx_count_model <- read_rds(here("R/BC_count_model.rds"))
 
 
 # prev eqn OR
-OR_fam_history <- list(c(1,1.13),
-                       c(1, exp((log(1.13)+log(2.4))/2)),
-                       c(1,2.4))
+OR_fam_history <- list(
+    c(1, OR_ASTHMA_AGE_3),
+    c(1, exp((log(OR_ASTHMA_AGE_3) + log(OR_ASTHMA_AGE_5)) / 2)),
+    c(1, OR_ASTHMA_AGE_5)
+)
 OR_fam_history<- data.frame(age=c(3,4,5),do.call(rbind,OR_fam_history))
 colnames(OR_fam_history)[-1] <- c(0,1)
 OR_fam_history <- pivot_longer(OR_fam_history,cols=-1,names_to="fam_history",values_to="OR_fam") %>% 
@@ -240,7 +251,10 @@ calibrator <- function(inc_beta_parameters=c(0.3766256,-0.225),
                        model_abx){
   
   if(!is.list(inc_beta_parameters)){
-    inc_beta_parameters <- list(c(log(1.13),inc_beta_parameters[1]),c(1.826,inc_beta_parameters[2],0.053))
+    inc_beta_parameters <- list(
+        c(log(OR_ASTHMA_AGE_3), inc_beta_parameters[1]),
+        c(1.826,inc_beta_parameters[2],0.053)
+    )
   }
   
   if(chosen_age<=7){
@@ -442,7 +456,7 @@ calibrator <- function(inc_beta_parameters=c(0.3766256,-0.225),
   
 # inc_beta_parameters <-list(c(log(1.13),(log(2.4)-log(1.13))/2),c(1.711+0.115,-0.225,0.053))
 # initial values
-inc_beta_parameters <-c( (log(2.4)-log(1.13)) / 2 , -0.225)
+inc_beta_parameters <- c((log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2, -0.225)
 
 # chosen_year <- 2002
 # chosen_age <- 4
@@ -503,7 +517,10 @@ calculate_correction <- function(inc_beta_parameters=optimized_inc_beta,
                         inc_correction = NA)
   
   if(!is.list(inc_beta_parameters)){
-    inc_beta_parameters <- list(c(log(1.13),inc_beta_parameters[1]),c(1.826,inc_beta_parameters[2],0.053))
+    inc_beta_parameters <- list(
+        c(log(OR_ASTHMA_AGE_3), inc_beta_parameters[1]),
+        c(1.826, inc_beta_parameters[2], 0.053)
+    )
   }
   
   if(chosen_age<=7){
