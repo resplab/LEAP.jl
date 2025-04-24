@@ -22,6 +22,8 @@ MIN_ASTHMA_AGE <- 3
 OR_ASTHMA_AGE_3 <- 1.13
 # odds ratio between asthma prevalence at age 5 and family history (CHILD Study)
 OR_ASTHMA_AGE_5 <- 2.4
+INC_BETA_PARAMS <- c((log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2, -0.225)
+
 
 asthma_predictor <- function(age, sex, year, type) {
   
@@ -249,7 +251,7 @@ tmp_RA <- df_reassessment %>%
 # spit out the loss function 
 # .5989652 -0.3574636
 calibrator <- function(
-    inc_beta_parameters=c(0.3766256,-0.225),
+    inc_beta_params=c(0.3766256,-0.225),
                        chosen_year,
                        chosen_sex,
                        chosen_age,
@@ -257,10 +259,10 @@ calibrator <- function(
     df_fam_history_or
 ){
   
-  if(!is.list(inc_beta_parameters)){
-    inc_beta_parameters <- list(
-        c(log(OR_ASTHMA_AGE_3), inc_beta_parameters[1]),
-        c(1.826,inc_beta_parameters[2],0.053)
+  if(!is.list(inc_beta_params)){
+    inc_beta_params <- list(
+        c(log(OR_ASTHMA_AGE_3), inc_beta_params[1]),
+        c(1.826,inc_beta_params[2],0.053)
     )
   }
   
@@ -336,7 +338,7 @@ calibrator <- function(
       
       inc_risk_set$OR <- inc_risk_set %>% 
         apply(.,1,FUN=function(x){
-          OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_parameters)
+          OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_params)
         })
       
       inc_sol <- inc_loss_function(target_inc = target_inc,
@@ -449,7 +451,7 @@ calibrator <- function(
       
       inc_risk_set$OR <- inc_risk_set %>% 
         apply(.,1,FUN=function(x){
-          OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_parameters)
+          OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_params)
         })
       
       inc_sol <- inc_loss_function(target_inc = target_inc,
@@ -470,21 +472,18 @@ calibrator <- function(
   
 }
   
-# inc_beta_parameters <-list(c(log(1.13),(log(2.4)-log(1.13))/2),c(1.711+0.115,-0.225,0.053))
-# initial values
-inc_beta_parameters <- c((log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2, -0.225)
-
-# chosen_year <- 2002
-# chosen_age <- 4
-# chosen_sex <- 1
-# calibrator(inc_beta_parameters,2004,1,10)
 
 baseline_year=2001
 stabilization_year=2025
 max_age=63
 
 inc_beta_solver <- function(
-   model_abx, df_fam_history_or, baseline_year=2001, stabilization_year=2025, max_age=63, 
+    model_abx,
+    df_fam_history_or,
+    baseline_year=2001,
+    stabilization_year=2025,
+    max_age=63,
+    inc_beta_params=INC_BETA_PARAMS
 ){
   cal_years <- baseline_year:(stabilization_year+1)
   ages <- 4:max_age
@@ -494,15 +493,15 @@ inc_beta_solver <- function(
   
   
   
-  obj <- function(inc_beta_parameters){
+  obj <- function(inc_beta_params){
     apply(covar,1,FUN = function(x){
-      calibrator(inc_beta_parameters, x[1], x[2], x[3], model_abx, df_fam_history_or)
+      calibrator(inc_beta_params, x[1], x[2], x[3], model_abx, df_fam_history_or)
     }) %>% mean()
     
   }
   
-  res_optim <- optim(unlist(inc_beta_parameters),fn=obj,method='BFGS')
-  res_nlm <- nlm(obj,unlist(inc_beta_parameters),steptol=1e-6,gradtol=1e-6,print.level=2)
+  res_optim <- optim(unlist(inc_beta_params),fn=obj,method='BFGS')
+  res_nlm <- nlm(obj,unlist(inc_beta_params),steptol=1e-6,gradtol=1e-6,print.level=2)
   write_rds(res_optim, here("R/res_optim.rds"))
 }
   
@@ -520,7 +519,7 @@ calibration_results <- expand.grid(year=cal_years,sex=sexes,age=ages) %>%
 
 
 calculate_correction <- function(
-    inc_beta_parameters=optimized_inc_beta,
+    inc_beta_params=optimized_inc_beta,
                        chosen_year,
                        chosen_sex,
                        chosen_age,
@@ -535,10 +534,10 @@ calculate_correction <- function(
                         prev_correction = NA,
                         inc_correction = NA)
   
-  if(!is.list(inc_beta_parameters)){
-    inc_beta_parameters <- list(
-        c(log(OR_ASTHMA_AGE_3), inc_beta_parameters[1]),
-        c(1.826, inc_beta_parameters[2], 0.053)
+  if(!is.list(inc_beta_params)){
+    inc_beta_params <- list(
+        c(log(OR_ASTHMA_AGE_3), inc_beta_params[1]),
+        c(1.826, inc_beta_params[2], 0.053)
     )
   }
   
@@ -619,7 +618,7 @@ calculate_correction <- function(
       
       inc_risk_set$OR <- inc_risk_set %>% 
         apply(.,1,FUN=function(x){
-          OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_parameters)
+          OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_params)
         })
       
       inc_sol <- inc_correction_calculator(target_inc = target_inc,
@@ -739,7 +738,7 @@ calculate_correction <- function(
       
       inc_risk_set$OR <- inc_risk_set %>% 
         apply(.,1,FUN=function(x){
-          OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_parameters)
+          OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_params)
         })
       
       inc_sol <- inc_correction_calculator(target_inc = target_inc,
@@ -763,9 +762,9 @@ calculate_correction <- function(
 }
 
       
-generate_correction <- function(tmp_df, model_abx){
+generate_correction <- function(tmp_df, model_abx, inc_beta_params){
     apply(tmp_df,1,FUN=function(x){
-      calculate_correction(inc_beta_parameters=optimized_inc_beta,
+      calculate_correction(inc_beta_params=inc_beta_params,
                            chosen_year=x[1],
                            chosen_sex = x[2],
                            chosen_age = x[3],
@@ -774,7 +773,7 @@ generate_correction <- function(tmp_df, model_abx){
     do.call(rbind,.)
 }
 
-df_correct <- generate_correction(calibration_results, model_abx)
+df_correct <- generate_correction(calibration_results, model_abx, optimized_inc_beta)
 
 df_correct_prev <- df_correct %>% 
   select(1:3,5) %>% 
