@@ -23,6 +23,8 @@ OR_ASTHMA_AGE_3 <- 1.13
 # odds ratio between asthma prevalence at age 5 and family history (CHILD Study)
 OR_ASTHMA_AGE_5 <- 2.4
 INC_BETA_PARAMS <- c((log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2, -0.225)
+# the probability that one or more parents have asthma (CHILD Study)
+PROB_FAM_HIST <- 0.2927242
 
 
 asthma_predictor <- function(age, sex, year, type) {
@@ -184,8 +186,10 @@ df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.
 
 # risk factors ------------------------------------------------------------
 
-p_fam_distribution <- data.frame(fam_history=c(0,1),
-                                 prob_fam=c(1-0.2927242,0.2927242))
+p_fam_distribution <- data.frame(
+    fam_history=c(0, 1),
+    prob_fam=c(1 - PROB_FAM_HIST, PROB_FAM_HIST)
+)
 
 # Abx exposure: 0 1 2 3 4 5+
 # differs by year
