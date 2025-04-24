@@ -41,8 +41,6 @@ df_asthma <- xs %>%
   mutate(prev = asthma_predictor(age,sex,year,"prev")) %>% 
   mutate(inc = ifelse(age==3,prev,inc))
 
-# inc <- read_csv("master_asthma_inc_interpolated.csv") %>% 
-#   filter(province==chosen_province)
 inc <- df_asthma %>% 
   select(year,age,sex,inc) %>% 
   pivot_wider(names_from=sex,values_from=inc) %>% 
@@ -50,23 +48,12 @@ inc <- df_asthma %>%
 colnames(inc)[c(3,4)] <- c("F","M")
 inc$province <- chosen_province
 
-# prev <- read_csv("master_asthma_prev_interpolated.csv")%>% 
-#   filter(province==chosen_province)
 prev <- df_asthma %>% 
   select(year,age,sex,prev) %>% 
   pivot_wider(names_from=sex,values_from=prev) %>% 
   as.data.frame()
 colnames(prev)[c(3,4)] <- c("F","M")
 prev$province <- chosen_province
-
-# misDx <- read_csv("master_asthma_mis_dx.csv")%>% 
-#   filter(province==chosen_province)
-# misDx$`F` <- 0
-# misDx$M <- 0
-# Dx <- read_csv("master_asthma_dx.csv") %>% 
-#   filter(province==chosen_province)
-# Dx$`F` <- 1
-# Dx$M <- 1
 
 df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
   filter(province==chosen_province)
@@ -237,16 +224,6 @@ tmp_RA <- df_reassessment %>%
   pivot_longer(3:4,values_to="ra",names_to='sex')%>% 
   mutate(sex = as.numeric(sex=="M"))
 
-# tmp_misDx <- misDx %>% 
-#   select(-province)%>% 
-#   pivot_longer(3:4,values_to="misDx",names_to='sex')%>% 
-#   mutate(sex = as.numeric(sex=="M"))
-# 
-# tmp_Dx <- Dx %>% 
-#   select(-province)%>% 
-#   pivot_longer(3:4,values_to="Dx",names_to='sex')%>% 
-#   mutate(sex = as.numeric(sex=="M"))
-
 # for each year, sex, age
 # given the effects of risk factors in the incidence equation,
 # spit out the loss function 
@@ -319,30 +296,8 @@ calibrator <- function(inc_beta_parameters=c(0.3766256,-0.225),
     select(ra) %>% 
     unlist()
   
-      # target_Dx <- tmp_Dx %>% 
-      #   filter(age == chosen_age & 
-      #            year == chosen_year &
-      #            sex == chosen_sex) %>% 
-      #   select(Dx) %>% 
-      #   unlist()
-      
       target_Dx <- 1
-      
-      # target_misDx <- tmp_misDx %>% 
-      #   filter(age == chosen_age & 
-      #            year == chosen_year &
-      #            sex == chosen_sex) %>% 
-      #   select(misDx) %>% 
-      #   unlist()
-      
       target_misDx <- 0
-      
-      # if(!(abs(target_prev -(
-      #   past_target_prev*target_RA + 
-      #   (1-past_target_prev)*target_inc*target_Dx + 
-      #   (1-past_target_prev)*(1-target_inc)*target_misDx))<1e-10)){
-      #   return("Something wrong with Dx misDx RA")
-      # }
       
       inc_risk_set <- risk_factor_generator(chosen_year,chosen_sex,chosen_age,model_abx) %>% 
         select(fam_history,abx_exposure,year,sex,age,prob)
@@ -353,20 +308,6 @@ calibrator <- function(inc_beta_parameters=c(0.3766256,-0.225),
         apply(.,1,FUN=function(x){
           OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_parameters)
         })
-      
-      
-      
-      
-      # target_inc = target_inc;
-      # past_target_prev = past_target_prev;
-      # past_target_OR = past_target_OR;
-      # target_OR = target_OR;
-      # p_risk = past_target_risk_p;
-      # ra = target_RA;
-      # misDx = target_misDx;
-      # Dx = target_Dx;
-      # risk_set=inc_risk_set;
-      # log_inc_OR = log(inc_risk_set$OR)
       
       inc_sol <- inc_loss_function(target_inc = target_inc,
                                    past_target_prev = past_target_prev,
@@ -464,22 +405,7 @@ calibrator <- function(inc_beta_parameters=c(0.3766256,-0.225),
         select(ra) %>% 
         unlist()
       
-      # target_Dx <- tmp_Dx %>% 
-      #   filter(age == chosen_age & 
-      #            year == chosen_year &
-      #            sex == chosen_sex) %>% 
-      #   select(Dx) %>% 
-      #   unlist()
-      
       target_Dx <- 1
-      
-      # target_misDx <- tmp_misDx %>% 
-      #   filter(age == chosen_age & 
-      #            year == chosen_year &
-      #            sex == chosen_sex) %>% 
-      #   select(misDx) %>% 
-      #   unlist()
-      
       target_misDx <- 0
   
       inc_risk_set <- risk_factor_generator(chosen_year,chosen_sex,chosen_age, model_abx) %>% 
@@ -490,8 +416,6 @@ calibrator <- function(inc_beta_parameters=c(0.3766256,-0.225),
         apply(.,1,FUN=function(x){
           OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_parameters)
         })
-      
-      
       
       inc_sol <- inc_loss_function(target_inc = target_inc,
                                    past_target_prev = past_target_prev,
@@ -519,7 +443,6 @@ inc_beta_parameters <-c( (log(2.4)-log(1.13)) / 2 , -0.225)
 # chosen_age <- 4
 # chosen_sex <- 1
 # calibrator(inc_beta_parameters,2004,1,10)
-
 
 baseline_year=2001
 stabilization_year=2025
@@ -640,22 +563,7 @@ calculate_correction <- function(inc_beta_parameters=optimized_inc_beta,
         select(ra) %>% 
         unlist()
       
-      # target_Dx <- tmp_Dx %>% 
-      #   filter(age == chosen_age & 
-      #            year == chosen_year &
-      #            sex == chosen_sex) %>% 
-      #   select(Dx) %>% 
-      #   unlist()
-      
       target_Dx <- 1
-      
-      # target_misDx <- tmp_misDx %>% 
-      #   filter(age == chosen_age & 
-      #            year == chosen_year &
-      #            sex == chosen_sex) %>% 
-      #   select(misDx) %>% 
-      #   unlist()
-      
       target_misDx <- 0
       
       
@@ -773,22 +681,7 @@ calculate_correction <- function(inc_beta_parameters=optimized_inc_beta,
         select(ra) %>% 
         unlist()
       
-      # target_Dx <- tmp_Dx %>% 
-      #   filter(age == chosen_age & 
-      #            year == chosen_year &
-      #            sex == chosen_sex) %>% 
-      #   select(Dx) %>% 
-      #   unlist()
-      
       target_Dx <- 1
-      
-      # target_misDx <- tmp_misDx %>% 
-      #   filter(age == chosen_age & 
-      #            year == chosen_year &
-      #            sex == chosen_sex) %>% 
-      #   select(misDx) %>% 
-      #   unlist()
-      
       target_misDx <- 0
       
       inc_risk_set <- risk_factor_generator(chosen_year,chosen_sex,chosen_age) %>% 
@@ -800,8 +693,6 @@ calculate_correction <- function(inc_beta_parameters=optimized_inc_beta,
           OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_parameters)
         })
       
-      
-
       inc_sol <- inc_correction_calculator(target_inc = target_inc,
                                            past_target_prev = past_target_prev,
                                            past_target_OR = past_target_OR,
@@ -835,8 +726,6 @@ generate_correction <- function(tmp_df, model_abx){
 }
 
 df_correct <- generate_correction(calibration_results, model_abx)
-
-# write_rds(df_correct,"df_correct_25.rds")
 
 df_correct_prev <- df_correct %>% 
   select(1:3,5) %>% 
