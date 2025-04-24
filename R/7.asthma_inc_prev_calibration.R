@@ -33,10 +33,10 @@ asthma_predictor <- function(age, sex, year, type) {
   }
 }
 
-xs <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
+df_asthma <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
   as.data.frame()
 
-df_asthma <- xs %>% 
+df_asthma <- df_asthma %>% 
   mutate(inc = asthma_predictor(age,sex,year,"inc")) %>% 
   mutate(prev = asthma_predictor(age,sex,year,"prev")) %>% 
   mutate(inc = ifelse(age==3,prev,inc))
