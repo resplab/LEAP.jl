@@ -16,21 +16,20 @@ stabilization_year <- 2025
 
 asthma_inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
 asthma_prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
-asthma_max_age <- 62
+MAX_ASTHMA_AGE <- 62
 
-asthma_predictor <- function(age,sex,year,type){
-  age <- pmin(age,asthma_max_age)
+asthma_predictor <- function(age, sex, year, type) {
   
-  year <- pmin(year,stabilization_year)
+    age <- pmin(age, MAX_ASTHMA_AGE)
+    year <- pmin(year, stabilization_year)
   
-  if(type == "prev" ){
-    return( exp(predict(asthma_prev_model,newdata=data.frame(age,sex,year))) %>% 
+  if(type=="prev"){
+    return(exp(predict(asthma_prev_model, newdata=data.frame(age, sex, year))) %>% 
               unlist())
-  } else{
-    return( exp(predict(asthma_inc_model,newdata=data.frame(age,sex,year))) %>% 
+    } else {
+    return(exp(predict(asthma_inc_model, newdata=data.frame(age, sex, year))) %>% 
               unlist())
   }
-  
 }
 
 xs <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
