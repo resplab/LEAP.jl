@@ -68,7 +68,7 @@ prev$province <- chosen_province
 # Dx$`F` <- 1
 # Dx$M <- 1
 
-RA <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
+df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
   filter(province==chosen_province)
 
 
@@ -232,7 +232,7 @@ tmp_prev <- prev %>%
   pivot_longer(3:4,values_to="prev",names_to='sex')%>% 
   mutate(sex = as.numeric(sex=="M"))
 
-tmp_RA <- RA %>% 
+tmp_RA <- df_reassessment %>% 
   select(-province)%>% 
   pivot_longer(3:4,values_to="ra",names_to='sex')%>% 
   mutate(sex = as.numeric(sex=="M"))
