@@ -848,12 +848,11 @@ df_correct_inc <- df_correct %>%
   rename(correction=inc_correction) %>% 
   mutate(type='inc')
 
-master_correct <- rbind(df_correct_prev,
-                        df_correct_inc)
+master_correct <- rbind(df_correct_prev, df_correct_inc)
+master_correct <- master_correct %>% 
+  mutate(correction=ifelse(is.na(correction), 0, correction))
 
-write_csv(master_correct %>% 
-            mutate(correction=ifelse(is.na(correction),0,correction)),
-            here("src/processed_data/master_asthma_occurrence_correction.csv"))
+write_csv(master_correct, here("src/processed_data/master_asthma_occurrence_correction.csv"))
 
 # examine_results <- df_correct %>% 
 #   filter(age !=3)
