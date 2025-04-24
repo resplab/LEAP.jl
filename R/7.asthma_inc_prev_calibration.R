@@ -166,12 +166,14 @@ OR_Abx <- OR_Abx %>%
 OR_Abx <- pivot_longer(OR_Abx,cols=-1,names_to="abx_exposure",values_to="OR_abx") %>% 
   mutate(abx_exposure=as.numeric(str_remove(abx_exposure,"OR")))
 
-risk_set <- expand.grid(fam_history = c(0,1),
-                        abx_exposure = c(0,1,2,3,4,5))
 
 risk_factor_generator <- function(
     chosen_year, chosen_sex, chosen_age, model_abx
 ){
+    risk_set <- expand.grid(
+        fam_history = c(0,1),
+        abx_exposure = c(0,1,2,3,4,5)
+    )
   tmp_p_fam <- p_fam_distribution
   birth_year <- chosen_year - chosen_age
     df_abx_exposure <- p_antibiotic_exposure(max(birth_year, 2000), chosen_sex, model_abx)
