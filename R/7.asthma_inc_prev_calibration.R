@@ -41,19 +41,19 @@ df_asthma <- xs %>%
   mutate(prev = asthma_predictor(age,sex,year,"prev")) %>% 
   mutate(inc = ifelse(age==3,prev,inc))
 
-inc <- df_asthma %>% 
-  select(year,age,sex,inc) %>% 
-  pivot_wider(names_from=sex,values_from=inc) %>% 
+df_incidence <- df_asthma %>% 
+  select(year, age, sex, inc) %>% 
+  pivot_wider(names_from=sex, values_from=inc) %>% 
   as.data.frame()
-colnames(inc)[c(3,4)] <- c("F","M")
-inc$province <- chosen_province
+colnames(df_incidence)[c(3, 4)] <- c("F", "M")
+df_incidence$province <- chosen_province
 
-prev <- df_asthma %>% 
-  select(year,age,sex,prev) %>% 
-  pivot_wider(names_from=sex,values_from=prev) %>% 
+df_prevalence <- df_asthma %>% 
+    select(year, age, sex, prev) %>% 
+    pivot_wider(names_from=sex, values_from=prev) %>% 
   as.data.frame()
-colnames(prev)[c(3,4)] <- c("F","M")
-prev$province <- chosen_province
+colnames(df_prevalence)[c(3, 4)] <- c("F", "M")
+df_prevalence$province <- chosen_province
 
 df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
   filter(province==chosen_province)
@@ -202,12 +202,12 @@ risk_factor_generator <- function(chosen_year,chosen_sex,chosen_age, model_abx){
 # OR_risk_factor_calculator(tmp$fam_history[kk],tmp$age[kk],tmp$abx_exposure[kk])
 
 # algorithm for the birth cohort
-tmp_inc <- inc %>% 
+tmp_inc <- df_incidence %>% 
   select(-province) %>%
   pivot_longer(3:4,values_to="inc",names_to='sex') %>% 
   mutate(sex = as.numeric(sex=="M"))
 
-tmp_prev <- prev %>% 
+tmp_prev <- df_prevalence %>% 
   select(-province)%>% 
   pivot_longer(3:4,values_to="prev",names_to='sex')%>% 
   mutate(sex = as.numeric(sex=="M"))
