@@ -165,36 +165,42 @@ OR_Abx <- pivot_longer(OR_Abx,cols=-1,names_to="abx_exposure",values_to="OR_abx"
 risk_set <- expand.grid(fam_history = c(0,1),
                         abx_exposure = c(0,1,2,3,4,5))
 
-risk_factor_generator <- function(chosen_year,chosen_sex,chosen_age, model_abx){
+risk_factor_generator <- function(
+    chosen_year, chosen_sex, chosen_age, model_abx
+){
   tmp_p_fam <- p_fam_distribution
   birth_year <- chosen_year - chosen_age
-  tmp_abx_exposure <- p_antibiotic_exposure(max(birth_year,2000), chosen_sex, model_abx)
+    df_abx_exposure <- p_antibiotic_exposure(max(birth_year, 2000), chosen_sex, model_abx)
   tmp_OR_fam <- OR_fam_history %>% 
-    filter(age == min(chosen_age,5)) %>% 
+        filter(age==min(chosen_age, 5)) %>% 
     select(-age)
   tmp_OR_abx <- OR_Abx %>% 
-    filter(age == min(chosen_age,8)) %>% 
+        filter(age == min(chosen_age, 8)) %>% 
     select(-age)
-  # tmp_OR_abx$OR_abx[4] <- exp(sum(log(tmp_OR_abx$OR_abx)[4:6]*(tmp_abx_exposure$prob_abx[4:6]/sum(tmp_abx_exposure$prob_abx[4:6]))))
-  tmp_abx_exposure$prob_abx[4] <- sum(tmp_abx_exposure$prob_abx[4:6])
+    df_abx_exposure$prob_abx[4] <- sum(df_abx_exposure$prob_abx[4:6])
   
   tmp_OR_abx <- tmp_OR_abx %>% 
     filter(abx_exposure<=3)
-  tmp_abx_exposure <- tmp_abx_exposure %>% 
+    df_abx_exposure <- df_abx_exposure %>% 
     filter(abx_exposure<=3)
   
-  risk_set %>%
-    mutate(year = chosen_year,
-           sex = chosen_sex,
-           age = chosen_age) %>%
-    filter(abx_exposure<=3) %>% 
-    left_join(tmp_p_fam,by=c("fam_history")) %>%
-    left_join(tmp_abx_exposure,by=c("abx_exposure")) %>%
+    risk_set <- risk_set %>%
+        mutate(
+            year=chosen_year,
+            sex=chosen_sex,
+            age=chosen_age
+        ) %>%
+        filter(abx_exposure <= 3) %>% 
+        left_join(tmp_p_fam, by=c("fam_history")) %>%
+        left_join(df_abx_exposure, by=c("abx_exposure")) %>%
     left_join(tmp_OR_fam, by = c("fam_history")) %>%
     left_join(tmp_OR_abx, by =c("abx_exposure")) %>% 
-    mutate(prob = prob_fam * prob_abx,
-           OR = OR_abx * OR_fam) %>%
-    select(fam_history,abx_exposure,year,sex,age,prob,OR)
+        mutate(
+            prob=prob_fam * prob_abx,
+            OR=OR_abx * OR_fam
+        ) %>%
+        select(fam_history, abx_exposure,year,sex,age,prob,OR)
+    return(risk_set)
 }
 
 # tmp <- risk_factor_generator(2002,1,4)
