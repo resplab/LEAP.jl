@@ -145,7 +145,7 @@ p_fam_distribution <- data.frame(fam_history=c(0,1),
 
 # Abx exposure: 0 1 2 3 4 5+
 # differs by year
-Abx_count_model <- read_rds(here("R/BC_count_model.rds"))
+model_abx <- read_rds(here("R/BC_count_model.rds"))
 
 
 
