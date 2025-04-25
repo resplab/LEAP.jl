@@ -116,47 +116,76 @@ OR_risk_factor_calculator <- function(
     }
 }
 
+
+#' Compute the combined antibiotic exposure and family history odds ratio.
+#' 
+#' @param chosen_year The current year.
+#' @param chosen_age The age of the person in years.
+#' @param chosen_sex The sex of the person; 0 = female, 1 = male.
+#' @param model_abx The fitted Negative Binomial model for the number of courses of antibiotics.
+#' @param p_fam_distribution A dataframe with the probability of family history of asthma, given
+#' that the person has asthma. Contains two columns: fam_history (0 or 1) and prob_fam.
+#' @param df_fam_history_or A dataframe with the odds ratio of family history of asthma, given
+#' the age of the person. Contains three columns: age (3, 4, or 5), fam_history (0 or 1),
+#' and OR_fam: odds ratio.
+#' @param df_abx_or A dataframe with the odds ratio of antibiotic exposure, given
+#' the age of the person. Contains three columns: age (3, 4, or 5),
+#' abx_exposure (0, 1, 2, 3, 4, or 5), and OR_abx: odds ratio.
+#' @returns A dataframe with the following columns:
+#' - fam_history: 0 or 1; 0 = no family history of asthma, 1 = family history of asthma
+#' - abx_exposure: 0, 1, 2, 3, 4, 5(+); number of courses of antibiotics in the first year of life
+#' - year: the current year
+#' - sex: 0 or 1; 0 = female, 1 = male
+#' - age: the age of the person in years
+#' - prob: the probability of antibiotic exposure * probability of family history
+#' - OR: the odds ratio of antibiotic exposure * odds ratio of family history
 risk_factor_generator <- function(
     chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
 ){
-    risk_set <- expand.grid(
-        fam_history = c(0,1),
-        abx_exposure = c(0,1,2,3,4,5)
-    )
-    tmp_p_fam <- p_fam_distribution
+
     birth_year <- chosen_year - chosen_age
     df_abx_exposure <- p_antibiotic_exposure(max(birth_year, 2000), chosen_sex, model_abx)
-    tmp_OR_fam <- df_fam_history_or %>% 
-        filter(age==min(chosen_age, 5)) %>% 
-        select(-age)
-    tmp_OR_abx <- df_abx_or %>% 
-        filter(age == min(chosen_age, 8)) %>% 
-        select(-age)
+
+    # combine abx_exposure = 3, 4, 5+ into 3+
     df_abx_exposure$prob_abx[4] <- sum(df_abx_exposure$prob_abx[4:6])
-    
-    tmp_OR_abx <- tmp_OR_abx %>% 
-        filter(abx_exposure<=3)
     df_abx_exposure <- df_abx_exposure %>% 
         filter(abx_exposure<=3)
+
+    # select the given age if <= 5, otherwise select age == 5
+    df_fam_history_or_age <- df_fam_history_or %>% 
+        filter(age==min(chosen_age, 5)) %>% 
+        select(-age)
+
+    # select the given age if <= 8, otherwise select age == 8
+    # filter out abx_exposure > 3
+    df_abx_or_age <- df_abx_or %>% 
+        filter(age == min(chosen_age, 8)) %>% 
+        select(-age) %>%
+        filter(abx_exposure<=3)
   
-    risk_set <- risk_set %>%
+
+    risk_set <- expand.grid(
+        fam_history=c(0, 1),
+        abx_exposure=c(0, 1, 2, 3, 4, 5)
+    ) %>%
         mutate(
             year=chosen_year,
             sex=chosen_sex,
             age=chosen_age
         ) %>%
         filter(abx_exposure <= 3) %>% 
-        left_join(tmp_p_fam, by=c("fam_history")) %>%
+        left_join(p_fam_distribution, by=c("fam_history")) %>%
         left_join(df_abx_exposure, by=c("abx_exposure")) %>%
-        left_join(tmp_OR_fam, by = c("fam_history")) %>%
-        left_join(tmp_OR_abx, by =c("abx_exposure")) %>% 
+        left_join(df_fam_history_or_age, by=c("fam_history")) %>%
+        left_join(df_abx_or_age, by=c("abx_exposure")) %>% 
         mutate(
             prob=prob_fam * prob_abx,
             OR=OR_abx * OR_fam
         ) %>%
-        select(fam_history, abx_exposure,year,sex,age,prob,OR)
+        select(fam_history, abx_exposure, year, sex, age, prob, OR)
     return(risk_set)
 }
+
 
 df_asthma <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
   as.data.frame()
