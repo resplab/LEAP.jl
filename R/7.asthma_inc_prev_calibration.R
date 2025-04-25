@@ -693,16 +693,35 @@ calculate_correction <- function(
 }
 
       
-generate_correction <- function(tmp_df, model_abx, inc_beta_params){
-    apply(tmp_df,1,FUN=function(x){
-      calculate_correction(inc_beta_params=inc_beta_params,
+generate_correction <- function(
+    df,
+    inc_beta_params,
+    df_incidence,
+    df_prevalence,
+    df_reassessment,
+    p_fam_distribution,
+    df_fam_history_or,
+    df_abx_or,
+    model_abx
+){
+    apply(df, 1, FUN=function(x) {
+        calculate_correction(
                            chosen_year=x[1],
-                           chosen_sex = x[2],
-                           chosen_age = x[3],
-                           model_abx=model_abx)
+            chosen_sex=x[2],
+            chosen_age=x[3],
+            df_incidence=df_incidence,
+            df_prevalence=df_prevalence,
+            df_reassessment=df_reassessment,
+            p_fam_distribution=p_fam_distribution,
+            df_fam_history_or=df_fam_history_or,
+            df_abx_or=df_abx_or,
+            model_abx=model_abx,
+            inc_beta_params=inc_beta_params
+        )
     }) %>% 
     do.call(rbind,.)
 }
+
 
 inc_beta_solver <- function(
     model_abx,
