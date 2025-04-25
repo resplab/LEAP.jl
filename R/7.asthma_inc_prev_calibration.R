@@ -261,10 +261,6 @@ df_abx_or <- pivot_longer(
     mutate(abx_exposure=as.numeric(str_remove(abx_exposure, "OR")))
 
 
-# tmp <- risk_factor_generator(2002,1,4)
-# kk <- 8
-# OR_risk_factor_calculator(tmp$fam_history[kk],tmp$age[kk],tmp$abx_exposure[kk])
-
 # algorithm for the birth cohort
 tmp_inc <- df_incidence %>% 
   select(-province) %>%
