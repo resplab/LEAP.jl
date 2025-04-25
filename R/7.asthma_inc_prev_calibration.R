@@ -199,7 +199,10 @@ calibrator <- function(
     model_abx,
     p_fam_distribution,
     df_fam_history_or,
-    df_abx_or
+    df_abx_or,
+    df_incidence,
+    df_prevalence,
+    df_reassessment
 ){
   
   if(!is.list(inc_beta_params)){
@@ -216,7 +219,7 @@ calibrator <- function(
             df_fam_history_or, df_abx_or
     )
     
-  target_prev <- tmp_prev %>% 
+        target_prev <- df_prevalence %>% 
             filter(
                 age==chosen_age & 
                 year==chosen_year &
@@ -238,7 +241,7 @@ calibrator <- function(
             risk_set$calibrated_inc <- risk_set$calibrated_prev
         } else { # aged 4 or more
     
-            risk_set$inc <- tmp_inc %>% 
+            risk_set$inc <- df_incidence %>% 
                 filter(
                     age==chosen_age & 
                     year==chosen_year &
@@ -247,7 +250,7 @@ calibrator <- function(
     select(inc) %>% 
     unlist()
       
-  past_target_prev <- tmp_prev %>% 
+            past_target_prev <- df_prevalence %>% 
     filter(age == chosen_age-1 & 
              year == max(min_cal_year,chosen_year-1) &
              sex == chosen_sex) %>% 
@@ -263,7 +266,7 @@ calibrator <- function(
                 df_abx_or
       )
 
-  target_RA <- tmp_RA %>% 
+            target_RA <- df_reassessment %>% 
                 filter(
                     age==chosen_age & 
                     year==chosen_year &
@@ -313,7 +316,7 @@ calibrator <- function(
                 OR = mean(OR)) %>% 
       ungroup() 
     
-    target_prev <- tmp_prev %>% 
+        target_prev <- df_prevalence %>% 
     filter(age == chosen_age & 
              year == chosen_year &
              sex == chosen_sex) %>% 
@@ -329,14 +332,14 @@ calibrator <- function(
             return(risk_set)
         } else { 
       
-            risk_set$inc <- tmp_inc %>% 
+            risk_set$inc <- df_incidence %>% 
     filter(age == chosen_age & 
              year == chosen_year &
              sex == chosen_sex) %>% 
         select(inc) %>% 
     unlist()
       
-      past_target_prev <- tmp_prev %>% 
+            past_target_prev <- df_prevalence %>% 
         filter(age == chosen_age-1 & 
                  year == max(min_cal_year,chosen_year-1) &
                  sex == chosen_sex) %>% 
@@ -382,7 +385,7 @@ calibrator <- function(
                 past_risk_set$OR <- c(1, past_tmp_OR)
       }
       
-      target_RA <- tmp_RA %>% 
+            target_RA <- df_reassessment %>% 
         filter(age == chosen_age & 
                  year == chosen_year &
                  sex == chosen_sex) %>% 
@@ -437,6 +440,11 @@ df_incidence <- df_asthma %>%
 colnames(df_incidence)[c(3, 4)] <- c("F", "M")
 df_incidence$province <- chosen_province
 
+df_incidence <- df_incidence %>% 
+    select(-province) %>%
+    pivot_longer(3:4, values_to="inc", names_to='sex') %>% 
+    mutate(sex=as.numeric(sex=="M"))
+
 df_prevalence <- df_asthma %>% 
     select(year, age, sex, prev) %>% 
     pivot_wider(names_from=sex, values_from=prev) %>% 
@@ -444,8 +452,18 @@ df_prevalence <- df_asthma %>%
 colnames(df_prevalence)[c(3, 4)] <- c("F", "M")
 df_prevalence$province <- chosen_province
 
+df_prevalence <- df_prevalence %>% 
+    select(-province)%>% 
+    pivot_longer(3:4, values_to="prev", names_to='sex')%>% 
+    mutate(sex=as.numeric(sex=="M"))
+
 df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
     filter(province==chosen_province)
+
+df_reassessment <- df_reassessment %>% 
+    select(-province)%>% 
+    pivot_longer(3:4, values_to="ra", names_to='sex')%>% 
+    mutate(sex=as.numeric(sex=="M"))
 
 
 # risk factors ------------------------------------------------------------
@@ -495,24 +513,6 @@ df_abx_or <- pivot_longer(
 ) %>% 
     mutate(abx_exposure=as.numeric(str_remove(abx_exposure, "OR")))
 
-
-# algorithm for the birth cohort
-tmp_inc <- df_incidence %>% 
-  select(-province) %>%
-  pivot_longer(3:4,values_to="inc",names_to='sex') %>% 
-  mutate(sex = as.numeric(sex=="M"))
-
-tmp_prev <- df_prevalence %>% 
-  select(-province)%>% 
-  pivot_longer(3:4,values_to="prev",names_to='sex')%>% 
-  mutate(sex = as.numeric(sex=="M"))
-
-tmp_RA <- df_reassessment %>% 
-  select(-province)%>% 
-  pivot_longer(3:4,values_to="ra",names_to='sex')%>% 
-  mutate(sex = as.numeric(sex=="M"))
-
-
 baseline_year=2001
 stabilization_year=2025
 max_age=63
@@ -521,6 +521,9 @@ inc_beta_solver <- function(
     model_abx,
     df_fam_history_or,
     df_abx_or,
+    df_incidence,
+    df_prevalence,
+    df_reassessment,
     baseline_year=2001,
     stabilization_year=2025,
     max_age=63,
@@ -532,13 +535,13 @@ inc_beta_solver <- function(
   covar <- expand.grid(year=cal_years,sex=sexes,age=ages) %>% 
     as.data.frame()
   
-  
-  
   obj <- function(inc_beta_params){
-    apply(covar,1,FUN = function(x){
-      calibrator(inc_beta_params, x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or, df_abx_or)
+        apply(covar, 1, FUN=function(x) {
+            calibrator(
+                inc_beta_params, x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or,
+                df_abx_or, df_incidence, df_prevalence, df_reassessment
+            )
     }) %>% mean()
-    
   }
   
   res_optim <- optim(unlist(inc_beta_params),fn=obj,method='BFGS')
@@ -567,7 +570,10 @@ calculate_correction <- function(
     model_abx,
     p_fam_distribution,
     df_fam_history_or,
-    df_abx_or
+    df_abx_or,
+    df_incidence,
+    df_prevalence,
+    df_reassessment
 ){
   
   tmp_res <- data.frame(year=chosen_year,
@@ -589,7 +595,7 @@ calculate_correction <- function(
         chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
     )
     
-    target_prev <- tmp_prev %>% 
+    target_prev <- df_prevalence %>% 
       filter(age == chosen_age & 
                year == chosen_year &
                sex == chosen_sex) %>% 
@@ -619,7 +625,7 @@ calculate_correction <- function(
     
     else{ # aged 4 or more
       
-      target_inc <- tmp_inc %>% 
+      target_inc <- df_incidence %>% 
         filter(age == chosen_age & 
                  year == chosen_year &
                  sex == chosen_sex) %>% 
@@ -628,7 +634,7 @@ calculate_correction <- function(
       
       tmp_risk_set$inc <- target_inc
       
-      past_target_prev <- tmp_prev %>% 
+      past_target_prev <- df_prevalence %>% 
         filter(age == chosen_age-1 & 
                  year == max(min_cal_year,chosen_year-1) &
                  sex == chosen_sex) %>% 
@@ -693,7 +699,7 @@ calculate_correction <- function(
                 OR = mean(OR)) %>% 
       ungroup() 
     
-    target_prev <- tmp_prev %>% 
+    target_prev <- df_prevalence %>% 
       filter(age == chosen_age & 
                year == chosen_year &
                sex == chosen_sex) %>% 
@@ -715,7 +721,7 @@ calculate_correction <- function(
     } else
     { 
       
-      target_inc <- tmp_inc %>% 
+      target_inc <- df_incidence %>% 
         filter(age == chosen_age & 
                  year == chosen_year &
                  sex == chosen_sex) %>% 
@@ -723,7 +729,7 @@ calculate_correction <- function(
         unlist()
       tmp_risk_set$inc <- target_inc
       
-      past_target_prev <- tmp_prev %>% 
+      past_target_prev <- df_prevalence %>% 
         filter(age == chosen_age-1 & 
                  year == max(min_cal_year,chosen_year-1) &
                  sex == chosen_sex) %>% 
@@ -763,7 +769,7 @@ calculate_correction <- function(
       past_target_OR <- past_risk_set$OR
       past_target_risk_p <- past_risk_set$prob
       
-      target_RA <- tmp_RA %>% 
+      target_RA <- df_reassessment %>% 
         filter(age == chosen_age & 
                  year == chosen_year &
                  sex == chosen_sex) %>% 
