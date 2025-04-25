@@ -424,146 +424,6 @@ calibrator <- function(
   return(inc_sol)
 }
 
-inc_beta_solver <- function(
-    model_abx,
-    df_fam_history_or,
-    df_abx_or,
-    df_incidence,
-    df_prevalence,
-    df_reassessment,
-    baseline_year=2001,
-    stabilization_year=2025,
-    max_age=63,
-    inc_beta_params=INC_BETA_PARAMS
-){
-    cal_years <- baseline_year:(stabilization_year+1)
-    ages <- 4:max_age
-    sexes <- 0:1
-    covar <- expand.grid(year=cal_years,sex=sexes,age=ages) %>% 
-        as.data.frame()
-
-    obj <- function(inc_beta_params){
-        apply(covar, 1, FUN=function(x) {
-            calibrator(
-                inc_beta_params, x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or,
-                df_abx_or, df_incidence, df_prevalence, df_reassessment
-            )
-        }) %>% mean()
-    }
-  
-    res_optim <- optim(unlist(inc_beta_params),fn=obj,method='BFGS')
-    res_nlm <- nlm(obj,unlist(inc_beta_params),steptol=1e-6,gradtol=1e-6,print.level=2)
-    write_rds(res_optim, here("R/res_optim.rds"))
-}
-  
-
-df_asthma <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
-  as.data.frame()
-
-df_asthma <- df_asthma %>% 
-  mutate(inc = asthma_predictor(age,sex,year,"inc")) %>% 
-  mutate(prev = asthma_predictor(age,sex,year,"prev")) %>% 
-  mutate(inc = ifelse(age==3,prev,inc))
-
-df_incidence <- df_asthma %>% 
-  select(year, age, sex, inc) %>% 
-  pivot_wider(names_from=sex, values_from=inc) %>% 
-  as.data.frame()
-colnames(df_incidence)[c(3, 4)] <- c("F", "M")
-df_incidence$province <- chosen_province
-
-df_incidence <- df_incidence %>% 
-    select(-province) %>%
-    pivot_longer(3:4, values_to="inc", names_to='sex') %>% 
-    mutate(sex=as.numeric(sex=="M"))
-
-df_prevalence <- df_asthma %>% 
-    select(year, age, sex, prev) %>% 
-    pivot_wider(names_from=sex, values_from=prev) %>% 
-    as.data.frame()
-colnames(df_prevalence)[c(3, 4)] <- c("F", "M")
-df_prevalence$province <- chosen_province
-
-df_prevalence <- df_prevalence %>% 
-    select(-province)%>% 
-    pivot_longer(3:4, values_to="prev", names_to='sex')%>% 
-    mutate(sex=as.numeric(sex=="M"))
-
-df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
-    filter(province==chosen_province)
-
-df_reassessment <- df_reassessment %>% 
-    select(-province)%>% 
-    pivot_longer(3:4, values_to="ra", names_to='sex')%>% 
-    mutate(sex=as.numeric(sex=="M"))
-
-
-# risk factors ------------------------------------------------------------
-
-p_fam_distribution <- data.frame(
-    fam_history=c(0, 1),
-    prob_fam=c(1 - PROB_FAM_HIST, PROB_FAM_HIST)
-)
-
-# Abx exposure: 0 1 2 3 4 5+
-# differs by year
-model_abx <- read_rds(here("R/BC_count_model.rds"))
-
-
-
-
-# prev eqn OR
-df_fam_history_or <- list(
-    c(1, OR_ASTHMA_AGE_3),
-    c(1, exp((log(OR_ASTHMA_AGE_3) + log(OR_ASTHMA_AGE_5)) / 2)),
-    c(1, OR_ASTHMA_AGE_5)
-)
-df_fam_history_or<- data.frame(
-    age=c(3, 4, 5), do.call(rbind, df_fam_history_or)
-)
-colnames(df_fam_history_or)[-1] <- c(0,1)
-df_fam_history_or <- pivot_longer(
-    df_fam_history_or, cols=-1, names_to="fam_history", values_to="OR_fam"
-) %>% 
-    mutate(fam_history=as.numeric(fam_history))
-
-
-# fam_history + \beta_age * (age-3) + dose()
-# free parameters are : age
-
-df_abx_or <- read_csv(here("R/dose_response_log_aOR.csv"))
-colnames(df_abx_or) <- c("age", paste0("OR", c(1:5)))
-df_abx_or$OR0 <- 0
-df_abx_or <- df_abx_or %>% 
-    select(age, OR0, OR1:OR5) %>% 
-    mutate(across(contains("OR"), exp)) %>% 
-    filter(age >= 3) %>% 
-    rbind(data.frame(age=8, OR0=1, OR1=1, OR2=1, OR3=1, OR4=1, OR5=1))
-
-df_abx_or <- pivot_longer(
-    df_abx_or, cols=-1, names_to="abx_exposure", values_to="OR_abx"
-) %>% 
-    mutate(abx_exposure=as.numeric(str_remove(abx_exposure, "OR")))
-
-baseline_year=2001
-stabilization_year=2025
-max_age=63
-
-
-  
-
-# incorporate the estimates of the risk factors and correction terms ----------
-res_optim <- read_rds(here("R/res_optim.rds"))
-optimized_inc_beta <- res_optim$par
-
-cal_years <- (baseline_year-1):(stabilization_year+1)
-ages <- 3:max_age
-sexes <- 0:1
-calibration_results <- expand.grid(year=cal_years,sex=sexes,age=ages) %>%
-  as.data.frame()
-
-
-
 calculate_correction <- function(
     inc_beta_params=optimized_inc_beta,
                        chosen_year,
@@ -863,6 +723,145 @@ generate_correction <- function(tmp_df, model_abx, inc_beta_params){
     }) %>% 
     do.call(rbind,.)
 }
+
+inc_beta_solver <- function(
+    model_abx,
+    df_fam_history_or,
+    df_abx_or,
+    df_incidence,
+    df_prevalence,
+    df_reassessment,
+    baseline_year=2001,
+    stabilization_year=2025,
+    max_age=63,
+    inc_beta_params=INC_BETA_PARAMS
+){
+    cal_years <- baseline_year:(stabilization_year+1)
+    ages <- 4:max_age
+    sexes <- 0:1
+    covar <- expand.grid(year=cal_years,sex=sexes,age=ages) %>% 
+        as.data.frame()
+
+    obj <- function(inc_beta_params){
+        apply(covar, 1, FUN=function(x) {
+            calibrator(
+                inc_beta_params, x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or,
+                df_abx_or, df_incidence, df_prevalence, df_reassessment
+            )
+        }) %>% mean()
+    }
+  
+    res_optim <- optim(unlist(inc_beta_params),fn=obj,method='BFGS')
+    res_nlm <- nlm(obj,unlist(inc_beta_params),steptol=1e-6,gradtol=1e-6,print.level=2)
+    write_rds(res_optim, here("R/res_optim.rds"))
+}
+
+
+df_asthma <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
+  as.data.frame()
+
+df_asthma <- df_asthma %>% 
+  mutate(inc = asthma_predictor(age,sex,year,"inc")) %>% 
+  mutate(prev = asthma_predictor(age,sex,year,"prev")) %>% 
+  mutate(inc = ifelse(age==3,prev,inc))
+
+df_incidence <- df_asthma %>% 
+  select(year, age, sex, inc) %>% 
+  pivot_wider(names_from=sex, values_from=inc) %>% 
+  as.data.frame()
+colnames(df_incidence)[c(3, 4)] <- c("F", "M")
+df_incidence$province <- chosen_province
+
+df_incidence <- df_incidence %>% 
+    select(-province) %>%
+    pivot_longer(3:4, values_to="inc", names_to='sex') %>% 
+    mutate(sex=as.numeric(sex=="M"))
+
+df_prevalence <- df_asthma %>% 
+    select(year, age, sex, prev) %>% 
+    pivot_wider(names_from=sex, values_from=prev) %>% 
+    as.data.frame()
+colnames(df_prevalence)[c(3, 4)] <- c("F", "M")
+df_prevalence$province <- chosen_province
+
+df_prevalence <- df_prevalence %>% 
+    select(-province)%>% 
+    pivot_longer(3:4, values_to="prev", names_to='sex')%>% 
+    mutate(sex=as.numeric(sex=="M"))
+
+df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
+    filter(province==chosen_province)
+
+df_reassessment <- df_reassessment %>% 
+    select(-province)%>% 
+    pivot_longer(3:4, values_to="ra", names_to='sex')%>% 
+    mutate(sex=as.numeric(sex=="M"))
+
+
+# risk factors ------------------------------------------------------------
+
+p_fam_distribution <- data.frame(
+    fam_history=c(0, 1),
+    prob_fam=c(1 - PROB_FAM_HIST, PROB_FAM_HIST)
+)
+
+# Abx exposure: 0 1 2 3 4 5+
+# differs by year
+model_abx <- read_rds(here("R/BC_count_model.rds"))
+
+
+
+
+# prev eqn OR
+df_fam_history_or <- list(
+    c(1, OR_ASTHMA_AGE_3),
+    c(1, exp((log(OR_ASTHMA_AGE_3) + log(OR_ASTHMA_AGE_5)) / 2)),
+    c(1, OR_ASTHMA_AGE_5)
+)
+df_fam_history_or<- data.frame(
+    age=c(3, 4, 5), do.call(rbind, df_fam_history_or)
+)
+colnames(df_fam_history_or)[-1] <- c(0,1)
+df_fam_history_or <- pivot_longer(
+    df_fam_history_or, cols=-1, names_to="fam_history", values_to="OR_fam"
+) %>% 
+    mutate(fam_history=as.numeric(fam_history))
+
+
+# fam_history + \beta_age * (age-3) + dose()
+# free parameters are : age
+
+df_abx_or <- read_csv(here("R/dose_response_log_aOR.csv"))
+colnames(df_abx_or) <- c("age", paste0("OR", c(1:5)))
+df_abx_or$OR0 <- 0
+df_abx_or <- df_abx_or %>% 
+    select(age, OR0, OR1:OR5) %>% 
+    mutate(across(contains("OR"), exp)) %>% 
+    filter(age >= 3) %>% 
+    rbind(data.frame(age=8, OR0=1, OR1=1, OR2=1, OR3=1, OR4=1, OR5=1))
+
+df_abx_or <- pivot_longer(
+    df_abx_or, cols=-1, names_to="abx_exposure", values_to="OR_abx"
+) %>% 
+    mutate(abx_exposure=as.numeric(str_remove(abx_exposure, "OR")))
+
+baseline_year=2001
+stabilization_year=2025
+max_age=63
+
+
+
+
+# incorporate the estimates of the risk factors and correction terms ----------
+res_optim <- read_rds(here("R/res_optim.rds"))
+optimized_inc_beta <- res_optim$par
+
+cal_years <- (baseline_year-1):(stabilization_year+1)
+ages <- 3:max_age
+sexes <- 0:1
+calibration_results <- expand.grid(year=cal_years,sex=sexes,age=ages) %>%
+  as.data.frame()
+
 
 df_correct <- generate_correction(calibration_results, model_abx, optimized_inc_beta)
 
