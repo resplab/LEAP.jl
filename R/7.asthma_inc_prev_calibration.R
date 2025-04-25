@@ -423,6 +423,38 @@ calibrator <- function(
   
   return(inc_sol)
 }
+
+inc_beta_solver <- function(
+    model_abx,
+    df_fam_history_or,
+    df_abx_or,
+    df_incidence,
+    df_prevalence,
+    df_reassessment,
+    baseline_year=2001,
+    stabilization_year=2025,
+    max_age=63,
+    inc_beta_params=INC_BETA_PARAMS
+){
+    cal_years <- baseline_year:(stabilization_year+1)
+    ages <- 4:max_age
+    sexes <- 0:1
+    covar <- expand.grid(year=cal_years,sex=sexes,age=ages) %>% 
+        as.data.frame()
+
+    obj <- function(inc_beta_params){
+        apply(covar, 1, FUN=function(x) {
+            calibrator(
+                inc_beta_params, x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or,
+                df_abx_or, df_incidence, df_prevalence, df_reassessment
+            )
+        }) %>% mean()
+    }
+  
+    res_optim <- optim(unlist(inc_beta_params),fn=obj,method='BFGS')
+    res_nlm <- nlm(obj,unlist(inc_beta_params),steptol=1e-6,gradtol=1e-6,print.level=2)
+    write_rds(res_optim, here("R/res_optim.rds"))
+}
   
 
 df_asthma <- expand.grid(age=3:110,sex=c(0,1),year=min_cal_year:max_cal_year) %>% 
@@ -517,37 +549,7 @@ baseline_year=2001
 stabilization_year=2025
 max_age=63
 
-inc_beta_solver <- function(
-    model_abx,
-    df_fam_history_or,
-    df_abx_or,
-    df_incidence,
-    df_prevalence,
-    df_reassessment,
-    baseline_year=2001,
-    stabilization_year=2025,
-    max_age=63,
-    inc_beta_params=INC_BETA_PARAMS
-){
-  cal_years <- baseline_year:(stabilization_year+1)
-  ages <- 4:max_age
-  sexes <- 0:1
-  covar <- expand.grid(year=cal_years,sex=sexes,age=ages) %>% 
-    as.data.frame()
-  
-  obj <- function(inc_beta_params){
-        apply(covar, 1, FUN=function(x) {
-            calibrator(
-                inc_beta_params, x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or,
-                df_abx_or, df_incidence, df_prevalence, df_reassessment
-            )
-    }) %>% mean()
-  }
-  
-  res_optim <- optim(unlist(inc_beta_params),fn=obj,method='BFGS')
-  res_nlm <- nlm(obj,unlist(inc_beta_params),steptol=1e-6,gradtol=1e-6,print.level=2)
-  write_rds(res_optim, here("R/res_optim.rds"))
-}
+
   
 
 # incorporate the estimates of the risk factors and correction terms ----------
