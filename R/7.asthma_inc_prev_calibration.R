@@ -202,7 +202,8 @@ calibrator <- function(
     df_incidence,
     df_prevalence,
     df_reassessment,
-    inc_beta_params=c(0.3766256, -0.225)
+    inc_beta_params=c(0.3766256, -0.225),
+    inc_function=inc_loss_function
 ){
   
   if(!is.list(inc_beta_params)){
@@ -234,12 +235,20 @@ calibrator <- function(
         risk_set$prev <- target_prev
   
   if(chosen_year== 2000){
-            return(risk_set)
+            return(list(
+                risk_set=risk_set,
+                prev_sol=prev_sol,
+                inc_sol=c()
+            ))
   }
   
         if(chosen_age==3) {
             risk_set$calibrated_inc <- risk_set$calibrated_prev
-            return(risk_set)
+            return(list(
+                risk_set=risk_set,
+                prev_sol=prev_sol,
+                inc_sol=c()
+            ))
         } else { # aged 4 or more
     
             risk_set$inc <- df_incidence %>% 
@@ -400,7 +409,7 @@ calibrator <- function(
         }
     }
       
-            inc_sol <- inc_loss_function(
+    args <- list(
                 target_inc=risk_set$inc,
                 past_target_prev=past_target_prev,
                 past_target_OR=past_risk_set$OR,
@@ -412,10 +421,14 @@ calibrator <- function(
                                    risk_set=inc_risk_set,
                 log_inc_OR=log(inc_risk_set$OR)[-1]
             )
-    } 
-  }
+
+    inc_sol <- do.call(inc_function, args)
   
-  return(inc_sol)
+    return(list(
+        risk_set=risk_set,
+        prev_sol=prev_sol,
+        inc_sol=inc_sol
+    ))
 }
 
 calculate_correction <- function(
@@ -732,9 +745,9 @@ inc_beta_solver <- function(
     obj <- function(inc_beta_params){
         apply(covar, 1, FUN=function(x) {
             calibrator(
-                inc_beta_params, x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or,
-                df_abx_or, df_incidence, df_prevalence, df_reassessment
-            )
+                x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or,
+                df_abx_or, df_incidence, df_prevalence, df_reassessment, inc_beta_params
+            )$inc_sol
         }) %>% mean()
     }
   
