@@ -274,9 +274,6 @@ calibrator <- function(
                 ) %>% 
     select(ra) %>% 
     unlist()
-  
-      target_Dx <- 1
-      target_misDx <- 0
       
       inc_risk_set <- risk_factor_generator(
                 chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
@@ -300,8 +297,8 @@ calibrator <- function(
                 target_OR=risk_set$OR,
                 p_risk=past_risk_set$prob,
                 ra=target_RA,
-                misDx=target_misDx,
-                Dx=target_Dx,
+                misDx=0, # target misdiagnosis
+                Dx=1, # target diagnosis
                                    risk_set=inc_risk_set,
                 log_inc_OR=log(inc_risk_set$OR)[-1]
             )
@@ -391,9 +388,6 @@ calibrator <- function(
                  sex == chosen_sex) %>% 
         select(ra) %>% 
         unlist()
-      
-      target_Dx <- 1
-      target_misDx <- 0
   
       inc_risk_set <- risk_factor_generator(
         chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
@@ -413,8 +407,8 @@ calibrator <- function(
                 target_OR=risk_set$OR,
                 p_risk=past_risk_set$prob,
                 ra=target_RA,
-                misDx=target_misDx,
-                Dx=target_Dx,
+                misDx=0, # target misdiagnosis
+                Dx=1, # target diagnosis
                                    risk_set=inc_risk_set,
                 log_inc_OR=log(inc_risk_set$OR)[-1]
             )
@@ -521,9 +515,6 @@ calculate_correction <- function(
         select(ra) %>% 
         unlist()
       
-      target_Dx <- 1
-      target_misDx <- 0
-      
       inc_risk_set <- risk_factor_generator(
                 chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
                 df_fam_history_or, df_abx_or
@@ -546,8 +537,8 @@ calculate_correction <- function(
                 target_OR=risk_set$OR,
                 p_risk=past_risk_set$prob,
                                    ra = target_RA,
-                                   misDx = target_misDx,
-                                   Dx = target_Dx,
+                misDx=0, # target misdiagnosis
+                Dx=1, # target diagnosis
                                    risk_set=inc_risk_set,
                 log_inc_OR = log(inc_risk_set$OR)[-1]
             )
@@ -653,9 +644,6 @@ calculate_correction <- function(
         select(ra) %>% 
         unlist()
       
-      target_Dx <- 1
-      target_misDx <- 0
-      
       inc_risk_set <- risk_factor_generator(
         chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         ) %>% 
@@ -675,9 +663,9 @@ calculate_correction <- function(
                 past_target_OR=past_risk_set$OR,
                 target_OR=risk_set$OR,
                 p_risk=past_risk_set$prob,
-                                           ra = target_RA,
-                                           misDx = target_misDx,
-                                           Dx = target_Dx,
+                ra=target_RA,
+                misDx=0, # target misdiagnosis
+                Dx=1, # target diagnosis
                                            risk_set=inc_risk_set,
                 log_inc_OR = log(inc_risk_set$OR)[-1]
             )
