@@ -460,7 +460,7 @@ calculate_correction <- function(
             df_fam_history_or, df_abx_or
     )
     
-    target_prev <- df_prevalence %>% 
+        risk_set$prev <- df_prevalence %>% 
             filter(
                 age==chosen_age & 
                 year==chosen_year &
@@ -469,17 +469,12 @@ calculate_correction <- function(
       select(prev) %>% 
       unlist()
     
-        target_OR <- risk_set$OR
-        target_risk_p <- risk_set$prob
-    prev_sol <- prev_calibrator(target_prev,target_OR,target_risk_p)
-    p0 <- inverse_logit(logit(target_prev) - sum(target_risk_p[-1]*prev_sol))
-    calibrated_prev <- inverse_logit(logit(p0) + log(target_OR))
+        prev_sol <- prev_calibrator(risk_set$prev, risk_set$OR, risk_set$prob)
+        p0 <- inverse_logit(logit(risk_set$prev) - sum(risk_set$prob[-1]*prev_sol))
+        risk_set$calibrated_prev <- inverse_logit(logit(p0) + log(risk_set$OR))
     
-    prevalence_correction_term <- -sum(target_risk_p[-1]*prev_sol)
+        prevalence_correction_term <- -sum(risk_set$prob[-1]*prev_sol)
     tmp_res$prev_correction <- prevalence_correction_term
-    
-        risk_set$calibrated_prev <- calibrated_prev
-        risk_set$prev <- target_prev
     
         if(chosen_year==2000) {
       return(tmp_res)
@@ -490,7 +485,7 @@ calculate_correction <- function(
       return(tmp_res)
         } else { # aged 4 or more
       
-      target_inc <- df_incidence %>% 
+            risk_set$inc <- df_incidence %>% 
                 filter(
                     age==chosen_age & 
                     year==chosen_year &
@@ -498,8 +493,6 @@ calculate_correction <- function(
                 ) %>% 
         select(inc) %>% 
         unlist()
-      
-            risk_set$inc <- target_inc
       
       past_target_prev <- df_prevalence %>% 
                 filter(
@@ -518,8 +511,6 @@ calculate_correction <- function(
                 df_fam_history_or,
                 df_abx_or
       )
-      past_target_OR <- past_risk_set$OR
-      past_target_risk_p <- past_risk_set$prob
       
             target_RA <- df_reassessment %>% 
                 filter(
@@ -549,11 +540,11 @@ calculate_correction <- function(
         })
       
             inc_sol <- inc_correction_calculator(
-                target_inc = target_inc,
-                                   past_target_prev = past_target_prev,
-                                   past_target_OR = past_target_OR,
-                                   target_OR = target_OR,
-                                   p_risk = past_target_risk_p,
+                target_inc=risk_set$inc,
+                past_target_prev=past_target_prev,
+                past_target_OR=past_risk_set$OR,
+                target_OR=risk_set$OR,
+                p_risk=past_risk_set$prob,
                                    ra = target_RA,
                                    misDx = target_misDx,
                                    Dx = target_Dx,
@@ -578,7 +569,7 @@ calculate_correction <- function(
             ) %>% 
       ungroup() 
     
-    target_prev <- df_prevalence %>% 
+        risk_set$prev <- df_prevalence %>% 
             filter(
                 age==chosen_age & 
                 year==chosen_year &
@@ -587,22 +578,16 @@ calculate_correction <- function(
       select(prev) %>% 
       unlist()
 
-        target_OR <- risk_set$OR
-        target_risk_p <- risk_set$prob
-        prev_sol <- prev_calibrator(target_prev, target_OR, target_risk_p)
-    p0 <- inverse_logit(logit(target_prev) - sum(target_risk_p[-1]*prev_sol))
-    calibrated_prev <- inverse_logit(logit(p0) + log(target_OR))
-    
-    tmp_res$prev_correction <- -sum(target_risk_p[-1]*prev_sol)
-    
-        risk_set$calibrated_prev <- calibrated_prev
-        risk_set$prev <- target_prev
+        prev_sol <- prev_calibrator(risk_set$prev, risk_set$OR, risk_set$prob)
+        p0 <- inverse_logit(logit(risk_set$prev) - sum(risk_set$prob[-1]*prev_sol))
+        tmp_res$prev_correction <- -sum(risk_set$prob[-1] * prev_sol)
+        risk_set$calibrated_prev <- inverse_logit(logit(p0) + log(risk_set$OR))
     
     if(chosen_year== 2000){
       return(tmp_res)
         } else { 
       
-      target_inc <- df_incidence %>% 
+            risk_set$inc <- df_incidence %>% 
                 filter(
                     age==chosen_age & 
                     year==chosen_year &
@@ -610,7 +595,6 @@ calculate_correction <- function(
                 ) %>% 
         select(inc) %>% 
         unlist()
-            risk_set$inc <- target_inc
       
       past_target_prev <- df_prevalence %>% 
                 filter(
@@ -640,16 +624,13 @@ calculate_correction <- function(
                     )
             } else {
         
-        ttt_target_OR <- past_risk_set$OR
-        ttt_target_risk_p <- past_risk_set$prob
-        ttt_prev_sol <- prev_calibrator(past_target_prev,ttt_target_OR,ttt_target_risk_p)
-        ttt_p0 <- inverse_logit(logit(past_target_prev) - sum(ttt_target_risk_p[-1]*ttt_prev_sol))
-        ttt_calibrated_prev <- inverse_logit(logit(ttt_p0) + log(ttt_target_OR))
-        past_risk_set$calibrated_prev <- ttt_calibrated_prev
+                prev_sol <- prev_calibrator(past_target_prev, past_risk_set$OR, past_risk_set$prob)
+                p0 <- inverse_logit(logit(past_target_prev) - sum(past_risk_set$prob[-1]*prev_sol))
+                past_risk_set$calibrated_prev <- inverse_logit(logit(p0) + log(past_risk_set$OR))
                 tmp_look <- past_risk_set %>% 
                     mutate(
-                        yes_asthma = calibrated_prev * prob,
-                        no_asthma = (1-calibrated_prev) * prob
+                        yes_asthma=risk_set$calibrated_prev * prob,
+                        no_asthma=(1 - risk_set$calibrated_prev) * prob
                     )
                 past_tmp_OR <- sum(
                     tmp_look$no_asthma[tmp_look$fam_history==0]) * 
@@ -662,9 +643,6 @@ calculate_correction <- function(
                     summarise(prob=sum(prob))
                 past_risk_set$OR <- c(1, past_tmp_OR)
       }
-      
-      past_target_OR <- past_risk_set$OR
-      past_target_risk_p <- past_risk_set$prob
       
       target_RA <- df_reassessment %>% 
                 filter(
@@ -692,11 +670,11 @@ calculate_correction <- function(
         })
       
             inc_sol <- inc_correction_calculator(
-                target_inc = target_inc,
-                                           past_target_prev = past_target_prev,
-                                           past_target_OR = past_target_OR,
-                                           target_OR = target_OR,
-                                           p_risk = past_target_risk_p,
+                target_inc=risk_set$inc,
+                past_target_prev=past_target_prev,
+                past_target_OR=past_risk_set$OR,
+                target_OR=risk_set$OR,
+                p_risk=past_risk_set$prob,
                                            ra = target_RA,
                                            misDx = target_misDx,
                                            Dx = target_Dx,
