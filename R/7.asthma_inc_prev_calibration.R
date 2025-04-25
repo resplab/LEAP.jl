@@ -192,7 +192,6 @@ risk_factor_generator <- function(
 # spit out the loss function 
 # .5989652 -0.3574636
 calibrator <- function(
-    inc_beta_params=c(0.3766256, -0.225),
                        chosen_year,
                        chosen_sex,
                        chosen_age,
@@ -202,7 +201,8 @@ calibrator <- function(
     df_abx_or,
     df_incidence,
     df_prevalence,
-    df_reassessment
+    df_reassessment,
+    inc_beta_params=c(0.3766256, -0.225)
 ){
   
   if(!is.list(inc_beta_params)){
@@ -211,8 +211,6 @@ calibrator <- function(
             c(1.826, inc_beta_params[2], 0.053)
     )
   }
-  
-    if(chosen_age <= 7){
 
         risk_set <- risk_factor_generator(
             chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
@@ -227,9 +225,11 @@ calibrator <- function(
             ) %>% 
     select(prev) %>% 
     unlist()
+  
+    if(chosen_age <= 7){
     
         prev_sol <- prev_calibrator(target_prev, risk_set$OR, risk_set$prob)
-        p0 <- inverse_logit(logit(target_prev) - sum(risk_set$prob[-1]*prev_sol))
+        p0 <- inverse_logit(logit(target_prev) - sum(risk_set$prob[-1] * prev_sol))
         risk_set$calibrated_prev <- inverse_logit(logit(p0) + log(risk_set$OR))
         risk_set$prev <- target_prev
   
@@ -239,6 +239,7 @@ calibrator <- function(
   
         if(chosen_age==3) {
             risk_set$calibrated_inc <- risk_set$calibrated_prev
+            return(risk_set)
         } else { # aged 4 or more
     
             risk_set$inc <- df_incidence %>% 
@@ -261,7 +262,8 @@ calibrator <- function(
   
       past_risk_set <- risk_factor_generator(
                 max(min_cal_year, chosen_year - 1),
-                chosen_sex,chosen_age - 1,
+                chosen_sex,
+                chosen_age - 1,
                 model_abx,
                 p_fam_distribution,
                 df_fam_history_or,
@@ -286,43 +288,24 @@ calibrator <- function(
       inc_risk_set$prob <- inc_risk_set$prob / sum(inc_risk_set$prob)
       
       inc_risk_set$OR <- inc_risk_set %>% 
-                apply(., 1, FUN=function(x) {
+                apply(., 1, FUN=function(x){
                     OR_risk_factor_calculator(
-                        fam_hist=x[1], age=x[5], dose=x[2], params=inc_beta_params
+                        fam_hist=x[1],
+                        age=x[5],
+                        dose=x[2],
+                        params=inc_beta_params
                     )
         })
-      
-            inc_sol <- inc_loss_function(
-                target_inc=risk_set$inc,
-                past_target_prev=past_target_prev,
-                past_target_OR=past_risk_set$OR,
-                target_OR=risk_set$OR,
-                p_risk=past_risk_set$prob,
-                ra=target_RA,
-                misDx=0, # target misdiagnosis
-                Dx=1, # target diagnosis
-                                   risk_set=inc_risk_set,
-                log_inc_OR=log(inc_risk_set$OR)[-1]
-            )
     } 
     } else { # age > 7 => OR =1 for all abx
     
-        risk_set <- risk_factor_generator(
-        chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
-        ) %>% 
+        risk_set <- risk_set %>% 
         group_by(fam_history, year, sex, age) %>% 
-      summarise(prob = sum(prob),
-                OR = mean(OR)) %>% 
-      ungroup() 
-    
-        target_prev <- df_prevalence %>% 
-            filter(
-                age==chosen_age & 
-                year==chosen_year &
-                sex==chosen_sex
+            summarise(
+                prob=sum(prob),
+                OR=mean(OR)
             ) %>% 
-      select(prev) %>% 
-    unlist()
+      ungroup() 
     
         prev_sol <- prev_calibrator(target_prev, risk_set$OR, risk_set$prob)
         p0 <- inverse_logit(logit(target_prev) - sum(risk_set$prob[-1]*prev_sol))
@@ -406,11 +389,16 @@ calibrator <- function(
         select(fam_history,abx_exposure,year,sex,age,prob)
       
       inc_risk_set$OR <- inc_risk_set %>% 
-                apply(., 1, FUN=function(x) {
+                apply(., 1, FUN=function(x){
                     OR_risk_factor_calculator(
-                        fam_hist=x[1], age=x[5], dose=x[2], params=inc_beta_params
+                        fam_hist=x[1],
+                        age=x[5],
+                        dose=x[2],
+                        params=inc_beta_params
                     )
         })
+        }
+    }
       
             inc_sol <- inc_loss_function(
                 target_inc=risk_set$inc,
