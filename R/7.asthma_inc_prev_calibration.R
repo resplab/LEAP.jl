@@ -431,8 +431,8 @@ calibrator <- function(
     ))
 }
 
+
 calculate_correction <- function(
-    inc_beta_params=optimized_inc_beta,
                        chosen_year,
                        chosen_sex,
                        chosen_age,
@@ -442,17 +442,47 @@ calculate_correction <- function(
     df_abx_or,
     df_incidence,
     df_prevalence,
-    df_reassessment
+    df_reassessment,
+    inc_beta_params=optimized_inc_beta,
+    inc_function=inc_correction_calculator
 ){
   
-    tmp_res <- data.frame(
+    df_results <- data.frame(
         year=chosen_year,
-                        sex= chosen_sex,
-                        age = chosen_age,
+        sex=chosen_sex,
+        age=chosen_age,
                         obj_value=NA,
-                        prev_correction = NA,
-        inc_correction = NA
+        prev_correction=NA,
+        inc_correction=NA
     )
+    results <- calibrator(
+        chosen_year,
+        chosen_sex,
+        chosen_age,
+        model_abx,
+        p_fam_distribution,
+        df_fam_history_or,
+        df_abx_or,
+        df_incidence,
+        df_prevalence,
+        df_reassessment,
+        inc_beta_params=inc_beta_params,
+        inc_function=inc_function
+    )
+    risk_set <- results$risk_set
+    prev_sol <- results$prev_sol
+    inc_sol <- results$inc_sol
+    if (chosen_year==2000) {
+        df_results$prev_correction <- -sum(risk_set$prob[-1]*prev_sol)
+    }
+    if(chosen_age==3) {
+        df_results$inc_correction <- -sum(risk_set$prob[-1]*prev_sol)
+    } else { # aged 4 or more
+        df_results$obj_value <- inc_sol[1]
+        df_results$inc_correction <- inc_sol[2]
+    }
+    return(df_results)
+}
   
   if(!is.list(inc_beta_params)){
     inc_beta_params <- list(
