@@ -192,7 +192,7 @@ risk_factor_generator <- function(
 # spit out the loss function 
 # .5989652 -0.3574636
 calibrator <- function(
-    inc_beta_params=c(0.3766256,-0.225),
+    inc_beta_params=c(0.3766256, -0.225),
                        chosen_year,
                        chosen_sex,
                        chosen_age,
@@ -205,19 +205,23 @@ calibrator <- function(
   if(!is.list(inc_beta_params)){
     inc_beta_params <- list(
         c(log(OR_ASTHMA_AGE_3), inc_beta_params[1]),
-        c(1.826,inc_beta_params[2],0.053)
+            c(1.826, inc_beta_params[2], 0.053)
     )
   }
   
-  if(chosen_age<=7){
+    if(chosen_age <= 7){
+
     tmp_risk_set <- risk_factor_generator(
-        chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
+            chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
+            df_fam_history_or, df_abx_or
     )
     
   target_prev <- tmp_prev %>% 
-    filter(age == chosen_age & 
-             year == chosen_year &
-             sex == chosen_sex) %>% 
+            filter(
+                age==chosen_age & 
+                year==chosen_year &
+                sex==chosen_sex
+            ) %>% 
     select(prev) %>% 
     unlist()
     
@@ -236,14 +240,14 @@ calibrator <- function(
   
   if(chosen_age==3){
     tmp_risk_set$calibrated_inc <- calibrated_prev
-  } 
-    
-  else{ # aged 4 or more
+        } else { # aged 4 or more
     
   target_inc <- tmp_inc %>% 
-    filter(age == chosen_age & 
-             year == chosen_year &
-             sex == chosen_sex) %>% 
+                filter(
+                    age==chosen_age & 
+                    year==chosen_year &
+                    sex==chosen_sex
+                ) %>% 
     select(inc) %>% 
     unlist()
       
@@ -257,15 +261,22 @@ calibrator <- function(
     unlist()
   
       past_risk_set <- risk_factor_generator(
-        max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
+                max(min_cal_year, chosen_year - 1),
+                chosen_sex,chosen_age - 1,
+                model_abx,
+                p_fam_distribution,
+                df_fam_history_or,
+                df_abx_or
       )
   past_target_OR <- past_risk_set$OR
   past_target_risk_p <- past_risk_set$prob
 
   target_RA <- tmp_RA %>% 
-    filter(age == chosen_age & 
-             year == chosen_year &
-             sex == chosen_sex) %>% 
+                filter(
+                    age==chosen_age & 
+                    year==chosen_year &
+                    sex==chosen_sex
+                ) %>% 
     select(ra) %>% 
     unlist()
   
@@ -273,18 +284,22 @@ calibrator <- function(
       target_misDx <- 0
       
       inc_risk_set <- risk_factor_generator(
-        chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
+                chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
+                df_fam_history_or, df_abx_or
         ) %>% 
         select(fam_history,abx_exposure,year,sex,age,prob)
       
       inc_risk_set$prob <- inc_risk_set$prob / sum(inc_risk_set$prob)
       
       inc_risk_set$OR <- inc_risk_set %>% 
-        apply(.,1,FUN=function(x){
-          OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_params)
+                apply(., 1, FUN=function(x) {
+                    OR_risk_factor_calculator(
+                        fam_hist=x[1], age=x[5], dose=x[2], params=inc_beta_params
+                    )
         })
       
-      inc_sol <- inc_loss_function(target_inc = target_inc,
+            inc_sol <- inc_loss_function(
+                target_inc = target_inc,
                                    past_target_prev = past_target_prev,
                                    past_target_OR = past_target_OR,
                                    target_OR = target_OR,
@@ -293,17 +308,15 @@ calibrator <- function(
                                    misDx = target_misDx,
                                    Dx = target_Dx,
                                    risk_set=inc_risk_set,
-                                   log_inc_OR = log(inc_risk_set$OR)[-1])
-      
+                log_inc_OR = log(inc_risk_set$OR)[-1]
+            )
     } 
-  }
-  # age > 7 => OR =1 for all abx
-  else{
+    } else { # age > 7 => OR =1 for all abx
     
     tmp_risk_set <- risk_factor_generator(
         chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         ) %>% 
-      group_by(fam_history,year,sex,age) %>% 
+        group_by(fam_history, year, sex, age) %>% 
       summarise(prob = sum(prob),
                 OR = mean(OR)) %>% 
       ungroup() 
@@ -323,10 +336,9 @@ calibrator <- function(
     tmp_risk_set$calibrated_prev <- calibrated_prev
     tmp_risk_set$prev <- target_prev
     
-    if(chosen_year== 2000){
+        if(chosen_year == 2000) {
       return(tmp_risk_set)
-    } else
-    { 
+        } else { 
       
       target_inc <- tmp_inc %>% 
     filter(age == chosen_age & 
@@ -342,34 +354,49 @@ calibrator <- function(
                  sex == chosen_sex) %>% 
         select(prev) %>% 
         unlist()
-      if(chosen_age != 8){
-        past_risk_set <- risk_factor_generator(
-            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
-          group_by(fam_history) %>% 
-          summarise(prob = sum(prob),
-                    OR = mean(OR))
-      } else{
         
         past_risk_set <- risk_factor_generator(
-            max(min_cal_year,chosen_year-1),chosen_sex,chosen_age-1, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
+                max(min_cal_year, chosen_year-1),
+                chosen_sex,
+                chosen_age - 1,
+                model_abx,
+                p_fam_distribution,
+                df_fam_history_or,
+                df_abx_or
         )
         
+            if(chosen_age != 8){
+                past_risk_set <- past_risk_set %>% 
+                    group_by(fam_history) %>% 
+                    summarise(
+                        prob=sum(prob),
+                        OR=mean(OR)
+                    )
+            } else {
         
         ttt_target_OR <- past_risk_set$OR
         ttt_target_risk_p <- past_risk_set$prob
         ttt_prev_sol <- prev_calibrator(past_target_prev,ttt_target_OR,ttt_target_risk_p)
-        ttt_p0 <- inverse_logit(logit(past_target_prev) - sum(ttt_target_risk_p[-1]*ttt_prev_sol))
-        ttt_calibrated_prev <- inverse_logit(logit(ttt_p0) + log(ttt_target_OR))
+                ttt_p0 <- inverse_logit(
+                    logit(past_target_prev) - sum(ttt_target_risk_p[-1]*ttt_prev_sol)
+                )
+                ttt_calibrated_prev <- inverse_logit(logit(p0) + log(past_risk_set$OR))
         past_risk_set$calibrated_prev <- ttt_calibrated_prev
-        past_risk_set %>% 
-          mutate(yes_asthma = calibrated_prev * prob,
-                 no_asthma = (1-calibrated_prev) * prob) -> tmp_look
-        past_tmp_OR <- sum(tmp_look$no_asthma[tmp_look$fam_history==0])*sum(tmp_look$yes_asthma[tmp_look$fam_history==1])/
-          (sum(tmp_look$yes_asthma[tmp_look$fam_history==0])*sum(tmp_look$no_asthma[tmp_look$fam_history==1]))
-        past_risk_set %>% 
+                tmp_look <- past_risk_set %>% 
+                    mutate(
+                        yes_asthma=calibrated_prev * prob,
+                        no_asthma=(1 - calibrated_prev) * prob
+                    )
+                past_tmp_OR <- (
+                    sum(tmp_look$no_asthma[tmp_look$fam_history==0]) * 
+                    sum(tmp_look$yes_asthma[tmp_look$fam_history==1]) /
+                    (sum(tmp_look$yes_asthma[tmp_look$fam_history==0]) * 
+                    sum(tmp_look$no_asthma[tmp_look$fam_history==1]))
+                )
+                past_risk_set <- past_risk_set %>% 
           group_by(fam_history) %>% 
-          summarise(prob=sum(prob)) ->past_risk_set
-        past_risk_set$OR <- c(1,past_tmp_OR)
+                    summarise(prob=sum(prob))
+                past_risk_set$OR <- c(1, past_tmp_OR)
       }
       
       past_target_OR <- past_risk_set$OR
@@ -396,7 +423,8 @@ calibrator <- function(
           OR_risk_factor_calculator(fam_hist=x[1],age=x[5],dose=x[2],params=inc_beta_params)
         })
       
-      inc_sol <- inc_loss_function(target_inc = target_inc,
+            inc_sol <- inc_loss_function(
+                target_inc = target_inc,
                                    past_target_prev = past_target_prev,
                                    past_target_OR = past_target_OR,
                                    target_OR = target_OR,
@@ -405,13 +433,12 @@ calibrator <- function(
                                    misDx = target_misDx,
                                    Dx = target_Dx,
                                    risk_set=inc_risk_set,
-                                   log_inc_OR = log(inc_risk_set$OR)[-1])
+                log_inc_OR = log(inc_risk_set$OR)[-1]
+            )
     } 
   }
   
-  
   return(inc_sol)
-  
 }
   
 
