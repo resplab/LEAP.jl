@@ -211,7 +211,7 @@ calibrator <- function(
   
     if(chosen_age <= 7){
 
-    tmp_risk_set <- risk_factor_generator(
+        risk_set <- risk_factor_generator(
             chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
             df_fam_history_or, df_abx_or
     )
@@ -225,21 +225,21 @@ calibrator <- function(
     select(prev) %>% 
     unlist()
     
-  target_OR <- tmp_risk_set$OR
-  target_risk_p <- tmp_risk_set$prob
+        target_OR <- risk_set$OR
+        target_risk_p <- risk_set$prob
   prev_sol <- prev_calibrator(target_prev,target_OR,target_risk_p)
   p0 <- inverse_logit(logit(target_prev) - sum(target_risk_p[-1]*prev_sol))
   calibrated_prev <- inverse_logit(logit(p0) + log(target_OR))
   
-  tmp_risk_set$calibrated_prev <- calibrated_prev
-  tmp_risk_set$prev <- target_prev
+        risk_set$calibrated_prev <- calibrated_prev
+        risk_set$prev <- target_prev
   
   if(chosen_year== 2000){
-    return(tmp_risk_set)
+            return(risk_set)
   }
   
   if(chosen_age==3){
-    tmp_risk_set$calibrated_inc <- calibrated_prev
+            risk_set$calibrated_inc <- calibrated_prev
         } else { # aged 4 or more
     
   target_inc <- tmp_inc %>% 
@@ -251,7 +251,7 @@ calibrator <- function(
     select(inc) %>% 
     unlist()
       
-  tmp_risk_set$inc <- target_inc
+            risk_set$inc <- target_inc
       
   past_target_prev <- tmp_prev %>% 
     filter(age == chosen_age-1 & 
@@ -313,7 +313,7 @@ calibrator <- function(
     } 
     } else { # age > 7 => OR =1 for all abx
     
-    tmp_risk_set <- risk_factor_generator(
+        risk_set <- risk_factor_generator(
         chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
         ) %>% 
         group_by(fam_history, year, sex, age) %>% 
@@ -327,17 +327,17 @@ calibrator <- function(
              sex == chosen_sex) %>% 
       select(prev) %>% 
     unlist()
-    target_OR <- tmp_risk_set$OR
-    target_risk_p <- tmp_risk_set$prob
+        target_OR <- risk_set$OR
+        target_risk_p <- risk_set$prob
     prev_sol <- prev_calibrator(target_prev,target_OR,target_risk_p)
     p0 <- inverse_logit(logit(target_prev) - sum(target_risk_p[-1]*prev_sol))
     calibrated_prev <- inverse_logit(logit(p0) + log(target_OR))
     
-    tmp_risk_set$calibrated_prev <- calibrated_prev
-    tmp_risk_set$prev <- target_prev
+        risk_set$calibrated_prev <- calibrated_prev
+        risk_set$prev <- target_prev
     
         if(chosen_year == 2000) {
-      return(tmp_risk_set)
+            return(risk_set)
         } else { 
       
       target_inc <- tmp_inc %>% 
@@ -346,7 +346,7 @@ calibrator <- function(
              sex == chosen_sex) %>% 
         select(inc) %>% 
     unlist()
-      tmp_risk_set$inc <- target_inc
+            risk_set$inc <- target_inc
       
       past_target_prev <- tmp_prev %>% 
         filter(age == chosen_age-1 & 
