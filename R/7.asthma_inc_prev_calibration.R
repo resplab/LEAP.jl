@@ -238,7 +238,7 @@ calibrator <- function(
             risk_set$calibrated_inc <- risk_set$calibrated_prev
         } else { # aged 4 or more
     
-  target_inc <- tmp_inc %>% 
+            risk_set$inc <- tmp_inc %>% 
                 filter(
                     age==chosen_age & 
                     year==chosen_year &
@@ -246,8 +246,6 @@ calibrator <- function(
                 ) %>% 
     select(inc) %>% 
     unlist()
-      
-            risk_set$inc <- target_inc
       
   past_target_prev <- tmp_prev %>% 
     filter(age == chosen_age-1 & 
@@ -293,7 +291,7 @@ calibrator <- function(
         })
       
             inc_sol <- inc_loss_function(
-                target_inc=target_inc,
+                target_inc=risk_set$inc,
                 past_target_prev=past_target_prev,
                 past_target_OR=past_risk_set$OR,
                 target_OR=risk_set$OR,
