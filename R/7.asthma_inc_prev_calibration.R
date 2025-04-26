@@ -594,8 +594,8 @@ df_asthma <- expand.grid(
     as.data.frame()
 
 df_asthma <- df_asthma %>% 
-    mutate(inc=asthma_predictor(age, sex, year, "inc")) %>% 
-    mutate(prev=asthma_predictor(age, sex, year, "prev")) %>% 
+    mutate(inc=asthma_predictor(age, sex, year, "inc", asthma_inc_model, asthma_prev_model)) %>% 
+    mutate(prev=asthma_predictor(age, sex, year, "prev", asthma_inc_model, asthma_prev_model)) %>% 
     mutate(inc=ifelse(age==3, prev, inc))
 
 df_incidence <- df_asthma %>% 
