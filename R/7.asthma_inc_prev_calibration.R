@@ -403,7 +403,7 @@ calibrator <- function(
     }
 
     args <- list(
-        target_inc=risk_set$inc,
+        target_inc=risk_set$inc[1],
         past_target_prev=past_target_prev,
         past_target_OR=past_risk_set$OR,
         target_OR=risk_set$OR,
