@@ -6,8 +6,8 @@ source(here("R/calibration_helper_function.R"))
 options(dplyr.summarise.inform = FALSE)
 
 chosen_province <- "CA"
-max_cal_year <- 2065 # 2065 for CA; 2043 for BC
-min_cal_year <- 2000
+MAX_YEAR <- 2065 # 2065 for CA; 2043 for BC
+MIN_YEAR <- 2000
 stabilization_year <- 2025
 MAX_ASTHMA_AGE <- 62
 MIN_ASTHMA_AGE <- 3
@@ -32,6 +32,57 @@ asthma_predictor <- function(age, sex, year, type, asthma_inc_model, asthma_prev
         return(exp(predict(asthma_inc_model, newdata=data.frame(age, sex, year))) %>% 
                 unlist())
     }
+}
+
+
+load_occurrence_data <- function(
+    chosen_province,
+    min_year=MIN_YEAR,
+    max_year=MAX_YEAR
+) {
+    asthma_inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
+    asthma_prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
+
+    df_asthma <- expand.grid(
+        age=3:110,
+        sex=c(0, 1),
+        year=min_year:max_year
+    ) %>% 
+        as.data.frame()
+
+    df_asthma <- df_asthma %>% 
+        mutate(inc=asthma_predictor(age, sex, year, "inc", asthma_inc_model, asthma_prev_model)) %>% 
+        mutate(prev=asthma_predictor(age, sex, year, "prev", asthma_inc_model, asthma_prev_model)) %>% 
+        mutate(inc=ifelse(age==3, prev, inc))
+
+    df_incidence <- df_asthma %>% 
+        select(year, age, sex, inc) %>% 
+        pivot_wider(names_from=sex, values_from=inc) %>% 
+        as.data.frame()
+    colnames(df_incidence)[c(3, 4)] <- c("F", "M")
+    df_incidence$province <- chosen_province
+
+    df_incidence <- df_incidence %>% 
+        select(-province) %>%
+        pivot_longer(3:4, values_to="inc", names_to='sex') %>% 
+        mutate(sex=as.numeric(sex=="M"))
+
+    df_prevalence <- df_asthma %>% 
+        select(year, age, sex, prev) %>% 
+        pivot_wider(names_from=sex, values_from=prev) %>% 
+        as.data.frame()
+    colnames(df_prevalence)[c(3, 4)] <- c("F", "M")
+    df_prevalence$province <- chosen_province
+
+    df_prevalence <- df_prevalence %>% 
+        select(-province)%>% 
+        pivot_longer(3:4, values_to="prev", names_to='sex')%>% 
+        mutate(sex=as.numeric(sex=="M"))
+
+    return(list(
+        df_incidence=df_incidence,
+        df_prevalence=df_prevalence
+    ))
 }
 
 #' Compute the probability of number of courses of antibiotics during infancy.
@@ -231,7 +282,8 @@ calibrator <- function(
     df_prevalence,
     df_reassessment,
     inc_beta_params=c(0.3766256, -0.225),
-    inc_function=inc_loss_function
+    inc_function=inc_loss_function,
+    min_year=MIN_YEAR
 ){
   
     if(!is.list(inc_beta_params)){
@@ -291,14 +343,14 @@ calibrator <- function(
             past_target_prev <- df_prevalence %>% 
                 filter(
                     age==chosen_age - 1 & 
-                    year==max(min_cal_year, chosen_year - 1) &
+                    year==max(min_year, chosen_year - 1) &
                     sex==chosen_sex
                 ) %>% 
                 select(prev) %>% 
                 unlist()
         
             past_risk_set <- risk_factor_generator(
-                max(min_cal_year, chosen_year - 1),
+                max(min_year, chosen_year - 1),
                 chosen_sex,
                 chosen_age - 1,
                 model_abx,
@@ -369,14 +421,14 @@ calibrator <- function(
             past_target_prev <- df_prevalence %>% 
                 filter(
                     age==chosen_age - 1 & 
-                    year==max(min_cal_year, chosen_year - 1) &
+                    year==max(min_year, chosen_year - 1) &
                     sex==chosen_sex
                 ) %>% 
                 select(prev) %>% 
                 unlist()
 
             past_risk_set <- risk_factor_generator(
-                max(min_cal_year, chosen_year-1),
+                max(min_year, chosen_year-1),
                 chosen_sex,
                 chosen_age - 1,
                 model_abx,
@@ -621,45 +673,10 @@ inc_beta_solver <- function(
 
 # asthma prev and inc -----------------------------------------------------
 
-asthma_inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
-asthma_prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
+df_occurrence_list <- load_occurrence_data(chosen_province)
+df_incidence <- df_occurrence_list$df_incidence
+df_prevalence <- df_occurrence_list$df_prevalence
 
-
-df_asthma <- expand.grid(
-    age=3:110,
-    sex=c(0, 1),
-    year=min_cal_year:max_cal_year
-) %>% 
-    as.data.frame()
-
-df_asthma <- df_asthma %>% 
-    mutate(inc=asthma_predictor(age, sex, year, "inc", asthma_inc_model, asthma_prev_model)) %>% 
-    mutate(prev=asthma_predictor(age, sex, year, "prev", asthma_inc_model, asthma_prev_model)) %>% 
-    mutate(inc=ifelse(age==3, prev, inc))
-
-df_incidence <- df_asthma %>% 
-    select(year, age, sex, inc) %>% 
-    pivot_wider(names_from=sex, values_from=inc) %>% 
-    as.data.frame()
-colnames(df_incidence)[c(3, 4)] <- c("F", "M")
-df_incidence$province <- chosen_province
-
-df_incidence <- df_incidence %>% 
-    select(-province) %>%
-    pivot_longer(3:4, values_to="inc", names_to='sex') %>% 
-    mutate(sex=as.numeric(sex=="M"))
-
-df_prevalence <- df_asthma %>% 
-    select(year, age, sex, prev) %>% 
-    pivot_wider(names_from=sex, values_from=prev) %>% 
-    as.data.frame()
-colnames(df_prevalence)[c(3, 4)] <- c("F", "M")
-df_prevalence$province <- chosen_province
-
-df_prevalence <- df_prevalence %>% 
-    select(-province)%>% 
-    pivot_longer(3:4, values_to="prev", names_to='sex')%>% 
-    mutate(sex=as.numeric(sex=="M"))
 
 df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
     filter(province==chosen_province)
