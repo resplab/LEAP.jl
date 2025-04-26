@@ -504,14 +504,14 @@ calculate_correction <- function(
     risk_set <- results$risk_set
     prev_sol <- results$prev_sol
     inc_sol <- results$inc_sol
-    if (chosen_year==2000) {
         df_results$prev_correction <- -sum(risk_set$prob[-1]*prev_sol)
-    }
+    if (chosen_year > 2000) {
     if(chosen_age==3) {
         df_results$inc_correction <- -sum(risk_set$prob[-1]*prev_sol)
     } else { # aged 4 or more
         df_results$obj_value <- inc_sol[1]
         df_results$inc_correction <- inc_sol[2]
+    }
     }
     return(df_results)
 }
