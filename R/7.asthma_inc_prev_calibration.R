@@ -180,10 +180,45 @@ risk_factor_generator <- function(
 }
 
 
-# for each year, sex, age
-# given the effects of risk factors in the incidence equation,
-# spit out the loss function 
+
 # .5989652 -0.3574636
+
+#' Compute the loss function given the effects of risk factors in the incidence equation, for
+#' each year, age, and sex.
+#' 
+#' @param chosen_year The current year.
+#' @param chosen_age The age of the person in years.
+#' @param chosen_sex The sex of the person; 0 = female, 1 = male.
+#' @param model_abx The fitted Negative Binomial model for the number of courses of antibiotics.
+#' @param p_fam_distribution A dataframe with the probability of family history of asthma, given
+#' that the person has asthma. Contains two columns: fam_history (0 or 1) and prob_fam.
+#' @param df_fam_history_or A dataframe with the odds ratio of family history of asthma, given
+#' the age of the person. Contains three columns: age (3, 4, or 5), fam_history (0 or 1),
+#' and OR_fam: odds ratio.
+#' @param df_abx_or A dataframe with the odds ratio of antibiotic exposure, given
+#' the age of the person. Contains three columns: age (3, 4, or 5),
+#' abx_exposure (0, 1, 2, 3, 4, or 5), and OR_abx: odds ratio.
+#' @param df_incidence A dataframe with the incidence of asthma, with the following columns:
+#' - year: the year
+#' - age: the age in years
+#' - sex: 0 or 1; 0 = female, 1 = male
+#' - inc: the incidence of asthma
+#' @param df_prevalence A dataframe with the prevalence of asthma, with the following columns:
+#' - year: the year
+#' - age: the age in years
+#' - sex: 0 or 1; 0 = female, 1 = male
+#' - prev: the prevalence of asthma
+#' @param df_reassessment A dataframe with the reassessment of asthma, with the following columns:
+#' - year: the year
+#' - age: the age in years
+#' - sex: 0 or 1; 0 = female, 1 = male
+#' - ra: the reassessment of asthma
+#' @param inc_beta_params A list of parameters for the incidence equation.
+#' @param inc_function A function to compute the incidence correction.
+#' @returns A list with the following elements:
+#' - risk_set: a dataframe with the risk factors and their probabilities and odds ratios
+#' - prev_sol: the solution for the prevalence calibration
+#' - inc_sol: the solution for the incidence calibration
 calibrator <- function(
     chosen_year,
     chosen_sex,
