@@ -315,7 +315,11 @@ calibrator <- function(
         risk_set$prev <- target_prev
     
         if(chosen_year == 2000) {
-            return(risk_set)
+            return(list(
+                risk_set=risk_set,
+                prev_sol=prev_sol,
+                inc_sol=c()
+            ))
         } else { 
  
             risk_set$inc <- df_incidence %>% 
