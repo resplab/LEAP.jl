@@ -520,13 +520,13 @@ calculate_correction <- function(
 generate_correction <- function(
     df,
     inc_beta_params,
-    df_incidence,
-    df_prevalence,
-    df_reassessment,
+    model_abx,
     p_fam_distribution,
     df_fam_history_or,
     df_abx_or,
-    model_abx
+    df_incidence,
+    df_prevalence,
+    df_reassessment
 ){
     apply(df, 1, FUN=function(x) {
         calculate_correction(
