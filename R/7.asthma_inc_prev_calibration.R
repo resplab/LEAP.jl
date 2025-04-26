@@ -702,7 +702,18 @@ calibration_results <- expand.grid(year=cal_years,sex=sexes,age=ages) %>%
   as.data.frame()
 
 
-df_correct <- generate_correction(calibration_results, model_abx, optimized_inc_beta)
+df_correct <- generate_correction(
+    df=calibration_results,
+    inc_beta_params=optimized_inc_beta,
+    model_abx=model_abx,
+    p_fam_distribution=p_fam_distribution,
+    df_fam_history_or=df_fam_history_or,
+    df_abx_or=df_abx_or,
+    df_incidence=df_incidence,
+    df_prevalence=df_prevalence,
+    df_reassessment=df_reassessment
+)
+
 
 df_correct_prev <- df_correct %>% 
     select(1:3, 5) %>% 
