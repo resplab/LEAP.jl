@@ -394,13 +394,13 @@ calibrator <- function(
                     )
             } else {
 
-                prev_sol <- prev_calibrator(past_target_prev, past_risk_set$OR, past_risk_set$prob)
-                p0 <- inverse_logit(logit(past_target_prev) - sum(past_risk_set$prob[-1]*prev_sol))
+                ttt_prev_sol <- prev_calibrator(past_target_prev, past_risk_set$OR, past_risk_set$prob)
+                p0 <- inverse_logit(logit(past_target_prev) - sum(past_risk_set$prob[-1]*ttt_prev_sol))
                 past_risk_set$calibrated_prev <- inverse_logit(logit(p0) + log(past_risk_set$OR))
                 tmp_look <- past_risk_set %>% 
                     mutate(
-                        yes_asthma=risk_set$calibrated_prev * prob,
-                        no_asthma=(1 - risk_set$calibrated_prev) * prob
+                        yes_asthma=calibrated_prev * prob,
+                        no_asthma=(1 - calibrated_prev) * prob
                     )
                 past_tmp_OR <- (
                     sum(tmp_look$no_asthma[tmp_look$fam_history==0]) * 
