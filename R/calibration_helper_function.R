@@ -18,29 +18,6 @@ OR_generator <- function(risk_set,params){
 }
 
 
-#' @title prev_calibrator
-#' @description This function calibrates the prevalence of asthma in a population
-#'   based on the target prevalence and odds ratios of risk factors.
-#' @param target_prev The target prevalence of asthma.
-#' @param target_OR A vector of odds ratios for the risk factors.
-#' @param p_risk A vector of the prevalence of the risk factors.
-#' @param beta0 The intercept of the logistic regression model.
-#' @param multiple_risk_factors A boolean indicating if there are multiple risk factors.
-#' @param chosen_trace A boolean indicating if the trace should be printed.
-#' @return A vector of the calibrated parameters for the risk factors.
-prev_calibrator <- function(
-    target_prev,
-                            target_OR,
-                            p_risk,
-    beta0=NULL,
-    multiple_risk_factors=FALSE,
-    chosen_trace=FALSE
-) {
-
-  if(is.null(beta0)){
-    beta0 <- logit(target_prev)
-  }
-  
     obj_function <- function(x, multiple_risk_factors, target_OR, p_risk, beta0) {
     # binary
         if(!multiple_risk_factors) {
@@ -86,6 +63,30 @@ prev_calibrator <- function(
       p_risk_unlisted <- unlist(p_risk)
       return(abs(sum(px_unlisted * p_risk_unlisted) - target_prev))
     }
+    }
+
+
+#' @title prev_calibrator
+#' @description This function calibrates the prevalence of asthma in a population
+#'   based on the target prevalence and odds ratios of risk factors.
+#' @param target_prev The target prevalence of asthma.
+#' @param target_OR A vector of odds ratios for the risk factors.
+#' @param p_risk A vector of the prevalence of the risk factors.
+#' @param beta0 The intercept of the logistic regression model.
+#' @param multiple_risk_factors A boolean indicating if there are multiple risk factors.
+#' @param chosen_trace A boolean indicating if the trace should be printed.
+#' @return A vector of the calibrated parameters for the risk factors.
+prev_calibrator <- function(
+    target_prev,
+    target_OR,
+    p_risk,
+    beta0=NULL,
+    multiple_risk_factors=FALSE,
+    chosen_trace=FALSE
+) {
+
+    if(is.null(beta0)){
+        beta0 <- logit(target_prev)
     }
 
   if(!multiple_risk_factors){
