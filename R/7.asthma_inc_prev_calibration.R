@@ -839,14 +839,6 @@ sexes <- 0:1
 # tmp <- head(final_result %>% filter(year==2004),n=8)
 # tmp$calibrated_prev[seq(2,8,by=2)]/tmp$calibrated_prev[seq(1,7,by=2)]
 # 
-# logit <- function(p){
-#   log(p/(1-p))
-# }
-# 
-# inv_logit <- function(x){
-#   exp(x)/(1+exp(x))
-# }
-# 
 # final_result %>% 
 #   group_by(fam_history,abx_exposure,sex,age) %>% 
 #   summarise(mean(OR),median(OR),sd(OR)) %>% 
