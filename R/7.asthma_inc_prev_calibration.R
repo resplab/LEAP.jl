@@ -85,6 +85,20 @@ load_occurrence_data <- function(
     ))
 }
 
+
+load_reassessment_data <- function(chosen_province){
+    df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
+        filter(province==chosen_province)
+
+    df_reassessment <- df_reassessment %>% 
+        select(-province)%>% 
+        pivot_longer(3:4, values_to="ra", names_to='sex')%>% 
+        mutate(sex=as.numeric(sex=="M"))
+
+    return(df_reassessment)
+}
+
+
 #' Compute the probability of number of courses of antibiotics during infancy.
 #' 
 #' @param chosen_year The birth year of the infant.
@@ -676,15 +690,7 @@ inc_beta_solver <- function(
 df_occurrence_list <- load_occurrence_data(chosen_province)
 df_incidence <- df_occurrence_list$df_incidence
 df_prevalence <- df_occurrence_list$df_prevalence
-
-
-df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
-    filter(province==chosen_province)
-
-df_reassessment <- df_reassessment %>% 
-    select(-province)%>% 
-    pivot_longer(3:4, values_to="ra", names_to='sex')%>% 
-    mutate(sex=as.numeric(sex=="M"))
+df_reassessment <- load_reassessment_data(chosen_province)
 
 
 # risk factors ------------------------------------------------------------
