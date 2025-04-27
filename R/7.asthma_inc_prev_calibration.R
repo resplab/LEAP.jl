@@ -736,7 +736,7 @@ p_fam_distribution <- data.frame(
     prob_fam=c(1 - PROB_FAM_HIST, PROB_FAM_HIST)
 )
 
-df_family_history_or <- load_family_history_data()
+    df_fam_history_or <- load_family_history_data()
 df_abx_or <- load_abx_exposure_data()
 
 model_abx <- read_rds(here("R/BC_count_model.rds"))
@@ -762,7 +762,7 @@ sexes <- 0:1
     df_fam_history_or=df_fam_history_or,
     df_abx_or=df_abx_or,
             model_abx=model_abx,
-            inc_beta_params=inc_beta_params
+            inc_beta_params=optimized_inc_beta
 )
     }) %>% 
         do.call(rbind, .)
