@@ -316,11 +316,11 @@ inc_loss_function <- function(
 
 
 inc_correction_calculator <- function(
-    target_inc,
-                              past_target_prev,
+    asthma_inc_target,
+    asthma_prev_target_past,
                               past_target_OR,
                               target_OR,
-                              p_risk,
+    risk_factor_prev,
                               ra=1,
                               misDx=0,
                               Dx=1,
@@ -328,40 +328,50 @@ inc_correction_calculator <- function(
     log_inc_OR
 ){
   
-  beta0 <- logit(target_inc)
-  
-  prop_asthma <- past_target_prev # (ref_b0+ref_d0)
-  prop_no_asthma <- (1-past_target_prev) # (ref_a0+ref_c0)
+    beta0 <- logit(asthma_inc_target)
+    prop_asthma <- asthma_prev_target_past # (ref_b0+ref_d0)
+    prop_no_asthma <- (1 - asthma_prev_target_past) # (ref_a0+ref_c0)
   
   # reconstruct contingency table for each OR
-  ref_p_risk <- p_risk[1]
-  sol <- prev_calibrator(past_target_prev,past_target_OR, p_risk)
-  p0 <- inverse_logit(logit(past_target_prev) - sum(p_risk[-1]*sol))
+    ref_risk_factor_prev <- risk_factor_prev[1]
+    sol <- prev_calibrator(
+        asthma_prev_target=asthma_prev_target_past,
+        target_OR=past_target_OR,
+        risk_factor_prev=risk_factor_prev
+    )
+    p0 <- inverse_logit(logit(asthma_prev_target_past) - sum(risk_factor_prev[-1]*sol))
   calibrated_p <- inverse_logit(logit(p0) + log(past_target_OR))
   # distribution of the risk factors for the population without asthma
-  no_asthma_p_risk_dist <- (1-calibrated_p) * p_risk
+    no_asthma_risk_factor_prev_dist <- (1-calibrated_p) * risk_factor_prev
   # normalize
-  no_asthma_p_risk_dist <- no_asthma_p_risk_dist/sum(no_asthma_p_risk_dist)
+    no_asthma_risk_factor_prev_dist <- no_asthma_risk_factor_prev_dist/sum(no_asthma_risk_factor_prev_dist)
   
   # for each OR, we need to obtain the contingency table
 
     prev_table <- generate_prev_table(
-        risk_factor_prev=p_risk,
+        risk_factor_prev=risk_factor_prev,
         past_target_OR=past_target_OR,
         target_OR=past_target_OR,
         calibrated_p=calibrated_p
     )
   
     
-  target_prev <- (past_target_prev*ra + target_inc*(1-past_target_prev)*Dx +
-                    (1-target_inc)*(1-past_target_prev)*misDx)
-  tmp_sol <- prev_calibrator(target_prev,target_OR, p_risk)
-  tmp_p0 <- inverse_logit(logit(target_prev) - sum(p_risk[-1]*tmp_sol))
+    target_prev <- (
+        asthma_prev_target_past * ra + 
+        asthma_inc_target * ( 1 - asthma_prev_target_past) * Dx +
+        (1-asthma_inc_target) * (1 - asthma_prev_target_past) * misDx
+    )
+    tmp_sol <- prev_calibrator(
+        asthma_prev_target=target_prev,
+        target_OR=target_OR,
+        risk_factor_prev=risk_factor_prev
+    )
+    tmp_p0 <- inverse_logit(logit(target_prev) - sum(risk_factor_prev[-1]*tmp_sol))
   tmp_calibrated_p <- inverse_logit(logit(tmp_p0) + log(target_OR))
   
     future_prev_table <- c()
     future_prev_table <- generate_prev_table(
-        risk_factor_prev=p_risk,
+        risk_factor_prev=risk_factor_prev,
         past_target_OR=past_target_OR,
         target_OR=target_OR,
         calibrated_p=tmp_calibrated_p
@@ -375,15 +385,15 @@ inc_correction_calculator <- function(
     target_OR_no_ref <- target_OR[-1]
     # # calibrate the current inc to the target inc
     tmp_sol <- prev_calibrator(
-        asthma_prev_target=target_inc,
+            asthma_prev_target=asthma_inc_target,
         target_OR=exp(c(0,x)),
-        risk_factor_prev=no_asthma_p_risk_dist
+            risk_factor_prev=no_asthma_risk_factor_prev_dist
     )
-    logit_p0 <- beta0 - sum(tmp_sol*no_asthma_p_risk_dist[-1])
+        logit_p0 <- beta0 - sum(tmp_sol*no_asthma_risk_factor_prev_dist[-1])
     # logit_p0 <- beta0
     calibrated_inc <- inverse_logit(logit_p0 + c(0,x))
     
-    inc_correction_term <- -sum(tmp_sol*no_asthma_p_risk_dist[-1])
+        inc_correction_term <- -sum(tmp_sol*no_asthma_risk_factor_prev_dist[-1])
     
     ref_cal_inc <- calibrated_inc[1]
     calibrated_inc_no_ref <- calibrated_inc[-1]
