@@ -729,6 +729,31 @@ inc_beta_solver <- function(
     write_rds(res_optim, here("R/res_optim.rds"))
 }
 
+load_optimized_beta_params <- function(
+    retrain=FALSE,
+    baseline_year=BASELINE_YEAR,
+    stabilization_year=STABILIZATION_YEAR,
+    max_age=MAX_AGE
+) {
+    if (retrain) {
+        inc_beta_solver(
+            df_incidence,
+            df_prevalence,
+            df_reassessment,
+            p_fam_distribution,
+            df_fam_history,
+            df_abx,
+            model_abx,
+            baseline_year=baseline_year,
+            stabilization_year=stabilization_year,
+            max_age=max_age
+        )
+    }
+    res_optim <- read_rds(here("R/res_optim.rds"))
+    optimized_inc_beta <- res_optim$par
+    return(optimized_inc_beta)
+}
+
 
 # asthma prev and inc -----------------------------------------------------
 
@@ -751,32 +776,11 @@ df_abx_or <- load_abx_exposure_data()
 
 model_abx <- read_rds(here("R/BC_count_model.rds"))
 
+optimized_inc_beta <- load_optimized_beta_params()
 
 
-
-# incorporate the estimates of the risk factors and correction terms ----------
-baseline_year=2001
-stabilization_year=2025
-max_age=63
-
-inc_beta_solver(
-    df_incidence,
-    df_prevalence,
-    df_reassessment,
-    p_fam_distribution,
-    df_fam_history,
-    df_abx,
-    model_abx,
-    baseline_year=baseline_year,
-    stabilization_year=stabilization_year,
-    max_age=max_age
-)
-
-res_optim <- read_rds(here("R/res_optim.rds"))
-optimized_inc_beta <- res_optim$par
-
-cal_years <- (baseline_year-1):(stabilization_year+1)
-ages <- 3:max_age
+cal_years <- (BASELINE_YEAR - 1):(STABILIZATION_YEAR + 1)
+ages <- 3:MAX_AGE
 sexes <- 0:1
 calibration_results <- expand.grid(year=cal_years,sex=sexes,age=ages) %>%
   as.data.frame()
