@@ -800,12 +800,12 @@ df_correct <- generate_correction(
 
 
 df_correct_prev <- df_correct %>% 
-    select(1:3, 5) %>% 
+    select(year, sex, age, prev_correction) %>% 
     rename(correction=prev_correction) %>% 
     mutate(type='prev')
 
 df_correct_inc <- df_correct %>% 
-    select(1:3, 6) %>% 
+    select(year, sex, age, inc_correction) %>% 
     rename(correction=inc_correction) %>% 
     mutate(type='inc')
 
