@@ -17,33 +17,45 @@ OR_generator <- function(risk_set,params){
   return(risk_set)
 }
 
-prev_calibrator <- function(target_prev,
+
+#' @title prev_calibrator
+#' @description This function calibrates the prevalence of asthma in a population
+#'   based on the target prevalence and odds ratios of risk factors.
+#' @param target_prev The target prevalence of asthma.
+#' @param target_OR A vector of odds ratios for the risk factors.
+#' @param p_risk A vector of the prevalence of the risk factors.
+#' @param beta0 The intercept of the logistic regression model.
+#' @param multiple_risk_factors A boolean indicating if there are multiple risk factors.
+#' @param chosen_trace A boolean indicating if the trace should be printed.
+#' @return A vector of the calibrated parameters for the risk factors.
+prev_calibrator <- function(
+    target_prev,
                             target_OR,
                             p_risk,
-                            beta0 = NULL,
-                            multiple_risk_factors=F,
-                            chosen_trace=F){
+    beta0=NULL,
+    multiple_risk_factors=FALSE,
+    chosen_trace=FALSE
+) {
+
   if(is.null(beta0)){
     beta0 <- logit(target_prev)
   }
   
-  obj_function <- function(x){
+    obj_function <- function(x, multiple_risk_factors, target_OR, p_risk, beta0) {
     # binary
-    if(!multiple_risk_factors){
-      if(length(target_OR)==1){
-        p0 <- inverse_logit(beta0-p_risk*x)
+        if(!multiple_risk_factors) {
+            if(length(target_OR) == 1) {
+                p0 <- inverse_logit(beta0 - p_risk * x)
         p0star <- inverse_logit(logit(p0) + log(target_OR))
         a <- p_risk * p0star
-        c <- (1-p_risk) * p0
+                c <- (1 - p_risk) * p0
         return(abs(a + c - target_prev))
-      } 
-      else{
-        logit_p0 <- beta0 - sum(p_risk[-1]*x)
+            } else {
+                logit_p0 <- beta0 - sum(p_risk[-1] * x)
         px <- inverse_logit(logit_p0 + log(target_OR))
-        
         return(abs(sum(px * p_risk) - target_prev))
-      }}
-    else{
+            }
+        } else {
       # number of risk factors
       num_p <- length(p_risk)
       # number of levels of risk factors
@@ -56,12 +68,17 @@ prev_calibrator <- function(target_prev,
       for(i in 1:num_p){
         index_end <- index_start + p_length_optim[[i]] - 1 
         xs[[i]] <- x[index_start:index_end]
-        index_start <- index_end+1
+                index_start <- index_end + 1
       } 
       
-      mapply(function(tmp_p_risk,tmp_x){
-        sum(tmp_p_risk[-1]*tmp_x)
-      },p_risk,xs,SIMPLIFY = F) %>% unlist() -> penalty
+            penalty <- mapply(
+                function(tmp_p_risk, tmp_x){
+                    sum(tmp_p_risk[-1] * tmp_x)
+                },
+                p_risk,
+                xs,
+                SIMPLIFY=FALSE
+            ) %>% unlist()
       
       logit_p0 <- beta0 - sum(penalty)
       
@@ -69,17 +86,29 @@ prev_calibrator <- function(target_prev,
       p_risk_unlisted <- unlist(p_risk)
       return(abs(sum(px_unlisted * p_risk_unlisted) - target_prev))
     }
-    
-    
-  }
+    }
+
   if(!multiple_risk_factors){
-    num_params <- ifelse(length(target_OR)==1,1,length(target_OR)-1)
-  } else{
-    num_params <- sum(unlist(target_OR)!=1)
+        if (length(target_OR)==1){
+            num_params <- 1
+        } else {
+            num_params <- length(target_OR) - 1
+        }
+    } else {
+        num_params <- sum(unlist(target_OR) != 1)
   }
-  return(optim(rep(0,num_params),obj_function,
-               control=list(abstol=1e-15,maxit=10000,trace=chosen_trace),
-               method="BFGS",hessian = T)$par) 
+
+    return(optim(
+        par=rep(0, num_params),
+        fn=obj_function,
+        multiple_risk_factors=multiple_risk_factors,
+        target_OR=target_OR,
+        p_risk=p_risk,
+        beta0=beta0,
+        control=list(abstol=1e-15, maxit=10000, trace=chosen_trace),
+        method="BFGS",
+        hessian=TRUE)$par
+    ) 
 }
 
 
