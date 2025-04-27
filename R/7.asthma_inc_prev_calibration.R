@@ -119,6 +119,26 @@ load_family_history_data <- function(){
 }
 
 
+# Abx exposure: 0 1 2 3 4 5+
+# differs by year
+load_abx_exposure_data <- function() {
+    df_abx_or <- read_csv(here("R/dose_response_log_aOR.csv"))
+    colnames(df_abx_or) <- c("age", paste0("OR", c(1:5)))
+    df_abx_or$OR0 <- 0
+    df_abx_or <- df_abx_or %>% 
+        select(age, OR0, OR1:OR5) %>% 
+        mutate(across(contains("OR"), exp)) %>% 
+        filter(age >= 3) %>% 
+        rbind(data.frame(age=8, OR0=1, OR1=1, OR2=1, OR3=1, OR4=1, OR5=1))
+
+    df_abx_or <- pivot_longer(
+        df_abx_or, cols=-1, names_to="abx_exposure", values_to="OR_abx"
+    ) %>% 
+        mutate(abx_exposure=as.numeric(str_remove(abx_exposure, "OR")))
+    return(df_abx_or)
+}
+
+
 #' Compute the probability of number of courses of antibiotics during infancy.
 #' 
 #' @param chosen_year The birth year of the infant.
@@ -721,25 +741,13 @@ p_fam_distribution <- data.frame(
 )
 
 df_family_history_or <- load_family_history_data()
+df_abx_or <- load_abx_exposure_data()
 
-# Abx exposure: 0 1 2 3 4 5+
-# differs by year
+
 model_abx <- read_rds(here("R/BC_count_model.rds"))
 
 
-df_abx_or <- read_csv(here("R/dose_response_log_aOR.csv"))
-colnames(df_abx_or) <- c("age", paste0("OR", c(1:5)))
-df_abx_or$OR0 <- 0
-df_abx_or <- df_abx_or %>% 
-    select(age, OR0, OR1:OR5) %>% 
-    mutate(across(contains("OR"), exp)) %>% 
-    filter(age >= 3) %>% 
-    rbind(data.frame(age=8, OR0=1, OR1=1, OR2=1, OR3=1, OR4=1, OR5=1))
 
-df_abx_or <- pivot_longer(
-    df_abx_or, cols=-1, names_to="abx_exposure", values_to="OR_abx"
-) %>% 
-    mutate(abx_exposure=as.numeric(str_remove(abx_exposure, "OR")))
 
 # incorporate the estimates of the risk factors and correction terms ----------
 baseline_year=2001
