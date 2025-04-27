@@ -640,14 +640,14 @@ inc_beta_solver <- function(
     max_age=MAX_AGE,
     inc_beta_params=INC_BETA_PARAMS
 ){
-    cal_years <- baseline_year:(stabilization_year+1)
+    years <- baseline_year:(stabilization_year + 1)
     ages <- 4:max_age
     sexes <- 0:1
-    covar <- expand.grid(year=cal_years,sex=sexes,age=ages) %>% 
+    df <- expand.grid(year=years, sex=sexes, age=ages) %>% 
         as.data.frame()
 
     obj <- function(inc_beta_params){
-        apply(covar, 1, FUN=function(x) {
+        apply(df, 1, FUN=function(x) {
             calibrator(
                 x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or,
                 df_abx_or, df_incidence, df_prevalence, df_reassessment, inc_beta_params
@@ -655,8 +655,8 @@ inc_beta_solver <- function(
         }) %>% mean()
     }
   
-    res_optim <- optim(unlist(inc_beta_params),fn=obj,method='BFGS')
-    res_nlm <- nlm(obj,unlist(inc_beta_params),steptol=1e-6,gradtol=1e-6,print.level=2)
+    res_optim <- optim(unlist(inc_beta_params), fn=obj, method='BFGS')
+    res_nlm <- nlm(obj, unlist(inc_beta_params), steptol=1e-6, gradtol=1e-6, print.level=2)
     write_rds(res_optim, here("R/res_optim.rds"))
 }
 
