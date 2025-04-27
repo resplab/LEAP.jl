@@ -22,30 +22,35 @@ OR_generator <- function(risk_set,params){
 #' @description This function calculates the objective function for the optimization process.
 #' @param x A vector of parameters to be optimized.
 #' @param multiple_risk_factors A boolean indicating if there are multiple risk factors.
-#' @param target_OR A vector of odds ratios for the risk factors.
-#' @param p_risk A vector of the prevalence of the risk factors.
+#' @param target_OR A vector of odds ratios between the risk factors and asthma.
+#' @param risk_factor_prev A vector of the prevalence of the risk factor levels.
 #' @param beta0 The intercept of the logistic regression model.
+#' @param asthma_prev_target The target prevalence of asthma.
 #' @return The absolute difference between the calculated and target prevalence.
 #' @details This function is used internally by the prev_calibrator function.
-    obj_function <- function(x, multiple_risk_factors, target_OR, p_risk, beta0) {
+obj_function <- function(
+    x, multiple_risk_factors, target_OR, risk_factor_prev, beta0, asthma_prev_target
+) {
     # binary
         if(!multiple_risk_factors) {
             if(length(target_OR) == 1) {
-                p0 <- inverse_logit(beta0 - p_risk * x)
-        p0star <- inverse_logit(logit(p0) + log(target_OR))
-        a <- p_risk * p0star
-                c <- (1 - p_risk) * p0
-        return(abs(a + c - target_prev))
+            p0 <- inverse_logit(beta0 - risk_factor_prev * x)
+            asthma_prev_x <- inverse_logit(logit(p0) + log(target_OR))
+            return(abs(
+                sum(asthma_prev_x * risk_factor_prev) + 
+                (1 - risk_factor_prev) * p0 - 
+                asthma_prev_target
+            ))
             } else {
-                logit_p0 <- beta0 - sum(p_risk[-1] * x)
-        px <- inverse_logit(logit_p0 + log(target_OR))
-        return(abs(sum(px * p_risk) - target_prev))
+            # asthma_prev_x: asthma prevalence at risk factor level x
+            asthma_prev_x <- inverse_logit(beta0 + log(target_OR) - sum(risk_factor_prev[-1] * x))
+            return(abs(sum(asthma_prev_x * risk_factor_prev) - asthma_prev_target))
             }
         } else {
       # number of risk factors
-        n_risk_factors <- length(p_risk)
+        n_risk_factors <- length(risk_factor_prev)
       # number of levels of risk factors
-        p_length <- lapply(p_risk, length) %>% unlist()
+        p_length <- lapply(risk_factor_prev, length) %>% unlist()
       p_length_optim <- p_length - 1 
       
       # break up x
@@ -59,19 +64,17 @@ OR_generator <- function(risk_set,params){
       } 
       
             penalty <- mapply(
-                function(tmp_p_risk, tmp_x){
-                    sum(tmp_p_risk[-1] * tmp_x)
+            function(tmp_risk_factor_prev, tmp_x){
+                sum(tmp_risk_factor_prev[-1] * tmp_x)
                 },
-                p_risk,
+            risk_factor_prev,
                 xs,
                 SIMPLIFY=FALSE
             ) %>% unlist()
       
-      logit_p0 <- beta0 - sum(penalty)
-      
-      px_unlisted <- inverse_logit(logit_p0 + log(unlist(target_OR)))
-      p_risk_unlisted <- unlist(p_risk)
-      return(abs(sum(px_unlisted * p_risk_unlisted) - target_prev))
+        asthma_prev_x_unlisted <- inverse_logit(beta0 - sum(penalty) + log(unlist(target_OR)))
+        risk_factor_prev_unlisted <- unlist(risk_factor_prev)
+        return(abs(sum(asthma_prev_x_unlisted * risk_factor_prev_unlisted) - asthma_prev_target))
     }
     }
 
@@ -79,17 +82,17 @@ OR_generator <- function(risk_set,params){
 #' @title prev_calibrator
 #' @description This function calibrates the prevalence of asthma in a population
 #'   based on the target prevalence and odds ratios of risk factors.
-#' @param target_prev The target prevalence of asthma.
+#' @param asthma_prev_target The target prevalence of asthma.
 #' @param target_OR A vector of odds ratios for the risk factors.
-#' @param p_risk A vector of the prevalence of the risk factors.
+#' @param risk_factor_prev A vector of the prevalence of the risk factors.
 #' @param beta0 The intercept of the logistic regression model.
 #' @param multiple_risk_factors A boolean indicating if there are multiple risk factors.
 #' @param chosen_trace A boolean indicating if the trace should be printed.
 #' @return A vector of the calibrated parameters for the risk factors.
 prev_calibrator <- function(
-    target_prev,
+    asthma_prev_target,
     target_OR,
-    p_risk,
+    risk_factor_prev,
     beta0=NULL,
     multiple_risk_factors=FALSE,
     chosen_trace=FALSE
@@ -101,21 +104,22 @@ prev_calibrator <- function(
 
   if(!multiple_risk_factors){
         if (length(target_OR)==1){
-            num_params <- 1
+            n_params <- 1
         } else {
-            num_params <- length(target_OR) - 1
+            n_params <- length(target_OR) - 1
         }
     } else {
-        num_params <- sum(unlist(target_OR) != 1)
+        n_params <- sum(unlist(target_OR) != 1)
   }
 
     return(optim(
-        par=rep(0, num_params),
+        par=rep(0, n_params),
         fn=obj_function,
         multiple_risk_factors=multiple_risk_factors,
         target_OR=target_OR,
-        p_risk=p_risk,
+        risk_factor_prev=risk_factor_prev,
         beta0=beta0,
+        asthma_prev_target=asthma_prev_target,
         control=list(abstol=1e-15, maxit=10000, trace=chosen_trace),
         method="BFGS",
         hessian=TRUE)$par
