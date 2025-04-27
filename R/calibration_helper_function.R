@@ -268,7 +268,7 @@ obj_function <- function(
     )
 }
 
-inc_loss_function <- function(
+inc_correction_calculator <- function(
     asthma_inc_target,
     asthma_prev_target_past,
     past_target_OR,
@@ -314,7 +314,7 @@ inc_loss_function <- function(
     target_prev <- (
         asthma_prev_target_past * ra + 
         asthma_inc_target * (1 - asthma_prev_target_past) * Dx +
-        (1 - asthma_inc_target)*(1-asthma_prev_target_past)*misDx
+        (1 - asthma_inc_target) * (1 - asthma_prev_target_past) * misDx
     )
     tmp_sol <- prev_calibrator(
         asthma_prev_target=target_prev,
@@ -326,7 +326,7 @@ inc_loss_function <- function(
   
     future_prev_table <- generate_prev_table(
         risk_factor_prev=risk_factor_prev,
-        past_target_OR=target_OR,
+        past_target_OR=past_target_OR,
         target_OR=target_OR,
         calibrated_p=tmp_calibrated_p
     )
@@ -335,11 +335,11 @@ inc_loss_function <- function(
         log_inc_OR, no_asthma_risk_factor_prev_dist, target_OR, asthma_inc_target, beta0,
         prev_table, ra, misDx, Dx
     )
-    return(fnc_value[1])
+    return(fnc_value)
 }
 
 
-inc_correction_calculator <- function(
+inc_loss_function <- function(
     asthma_inc_target,
     asthma_prev_target_past,
                               past_target_OR,
@@ -352,59 +352,18 @@ inc_correction_calculator <- function(
     log_inc_OR
 ){
   
-    beta0 <- logit(asthma_inc_target)
-    prop_asthma <- asthma_prev_target_past # (ref_b0+ref_d0)
-    prop_no_asthma <- (1 - asthma_prev_target_past) # (ref_a0+ref_c0)
-  
-  # reconstruct contingency table for each OR
-    ref_risk_factor_prev <- risk_factor_prev[1]
-    sol <- prev_calibrator(
-        asthma_prev_target=asthma_prev_target_past,
-        target_OR=past_target_OR,
-        risk_factor_prev=risk_factor_prev
-    )
-    p0 <- inverse_logit(logit(asthma_prev_target_past) - sum(risk_factor_prev[-1]*sol))
-  calibrated_p <- inverse_logit(logit(p0) + log(past_target_OR))
-  # distribution of the risk factors for the population without asthma
-    no_asthma_risk_factor_prev_dist <- (1-calibrated_p) * risk_factor_prev
-  # normalize
-    no_asthma_risk_factor_prev_dist <- no_asthma_risk_factor_prev_dist/sum(no_asthma_risk_factor_prev_dist)
-  
-  # for each OR, we need to obtain the contingency table
-
-    prev_table <- generate_prev_table(
-        risk_factor_prev=risk_factor_prev,
-        past_target_OR=past_target_OR,
-        target_OR=past_target_OR,
-        calibrated_p=calibrated_p
-    )
-  
-    
-    target_prev <- (
-        asthma_prev_target_past * ra + 
-        asthma_inc_target * ( 1 - asthma_prev_target_past) * Dx +
-        (1-asthma_inc_target) * (1 - asthma_prev_target_past) * misDx
-    )
-    tmp_sol <- prev_calibrator(
-        asthma_prev_target=target_prev,
-        target_OR=target_OR,
-        risk_factor_prev=risk_factor_prev
-    )
-    tmp_p0 <- inverse_logit(logit(target_prev) - sum(risk_factor_prev[-1]*tmp_sol))
-  tmp_calibrated_p <- inverse_logit(logit(tmp_p0) + log(target_OR))
-  
-    future_prev_table <- c()
-    future_prev_table <- generate_prev_table(
-        risk_factor_prev=risk_factor_prev,
+    fnc_value <- inc_correction_calculator(
+        asthma_inc_target=asthma_inc_target,
+        asthma_prev_target_past=asthma_prev_target_past,
         past_target_OR=past_target_OR,
         target_OR=target_OR,
-        calibrated_p=tmp_calibrated_p
+        risk_factor_prev=risk_factor_prev,
+        ra=ra,
+        misDx=misDx,
+        Dx=Dx,
+        risk_set=risk_set,
+        log_inc_OR=log_inc_OR
     )
-  
-    fnc_value <- obj_function(
-        log_inc_OR, no_asthma_risk_factor_prev_dist, target_OR, asthma_inc_target, beta0,
-        prev_table, ra, misDx, Dx
-    )
-  return(fnc_value)
+    return(fnc_value[1])
   
 }
