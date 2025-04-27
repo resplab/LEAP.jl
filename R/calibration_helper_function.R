@@ -150,7 +150,8 @@ prev_calibrator <- function(
 #        2) correction term for inc
 #        3) OR for inc
 
-inc_loss_function <- function(target_inc,
+inc_loss_function <- function(
+    target_inc,
                            past_target_prev,
                            past_target_OR,
                            target_OR,
@@ -159,32 +160,36 @@ inc_loss_function <- function(target_inc,
                            misDx=0,
                            Dx=1,
                            risk_set,
-                           log_inc_OR){
+    log_inc_OR
+){
   
   beta0 <- logit(target_inc)
-  
-  prop_asthma <- past_target_prev # (ref_b0+ref_d0)
-  prop_no_asthma <- (1-past_target_prev) # (ref_a0+ref_c0)
+    prop_asthma <- past_target_prev # proportion with asthma
+    prop_no_asthma <- (1 - past_target_prev) # proportion without asthma
   
   # reconstruct contingency table for each OR
   ref_p_risk <- p_risk[1]
-  sol <- prev_calibrator(past_target_prev,past_target_OR, p_risk)
-  p0 <- inverse_logit(logit(past_target_prev) - sum(p_risk[-1]*sol))
+    sol <- prev_calibrator(
+        asthma_prev_target=past_target_prev,
+        target_OR=past_target_OR,
+        risk_factor_prev=p_risk
+    )
+    p0 <- inverse_logit(logit(past_target_prev) - sum(p_risk[-1] * sol))
   calibrated_p <- inverse_logit(logit(p0) + log(past_target_OR))
   # distribution of the risk factors for the population without asthma
-  no_asthma_p_risk_dist <- (1-calibrated_p) * p_risk
+    no_asthma_p_risk_dist <- (1 - calibrated_p) * p_risk
   # normalize
-  no_asthma_p_risk_dist <- no_asthma_p_risk_dist/sum(no_asthma_p_risk_dist)
+    no_asthma_p_risk_dist <- no_asthma_p_risk_dist / sum(no_asthma_p_risk_dist)
   
   # for each OR, we need to obtain the contingency table
   
   prev_table <- c()
   
-  for(i in 1:(length(past_target_OR)-1)){
-    # print(i)
-    tmp_p_risk <- p_risk[c(1,i+1)]
-    tmp_p_risk <- tmp_p_risk/sum(tmp_p_risk)
-    tmp_p <- calibrated_p[c(1,i+1)]
+    for(i in 1:(length(past_target_OR) - 1)){
+        tmp_p_risk <- p_risk[c(1, i + 1)]
+        tmp_p_risk <- tmp_p_risk / sum(tmp_p_risk)
+        tmp_p <- calibrated_p[c(1, i + 1)]
+
     # return: a b c d
     # a: no exp, no asthma
     # b: no exp, yes asthma
@@ -196,86 +201,69 @@ inc_loss_function <- function(target_inc,
     # tmp_p[2] = d/(c+d) 
     # tmp_target_OR  = (a*d)/(b*c) 
     
-    # someone else has done it;
-    # use the metafor pkg
+        # metafor pkg
     # Bonett, D. G. (2007).
     # Transforming odds ratios into correlations for meta-analytic research. 
     # American Psychologist, 62(3), 254–255. ⁠https://doi.org/10.1037/0003-066x.62.3.254⁠
     
     nn <- 1e10
-    prev_table[[i]] <-  rev(metafor::conv.2x2(ori=past_target_OR[i+1],
-                                              ni = nn,
-                                              # prev of exposure
-                                              n1i = ((1-tmp_p[2])*tmp_p_risk[2] +tmp_p_risk[2] * tmp_p[2])*nn,
-                                              # prev of asthma
-                                              n2i=  sum(tmp_p_risk * tmp_p)*nn)/nn)
-  }
-  
-  future_prev_table <- c()
-  target_prev <- (past_target_prev*ra + target_inc*(1-past_target_prev)*Dx +
-                    (1-target_inc)*(1-past_target_prev)*misDx)
-  tmp_sol <- prev_calibrator(target_prev,target_OR, p_risk)
-  tmp_p0 <- inverse_logit(logit(target_prev) - sum(p_risk[-1]*tmp_sol))
+        prev_table[[i]] <- rev(
+            metafor::conv.2x2(
+                ori=past_target_OR[i + 1],
+                ni=nn,
+                n1i=((1 - tmp_p[2]) * tmp_p_risk[2] + tmp_p_risk[2] * tmp_p[2]) * nn, # prev of exposure
+                n2i=sum(tmp_p_risk * tmp_p) * nn # prev of asthma
+            ) / nn
+        )
+    }
+
+    target_prev <- (
+        past_target_prev * ra + 
+        target_inc * (1 - past_target_prev) * Dx +
+        (1-target_inc)*(1-past_target_prev)*misDx
+    )
+    tmp_sol <- prev_calibrator(target_prev, target_OR, p_risk)
+    tmp_p0 <- inverse_logit(logit(target_prev) - sum(p_risk[-1] * tmp_sol))
   tmp_calibrated_p <- inverse_logit(logit(tmp_p0) + log(target_OR))
   
-  for(i in 1:(length(past_target_OR)-1)){
-    # print(i)
-    tmp_p_risk <- p_risk[c(1,i+1)]
-    tmp_p_risk <- tmp_p_risk/sum(tmp_p_risk)
-    tmp_p <- tmp_calibrated_p[c(1,i+1)]
-    
+    future_prev_table <- c()
+
+    for(i in 1:(length(target_OR) - 1)){
+        tmp_p_risk <- p_risk[c(1, i + 1)]
+        tmp_p_risk <- tmp_p_risk / sum(tmp_p_risk)
+        tmp_p <- tmp_calibrated_p[c(1, i + 1)]
     nn <- 1e10
-    future_prev_table[[i]] <-  rev(metafor::conv.2x2(ori=target_OR[i+1],
-                                                     ni = nn,
-                                                     # prev of exposure
-                                                     n1i = ((1-tmp_p[2])*tmp_p_risk[2] +tmp_p_risk[2] * tmp_p[2])*nn,
-                                                     # prev of asthma
-                                                     n2i=  sum(tmp_p_risk * tmp_p)*nn)/nn)
+        prev_table[[i]] <- rev(
+            metafor::conv.2x2(
+                ori=target_OR[i + 1],
+                ni=nn,
+                n1i=((1 - tmp_p[2]) * tmp_p_risk[2] + tmp_p_risk[2] * tmp_p[2]) * nn, # prev of exposure
+                n2i=sum(tmp_p_risk * tmp_p) * nn # prev of asthma
+            ) / nn
+        )
   }
   
-  obj_function <- function(y){
-    # # break up params
-    
-    # ncol_risk_set <- ncol(risk_set)
-    # tmp_risk_set <- risk_set
-    # if(ncol_risk_set!=1){
-    #   # break up xs
-    #   levels <- apply(risk_set,2,function(x){ length(unique(x))-1})
-    #   tmp_x <- c()
-    #   start_index <- 1
-    #   for(j in 1:ncol_risk_set){
-    #     end_index <- start_index + levels[j]-1
-    #     tmp_x[[j]] <- risk_set %>% 
-    #       select(colnames(risk_set)[j]) %>% 
-    #       distinct() %>% 
-    #       mutate(log_OR = c(0,y[start_index:end_index]))
-    #     start_index <-  start_index + levels[j]
-    #     tmp_risk_set <- tmp_risk_set %>% 
-    #       left_join(tmp_x[[j]] ,by=colnames(risk_set)[j])
-    #   }
-    #   x <- rowSums(tmp_risk_set[,-c(1:ncol_risk_set)])[-1]
-    #   
-    # } else{
-    #   x <- y
-    # }
-    x <- y
-    
-    # # x = log(OR) for incidence eqn
-    
-    q <- length(no_asthma_p_risk_dist)-1
+    obj_function <- function(
+        y, no_asthma_p_risk_dist, target_OR, target_inc, beta0, prev_table
+    ) {
+        x <- y
+        q <- length(no_asthma_p_risk_dist) - 1
     target_OR_no_ref <- target_OR[-1]
-    # # calibrate the current inc to the target inc
-    tmp_sol <- prev_calibrator(target_inc,target_OR = exp(c(0,x)),p_risk = no_asthma_p_risk_dist)
-    logit_p0 <- beta0 - sum(tmp_sol*no_asthma_p_risk_dist[-1])
-    # logit_p0 <- beta0
-    calibrated_inc <- inverse_logit(logit_p0 + c(0,x))
+        # calibrate the current inc to the target inc
+        tmp_sol <- prev_calibrator(
+            asthma_prev_target=target_inc,
+            target_OR=exp(c(0, x)),
+            risk_factor_prev=no_asthma_p_risk_dist
+        )
+        logit_p0 <- beta0 - sum(tmp_sol * no_asthma_p_risk_dist[-1])
+        calibrated_inc <- inverse_logit(logit_p0 + c(0, x))
     
     ref_cal_inc <- calibrated_inc[1]
     calibrated_inc_no_ref <- calibrated_inc[-1]
     
     result <- 0
     
-    for(i in 1:(length(target_OR)-1)){
+        for(i in 1:(length(target_OR) - 1)){
       cal_inc <- calibrated_inc_no_ref[i]
       target_x <- x[i]
       
@@ -286,53 +274,37 @@ inc_loss_function <- function(target_inc,
       
       # contingency table of the population with asthma from a previous year
       # if ra=1, no reversibility
-      a0 <- ref_b0*(1-ra)
-      c0 <- ref_d0*(1-ra)
-      b0 <- ref_b0*ra
-      d0 <- ref_d0*ra
+            a0 <- ref_b0 * (1 - ra)
+            c0 <- ref_d0 * (1 - ra)
+            b0 <- ref_b0 * ra
+            d0 <- ref_d0 * ra
       
       # contingency table of the exposure level 
       # no exposure & no asthma: did not get asthma and did not get misdx + got asthma but misDx
-      a1 <-  (1-ref_cal_inc)*ref_a0*(1-misDx) + ref_cal_inc * ref_a0 *(1-Dx)
+            a1 <- (1 - ref_cal_inc) * ref_a0 * (1-misDx) + ref_cal_inc * ref_a0 * (1 - Dx)
       # no exposure & yes asthma: get asthma and correctly Dx + did not get asthma but misDx
-      b1 <- (1-ref_cal_inc)*ref_a0*misDx + ref_cal_inc * ref_a0 * Dx
+            b1 <- (1 - ref_cal_inc) * ref_a0 * misDx + ref_cal_inc * ref_a0 * Dx
       # yes exposure & no asthma: got asthma but incorrectly Dx + did not get asthma and correctly Dx
-      c1 <- (1-cal_inc)*ref_c0*(1-misDx) + cal_inc * ref_c0 * (1-Dx)
+            c1 <- (1 - cal_inc) * ref_c0 * (1 - misDx) + cal_inc * ref_c0 * (1 - Dx)
       # yes exposure & yes asthma: got asthma and correctly Dx
-      d1 <-   (1-cal_inc)*ref_c0*misDx + cal_inc* ref_c0 * Dx
+            d1 <- (1 - cal_inc) * ref_c0 * misDx + cal_inc * ref_c0 * Dx
       
       # two targets
-      #  objective: asthma prev OR
+            # objective: asthma prev OR
       a <- a0 + a1
       b <- b0 + b1
       c <- c0 + c1
       d <- d0 + d1
-      tmp_OR <- a*d/(b*c)
+            tmp_OR <- a * d / (b * c)
       result <- result +
         abs(log(target_OR_no_ref[i]) - (log(d) + log(a) - log(b) - log(c)))
-      # sum(abs(c(a,b,c,d)-future_prev_table[[i]]))
-      
-      # abs(log(target_OR_no_ref[i]) + log((b0+b1)/b1) + log(d1/(d1+d0)) + log(a1/(a0+a1)) + log((c0+c1)/c1)) #figure out why this works
-      # abs(log(target_OR_no_ref[i]) + log((b0+b1)/b1) + log(d1/(d1+d0)) + log(a1/(a0+a1)) + log((c0+c1)/c1)) #figure out why this works
-      
-      # result <- result + abs(log(target_OR_no_ref[i]) + log((b0+b1)/b1) + log(d1/(d1+d0)) + log(a1/(a0+a1)) + log((c0+c1)/c1) - target_x)
     }
     
-    # print(tmp_sol)
-    return(result %>% 
-             unlist() %>% 
-             mean())
+        return(result %>% unlist() %>% mean())
   }
   
-  # risk_set <- OR_generator(risk_set,inc_parameters)
-  
-  # n_par <-   sum(risk_set[,c(1,2)] %>%
-  #                  apply(.,2,function(x){length(unique(x))-1}))
-  
   fnc_value <- obj_function(log_inc_OR)
-  
   return(fnc_value)
-  
 }
 
 
