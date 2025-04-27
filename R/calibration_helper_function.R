@@ -150,6 +150,46 @@ prev_calibrator <- function(
 #        2) correction term for inc
 #        3) OR for inc
 
+
+generate_prev_table <- function(
+    risk_factor_prev, past_target_OR, target_OR, calibrated_p
+) {
+    prev_table <- c()
+
+    for(i in 1:(length(past_target_OR) - 1)){
+        tmp_risk_factor_prev <- risk_factor_prev[c(1, i + 1)]
+        tmp_risk_factor_prev <- tmp_risk_factor_prev / sum(tmp_risk_factor_prev)
+        tmp_p <- calibrated_p[c(1, i + 1)]
+
+        # return: a b c d
+        # a: no exp, no asthma
+        # b: no exp, yes asthma
+        # c: yes exp, no asthma
+        # d: yes exp, yes asthma
+        # Solve the following:
+        # tmp_target_prev  = (b+d)/(a+b+c+d) 
+        # tmp_p[1] = b/(a+b) 
+        # tmp_p[2] = d/(c+d) 
+        # tmp_target_OR  = (a*d)/(b*c) 
+    
+        # metafor pkg
+        # Bonett, D. G. (2007).
+        # Transforming odds ratios into correlations for meta-analytic research. 
+        # American Psychologist, 62(3), 254–255. ⁠https://doi.org/10.1037/0003-066x.62.3.254⁠
+
+        nn <- 1e10
+        prev_table[[i]] <- rev(
+            metafor::conv.2x2(
+                ori=target_OR[i + 1],
+                ni=nn,
+                n1i=((1 - tmp_p[2]) * tmp_risk_factor_prev[2] + tmp_risk_factor_prev[2] * tmp_p[2]) * nn, # prev of exposure
+                n2i=sum(tmp_risk_factor_prev * tmp_p) * nn # prev of asthma
+            ) / nn
+        )
+    }
+    return(prev_table)
+}
+
 inc_loss_function <- function(
     asthma_inc_target,
     asthma_prev_target_past,
@@ -183,39 +223,12 @@ inc_loss_function <- function(
   
   # for each OR, we need to obtain the contingency table
   
-  prev_table <- c()
-  
-    for(i in 1:(length(past_target_OR) - 1)){
-        tmp_risk_factor_prev <- risk_factor_prev[c(1, i + 1)]
-        tmp_risk_factor_prev <- tmp_risk_factor_prev / sum(tmp_risk_factor_prev)
-        tmp_p <- calibrated_p[c(1, i + 1)]
-
-    # return: a b c d
-    # a: no exp, no asthma
-    # b: no exp, yes asthma
-    # c: yes exp, no asthma
-    # d: yes exp, yes asthma
-    # Solve the following:
-    # tmp_target_prev  = (b+d)/(a+b+c+d) 
-    # tmp_p[1] = b/(a+b) 
-    # tmp_p[2] = d/(c+d) 
-    # tmp_target_OR  = (a*d)/(b*c) 
-    
-        # metafor pkg
-    # Bonett, D. G. (2007).
-    # Transforming odds ratios into correlations for meta-analytic research. 
-    # American Psychologist, 62(3), 254–255. ⁠https://doi.org/10.1037/0003-066x.62.3.254⁠
-    
-    nn <- 1e10
-        prev_table[[i]] <- rev(
-            metafor::conv.2x2(
-                ori=past_target_OR[i + 1],
-                ni=nn,
-                n1i=((1 - tmp_p[2]) * tmp_risk_factor_prev[2] + tmp_risk_factor_prev[2] * tmp_p[2]) * nn, # prev of exposure
-                n2i=sum(tmp_risk_factor_prev * tmp_p) * nn # prev of asthma
-            ) / nn
-        )
-    }
+    prev_table <- generate_prev_table(
+        risk_factor_prev=risk_factor_prev,
+        past_target_OR=past_target_OR,
+        target_OR=past_target_OR,
+        calibrated_p=calibrated_p
+    )
 
     target_prev <- (
         asthma_prev_target_past * ra + 
@@ -230,22 +243,12 @@ inc_loss_function <- function(
     tmp_p0 <- inverse_logit(logit(target_prev) - sum(risk_factor_prev[-1] * tmp_sol))
   tmp_calibrated_p <- inverse_logit(logit(tmp_p0) + log(target_OR))
   
-    future_prev_table <- c()
-
-    for(i in 1:(length(target_OR) - 1)){
-        tmp_risk_factor_prev <- risk_factor_prev[c(1, i + 1)]
-        tmp_risk_factor_prev <- tmp_risk_factor_prev / sum(tmp_risk_factor_prev)
-        tmp_p <- tmp_calibrated_p[c(1, i + 1)]
-    nn <- 1e10
-        prev_table[[i]] <- rev(
-            metafor::conv.2x2(
-                ori=target_OR[i + 1],
-                ni=nn,
-                n1i=((1 - tmp_p[2]) * tmp_risk_factor_prev[2] + tmp_risk_factor_prev[2] * tmp_p[2]) * nn, # prev of exposure
-                n2i=sum(tmp_risk_factor_prev * tmp_p) * nn # prev of asthma
-            ) / nn
-        )
-  }
+    future_prev_table <- generate_prev_table(
+        risk_factor_prev=risk_factor_prev,
+        past_target_OR=target_OR,
+        target_OR=target_OR,
+        calibrated_p=tmp_calibrated_p
+    )
   
     obj_function <- function(
         y, no_asthma_risk_factor_prev_dist, target_OR, asthma_inc_target, beta0, prev_table
