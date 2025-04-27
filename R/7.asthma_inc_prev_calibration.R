@@ -357,6 +357,16 @@ calibrator <- function(
         df_fam_history_or, df_abx_or
     )
 
+    if (chosen_age > 7) {
+        risk_set <- risk_set %>% 
+            group_by(fam_history, year, sex, age) %>% 
+            summarise(
+                prob=sum(prob),
+                OR=mean(OR)
+            ) %>% 
+            ungroup()
+    }
+
     # target marginal asthma prevalence
     asthma_prev_target <- df_prevalence %>% 
         filter(
@@ -366,8 +376,6 @@ calibrator <- function(
         ) %>% 
         select(prev) %>% 
         unlist()
-  
-    if(chosen_age <= 7){
 
         asthma_prev_risk_factor_params <- prev_calibrator(
             asthma_prev_target=asthma_prev_target,
@@ -382,7 +390,7 @@ calibrator <- function(
             sum(risk_set$prob[-1] * asthma_prev_risk_factor_params) 
         )
         
-        if(chosen_year== 2000){
+    if(chosen_year == 2000){
             return(list(
                 risk_set=risk_set,
                 asthma_prev_risk_factor_params=asthma_prev_risk_factor_params,
@@ -390,7 +398,7 @@ calibrator <- function(
             ))
         }
     
-        if(chosen_age==3) {
+    if (chosen_age == 3) {
             risk_set$calibrated_inc <- risk_set$calibrated_prev
             return(list(
                 risk_set=risk_set,
@@ -408,7 +416,7 @@ calibrator <- function(
                 select(inc) %>% 
                 unlist()
       
-
+        # target marginal asthma prevalence for the previous year and age
             past_asthma_prev_target <- df_prevalence %>% 
                 filter(
                     age==chosen_age - 1 & 
@@ -437,92 +445,14 @@ calibrator <- function(
                 select(ra) %>% 
                 unlist()
 
-            inc_risk_set <- risk_factor_generator(
-                chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
-                df_fam_history_or, df_abx_or
-            ) %>% 
-                select(fam_history, abx_exposure, year, sex, age, prob)
-        
-            inc_risk_set$prob <- inc_risk_set$prob / sum(inc_risk_set$prob)
-            
-            inc_risk_set$OR <- inc_risk_set %>% 
-                apply(., 1, FUN=function(x){
-                    OR_risk_factor_calculator(
-                        fam_hist=x[1],
-                        age=x[5],
-                        dose=x[2],
-                        params=inc_beta_params
-                    )
-                })
-        } 
-    } else { # age > 7 => OR =1 for all abx
-    
-        risk_set <- risk_set %>% 
-            group_by(fam_history, year, sex, age) %>% 
-            summarise(
-                prob=sum(prob),
-                OR=mean(OR)
-            ) %>% 
-            ungroup()
-
-        asthma_prev_risk_factor_params <- prev_calibrator(
-            asthma_prev_target=asthma_prev_target,
-            target_OR=risk_set$OR,
-            risk_factor_prev=risk_set$prob
-        )
-
-        risk_set$prev <- asthma_prev_target
-        risk_set$calibrated_prev <- inverse_logit(
-            logit(asthma_prev_target) + 
-            log(risk_set$OR) -
-            sum(risk_set$prob[-1] * asthma_prev_risk_factor_params)
-        )
-    
-        if(chosen_year == 2000) {
-            return(list(
-                risk_set=risk_set,
-                asthma_prev_risk_factor_params=asthma_prev_risk_factor_params,
-                inc_sol=c()
-            ))
-        } else { 
- 
-            risk_set$inc <- df_incidence %>% 
-                filter(
-                    age==chosen_age & 
-                    year==chosen_year &
-                    sex==chosen_sex
-                ) %>% 
-                select(inc) %>% 
-                unlist()
-      
-            # target marginal asthma prevalence for the previous year and age
-            past_asthma_prev_target <- df_prevalence %>% 
-                filter(
-                    age==chosen_age - 1 & 
-                    year==max(min_year, chosen_year - 1) &
-                    sex==chosen_sex
-                ) %>% 
-                select(prev) %>% 
-                unlist()
-
-            past_risk_set <- risk_factor_generator(
-                max(min_year, chosen_year-1),
-                chosen_sex,
-                chosen_age - 1,
-                model_abx,
-                p_fam_distribution,
-                df_fam_history_or,
-                df_abx_or
-            )
-
-            if(chosen_age != 8){
+        if(chosen_age > 8){
                 past_risk_set <- past_risk_set %>% 
                     group_by(fam_history) %>% 
                     summarise(
                         prob=sum(prob),
                         OR=mean(OR)
                     )
-            } else {
+        } else if (chosen_age == 8) {
 
                 ttt_asthma_prev_risk_factor_params <- prev_calibrator(
                     asthma_prev_target=past_asthma_prev_target,
@@ -552,20 +482,15 @@ calibrator <- function(
                 past_risk_set$OR <- c(1, past_tmp_OR)
             }
             
-            target_RA <- df_reassessment %>% 
-                filter(
-                    age==chosen_age & 
-                    year==chosen_year &
-                    sex==chosen_sex
+        inc_risk_set <- risk_factor_generator(
+            chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
+            df_fam_history_or, df_abx_or
                 ) %>% 
-                select(ra) %>% 
-                unlist()
-            
-            inc_risk_set <- risk_factor_generator(
-                chosen_year,chosen_sex,chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
-                ) %>% 
-                filter(abx_exposure==0) %>% 
-                select(fam_history,abx_exposure,year,sex,age,prob)
+            select(fam_history, abx_exposure, year, sex, age, prob)
+
+        if (chosen_age > 7) {
+            inc_risk_set <- inc_risk_set %>% filter(abx_exposure==0)
+        }
       
             inc_risk_set$OR <- inc_risk_set %>% 
                 apply(., 1, FUN=function(x){
@@ -576,6 +501,9 @@ calibrator <- function(
                         params=inc_beta_params
                     )
                 })
+
+        if (chosen_age <= 7) {
+            inc_risk_set$prob <- inc_risk_set$prob / sum(inc_risk_set$prob)
         }
     }
 
