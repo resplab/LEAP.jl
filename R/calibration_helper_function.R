@@ -151,11 +151,11 @@ prev_calibrator <- function(
 #        3) OR for inc
 
 inc_loss_function <- function(
-    target_inc,
-                           past_target_prev,
+    asthma_inc_target,
+    asthma_prev_target_past,
                            past_target_OR,
                            target_OR,
-                           p_risk,
+    risk_factor_prev,
                            ra=1,
                            misDx=0,
                            Dx=1,
@@ -163,31 +163,31 @@ inc_loss_function <- function(
     log_inc_OR
 ){
   
-  beta0 <- logit(target_inc)
-    prop_asthma <- past_target_prev # proportion with asthma
-    prop_no_asthma <- (1 - past_target_prev) # proportion without asthma
+    beta0 <- logit(asthma_inc_target)
+    prop_asthma <- asthma_prev_target_past # proportion with asthma
+    prop_no_asthma <- (1 - asthma_prev_target_past) # proportion without asthma
   
   # reconstruct contingency table for each OR
-  ref_p_risk <- p_risk[1]
+    ref_risk_factor_prev <- risk_factor_prev[1]
     sol <- prev_calibrator(
-        asthma_prev_target=past_target_prev,
+        asthma_prev_target=asthma_prev_target_past,
         target_OR=past_target_OR,
-        risk_factor_prev=p_risk
+        risk_factor_prev=risk_factor_prev
     )
-    p0 <- inverse_logit(logit(past_target_prev) - sum(p_risk[-1] * sol))
+    p0 <- inverse_logit(logit(asthma_prev_target_past) - sum(risk_factor_prev[-1] * sol))
   calibrated_p <- inverse_logit(logit(p0) + log(past_target_OR))
   # distribution of the risk factors for the population without asthma
-    no_asthma_p_risk_dist <- (1 - calibrated_p) * p_risk
+    no_asthma_risk_factor_prev_dist <- (1 - calibrated_p) * risk_factor_prev
   # normalize
-    no_asthma_p_risk_dist <- no_asthma_p_risk_dist / sum(no_asthma_p_risk_dist)
+    no_asthma_risk_factor_prev_dist <- no_asthma_risk_factor_prev_dist / sum(no_asthma_risk_factor_prev_dist)
   
   # for each OR, we need to obtain the contingency table
   
   prev_table <- c()
   
     for(i in 1:(length(past_target_OR) - 1)){
-        tmp_p_risk <- p_risk[c(1, i + 1)]
-        tmp_p_risk <- tmp_p_risk / sum(tmp_p_risk)
+        tmp_risk_factor_prev <- risk_factor_prev[c(1, i + 1)]
+        tmp_risk_factor_prev <- tmp_risk_factor_prev / sum(tmp_risk_factor_prev)
         tmp_p <- calibrated_p[c(1, i + 1)]
 
     # return: a b c d
@@ -211,51 +211,55 @@ inc_loss_function <- function(
             metafor::conv.2x2(
                 ori=past_target_OR[i + 1],
                 ni=nn,
-                n1i=((1 - tmp_p[2]) * tmp_p_risk[2] + tmp_p_risk[2] * tmp_p[2]) * nn, # prev of exposure
-                n2i=sum(tmp_p_risk * tmp_p) * nn # prev of asthma
+                n1i=((1 - tmp_p[2]) * tmp_risk_factor_prev[2] + tmp_risk_factor_prev[2] * tmp_p[2]) * nn, # prev of exposure
+                n2i=sum(tmp_risk_factor_prev * tmp_p) * nn # prev of asthma
             ) / nn
         )
     }
 
     target_prev <- (
-        past_target_prev * ra + 
-        target_inc * (1 - past_target_prev) * Dx +
-        (1-target_inc)*(1-past_target_prev)*misDx
+        asthma_prev_target_past * ra + 
+        asthma_inc_target * (1 - asthma_prev_target_past) * Dx +
+        (1 - asthma_inc_target)*(1-asthma_prev_target_past)*misDx
     )
-    tmp_sol <- prev_calibrator(target_prev, target_OR, p_risk)
-    tmp_p0 <- inverse_logit(logit(target_prev) - sum(p_risk[-1] * tmp_sol))
+    tmp_sol <- prev_calibrator(
+        asthma_prev_target=target_prev,
+        target_OR=target_OR,
+        risk_factor_prev=risk_factor_prev
+    )
+    tmp_p0 <- inverse_logit(logit(target_prev) - sum(risk_factor_prev[-1] * tmp_sol))
   tmp_calibrated_p <- inverse_logit(logit(tmp_p0) + log(target_OR))
   
     future_prev_table <- c()
 
     for(i in 1:(length(target_OR) - 1)){
-        tmp_p_risk <- p_risk[c(1, i + 1)]
-        tmp_p_risk <- tmp_p_risk / sum(tmp_p_risk)
+        tmp_risk_factor_prev <- risk_factor_prev[c(1, i + 1)]
+        tmp_risk_factor_prev <- tmp_risk_factor_prev / sum(tmp_risk_factor_prev)
         tmp_p <- tmp_calibrated_p[c(1, i + 1)]
     nn <- 1e10
         prev_table[[i]] <- rev(
             metafor::conv.2x2(
                 ori=target_OR[i + 1],
                 ni=nn,
-                n1i=((1 - tmp_p[2]) * tmp_p_risk[2] + tmp_p_risk[2] * tmp_p[2]) * nn, # prev of exposure
-                n2i=sum(tmp_p_risk * tmp_p) * nn # prev of asthma
+                n1i=((1 - tmp_p[2]) * tmp_risk_factor_prev[2] + tmp_risk_factor_prev[2] * tmp_p[2]) * nn, # prev of exposure
+                n2i=sum(tmp_risk_factor_prev * tmp_p) * nn # prev of asthma
             ) / nn
         )
   }
   
     obj_function <- function(
-        y, no_asthma_p_risk_dist, target_OR, target_inc, beta0, prev_table
+        y, no_asthma_risk_factor_prev_dist, target_OR, asthma_inc_target, beta0, prev_table
     ) {
         x <- y
-        q <- length(no_asthma_p_risk_dist) - 1
+        q <- length(no_asthma_risk_factor_prev_dist) - 1
     target_OR_no_ref <- target_OR[-1]
         # calibrate the current inc to the target inc
         tmp_sol <- prev_calibrator(
-            asthma_prev_target=target_inc,
+            asthma_prev_target=asthma_inc_target,
             target_OR=exp(c(0, x)),
-            risk_factor_prev=no_asthma_p_risk_dist
+            risk_factor_prev=no_asthma_risk_factor_prev_dist
         )
-        logit_p0 <- beta0 - sum(tmp_sol * no_asthma_p_risk_dist[-1])
+        logit_p0 <- beta0 - sum(tmp_sol * no_asthma_risk_factor_prev_dist[-1])
         calibrated_inc <- inverse_logit(logit_p0 + c(0, x))
     
     ref_cal_inc <- calibrated_inc[1]
