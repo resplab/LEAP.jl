@@ -628,75 +628,6 @@ calculate_correction <- function(
 }
 
 
-#' Generate the correction terms for the incidence and prevalence equations.
-#' 
-#' @param df A dataframe with the following columns:
-#' - year: the integer year
-#' - sex: 0 or 1; 0 = female, 1 = male
-#' - age: the age in years
-#' @param model_abx The fitted Negative Binomial model for the number of courses of antibiotics.
-#' @param p_fam_distribution A dataframe with the probability of family history of asthma, given
-#' that the person has asthma. Contains two columns: fam_history (0 or 1) and prob_fam.
-#' @param df_fam_history_or A dataframe with the odds ratio of family history of asthma, given
-#' the age of the person. Contains three columns: age (3, 4, or 5), fam_history (0 or 1),
-#' and OR_fam: odds ratio.
-#' @param df_abx_or A dataframe with the odds ratio of antibiotic exposure, given
-#' the age of the person. Contains three columns: age (3, 4, or 5),
-#' abx_exposure (0, 1, 2, 3, 4, or 5), and OR_abx: odds ratio.
-#' @param df_incidence A dataframe with the incidence of asthma, with the following columns:
-#' - year: the year
-#' - age: the age in years
-#' - sex: 0 or 1; 0 = female, 1 = male
-#' - inc: the incidence of asthma
-#' @param df_prevalence A dataframe with the prevalence of asthma, with the following columns:
-#' - year: the year
-#' - age: the age in years
-#' - sex: 0 or 1; 0 = female, 1 = male
-#' - prev: the prevalence of asthma
-#' @param df_reassessment A dataframe with the reassessment of asthma, with the following columns:
-#' - year: the year
-#' - age: the age in years
-#' - sex: 0 or 1; 0 = female, 1 = male
-#' - ra: the reassessment of asthma
-#' @param inc_beta_params A list of parameters for the incidence equation.
-#' @param inc_function A function to compute the incidence correction.
-#' @returns A dataframe with the following columns:
-#' - year: the integer year
-#' - sex: 0 or 1; 0 = female, 1 = male
-#' - age: the age in years
-#' - obj_value: the objective value of the incidence equation
-#' - prev_correction: the correction term for the prevalence equation
-#' - inc_correction: the correction term for the incidence equation
-generate_correction <- function(
-    df,
-    inc_beta_params,
-    model_abx,
-    p_fam_distribution,
-    df_fam_history_or,
-    df_abx_or,
-    df_incidence,
-    df_prevalence,
-    df_reassessment
-){
-    apply(df, 1, FUN=function(x) {
-        calculate_correction(
-            chosen_year=x[1],
-            chosen_sex=x[2],
-            chosen_age=x[3],
-            df_incidence=df_incidence,
-            df_prevalence=df_prevalence,
-            df_reassessment=df_reassessment,
-            p_fam_distribution=p_fam_distribution,
-            df_fam_history_or=df_fam_history_or,
-            df_abx_or=df_abx_or,
-            model_abx=model_abx,
-            inc_beta_params=inc_beta_params
-        )
-    }) %>% 
-    do.call(rbind,.)
-}
-
-
 inc_beta_solver <- function(
     model_abx,
     df_fam_history_or,
@@ -790,19 +721,24 @@ model_abx <- read_rds(here("R/BC_count_model.rds"))
     years <- (baseline_year - 1):(stabilization_year + 1)
     ages <- 3:max_age
 sexes <- 0:1
-    calibration_results <- expand.grid(year=years, sex=sexes, age=ages) %>% as.data.frame()
+    df_correction <- expand.grid(year=years, sex=sexes, age=ages) %>% as.data.frame()
 
-    df_correction <- generate_correction(
-    df=calibration_results,
-    inc_beta_params=optimized_inc_beta,
-    model_abx=model_abx,
+    df_correction <- apply(df_correction, 1, FUN=function(x) {
+        calculate_correction(
+            chosen_year=x[1],
+            chosen_sex=x[2],
+            chosen_age=x[3],
+            df_incidence=df_incidence,
+            df_prevalence=df_prevalence,
+            df_reassessment=df_reassessment,
     p_fam_distribution=p_fam_distribution,
     df_fam_history_or=df_fam_history_or,
     df_abx_or=df_abx_or,
-    df_incidence=df_incidence,
-    df_prevalence=df_prevalence,
-    df_reassessment=df_reassessment
+            model_abx=model_abx,
+            inc_beta_params=inc_beta_params
 )
+    }) %>% 
+        do.call(rbind, .)
 
     df_correction_prevalence <- df_correction %>% 
     select(year, sex, age, prev_correction) %>% 
