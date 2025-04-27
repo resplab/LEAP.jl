@@ -8,7 +8,9 @@ options(dplyr.summarise.inform = FALSE)
 PROVINCE <- "CA"
 MAX_YEAR <- 2065 # 2065 for CA; 2043 for BC
 MIN_YEAR <- 2000
-stabilization_year <- 2025
+STABILIZATION_YEAR <- 2025
+BASELINE_YEAR <- 2001
+MAX_AGE <- 63
 MAX_ASTHMA_AGE <- 62
 MIN_ASTHMA_AGE <- 3
 # odds ratio between asthma prevalence at age 3 and family history (CHILD Study)
@@ -20,7 +22,10 @@ INC_BETA_PARAMS <- c((log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2, -0.225)
 PROB_FAM_HIST <- 0.2927242
 
 
-asthma_predictor <- function(age, sex, year, type, asthma_inc_model, asthma_prev_model) {
+asthma_predictor <- function(
+    age, sex, year, type, asthma_inc_model, asthma_prev_model,
+    stabilization_year=STABILIZATION_YEAR
+) {
 
     age <- pmin(age, MAX_ASTHMA_AGE)
     year <- pmin(year, stabilization_year)
@@ -699,9 +704,9 @@ inc_beta_solver <- function(
     df_incidence,
     df_prevalence,
     df_reassessment,
-    baseline_year=2001,
-    stabilization_year=2025,
-    max_age=63,
+    baseline_year=BASELINE_YEAR,
+    stabilization_year=STABILIZATION_YEAR,
+    max_age=MAX_AGE,
     inc_beta_params=INC_BETA_PARAMS
 ){
     cal_years <- baseline_year:(stabilization_year+1)
