@@ -263,7 +263,6 @@ obj_function <- function(
         abs(log(target_OR_no_ref[i]) - (log(d) + log(a) - log(b) - log(c)))
     }
     
-        return(result %>% unlist() %>% mean())
     return(
         c(result %>% unlist() %>% mean(), -inc_correction_term)
     )
