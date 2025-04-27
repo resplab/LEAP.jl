@@ -327,7 +327,7 @@ risk_factor_generator <- function(
 #' @param inc_function A function to compute the incidence correction.
 #' @returns A list with the following elements:
 #' - risk_set: a dataframe with the risk factors and their probabilities and odds ratios
-#' - prev_sol: the solution for the prevalence calibration
+#' - asthma_prev_risk_factor: A vector of the calibrated asthma prevalence for each risk factor
 #' - inc_sol: the solution for the incidence calibration
 calibrator <- function(
     chosen_year,
@@ -357,7 +357,8 @@ calibrator <- function(
         df_fam_history_or, df_abx_or
     )
 
-    target_prev <- df_prevalence %>% 
+    # target marginal asthma prevalence
+    asthma_prev_target <- df_prevalence %>% 
         filter(
             age==chosen_age & 
             year==chosen_year &
@@ -368,15 +369,23 @@ calibrator <- function(
   
     if(chosen_age <= 7){
 
-        prev_sol <- prev_calibrator(target_prev, risk_set$OR, risk_set$prob)
-        p0 <- inverse_logit(logit(target_prev) - sum(risk_set$prob[-1] * prev_sol))
-        risk_set$calibrated_prev <- inverse_logit(logit(p0) + log(risk_set$OR))
-        risk_set$prev <- target_prev
+        asthma_prev_risk_factor <- prev_calibrator(
+            asthma_prev_target=asthma_prev_target,
+            target_OR=risk_set$OR,
+            risk_factor_prev=risk_set$prob
+        )
+
+        risk_set$prev <- asthma_prev_target
+        risk_set$calibrated_prev <- inverse_logit(
+            logit(asthma_prev_target) + 
+            log(risk_set$OR) - 
+            sum(risk_set$prob[-1] * asthma_prev_risk_factor) 
+        )
         
         if(chosen_year== 2000){
             return(list(
                 risk_set=risk_set,
-                prev_sol=prev_sol,
+                asthma_prev_risk_factor=asthma_prev_risk_factor,
                 inc_sol=c()
             ))
         }
@@ -385,7 +394,7 @@ calibrator <- function(
             risk_set$calibrated_inc <- risk_set$calibrated_prev
             return(list(
                 risk_set=risk_set,
-                prev_sol=prev_sol,
+                asthma_prev_risk_factor=asthma_prev_risk_factor,
                 inc_sol=c()
             ))
         } else { # aged 4 or more
@@ -399,7 +408,8 @@ calibrator <- function(
                 select(inc) %>% 
                 unlist()
       
-            past_target_prev <- df_prevalence %>% 
+
+            past_asthma_prev_target <- df_prevalence %>% 
                 filter(
                     age==chosen_age - 1 & 
                     year==max(min_year, chosen_year - 1) &
@@ -455,15 +465,23 @@ calibrator <- function(
             ) %>% 
             ungroup()
 
-        prev_sol <- prev_calibrator(target_prev, risk_set$OR, risk_set$prob)
-        p0 <- inverse_logit(logit(target_prev) - sum(risk_set$prob[-1]*prev_sol))
-        risk_set$calibrated_prev <- inverse_logit(logit(p0) + log(risk_set$OR))
-        risk_set$prev <- target_prev
+        asthma_prev_risk_factor <- prev_calibrator(
+            asthma_prev_target=asthma_prev_target,
+            target_OR=risk_set$OR,
+            risk_factor_prev=risk_set$prob
+        )
+
+        risk_set$prev <- asthma_prev_target
+        risk_set$calibrated_prev <- inverse_logit(
+            logit(asthma_prev_target) + 
+            log(risk_set$OR) -
+            sum(risk_set$prob[-1] * asthma_prev_risk_factor)
+        )
     
         if(chosen_year == 2000) {
             return(list(
                 risk_set=risk_set,
-                prev_sol=prev_sol,
+                asthma_prev_risk_factor=asthma_prev_risk_factor,
                 inc_sol=c()
             ))
         } else { 
@@ -477,7 +495,8 @@ calibrator <- function(
                 select(inc) %>% 
                 unlist()
       
-            past_target_prev <- df_prevalence %>% 
+            # target marginal asthma prevalence for the previous year and age
+            past_asthma_prev_target <- df_prevalence %>% 
                 filter(
                     age==chosen_age - 1 & 
                     year==max(min_year, chosen_year - 1) &
@@ -505,9 +524,17 @@ calibrator <- function(
                     )
             } else {
 
-                ttt_prev_sol <- prev_calibrator(past_target_prev, past_risk_set$OR, past_risk_set$prob)
-                p0 <- inverse_logit(logit(past_target_prev) - sum(past_risk_set$prob[-1]*ttt_prev_sol))
-                past_risk_set$calibrated_prev <- inverse_logit(logit(p0) + log(past_risk_set$OR))
+                ttt_asthma_prev_risk_factor <- prev_calibrator(
+                    asthma_prev_target=past_asthma_prev_target,
+                    target_OR=past_risk_set$OR,
+                    risk_factor_prev=past_risk_set$prob
+                )
+
+                past_risk_set$calibrated_prev <- inverse_logit(
+                    logit(past_asthma_prev_target) + 
+                    log(past_risk_set$OR) -
+                    sum(past_risk_set$prob[-1] * ttt_asthma_prev_risk_factor)
+                )
                 tmp_look <- past_risk_set %>% 
                     mutate(
                         yes_asthma=calibrated_prev * prob,
@@ -554,7 +581,7 @@ calibrator <- function(
 
     args <- list(
         target_inc=risk_set$inc[1],
-        past_target_prev=past_target_prev,
+        past_asthma_prev_target=past_asthma_prev_target,
         past_target_OR=past_risk_set$OR,
         target_OR=risk_set$OR,
         p_risk=past_risk_set$prob,
@@ -569,7 +596,7 @@ calibrator <- function(
   
     return(list(
         risk_set=risk_set,
-        prev_sol=prev_sol,
+        asthma_prev_risk_factor=asthma_prev_risk_factor,
         inc_sol=inc_sol
     ))
 }
@@ -613,12 +640,12 @@ calculate_correction <- function(
         inc_function=inc_function
     )
     risk_set <- results$risk_set
-    prev_sol <- results$prev_sol
+    asthma_prev_risk_factor <- results$asthma_prev_risk_factor
     inc_sol <- results$inc_sol
-        df_results$prev_correction <- -sum(risk_set$prob[-1]*prev_sol)
+    df_results$prev_correction <- -sum(risk_set$prob[-1]*asthma_prev_risk_factor)
     if (chosen_year > 2000) {
     if(chosen_age==3) {
-        df_results$inc_correction <- -sum(risk_set$prob[-1]*prev_sol)
+            df_results$inc_correction <- -sum(risk_set$prob[-1]*asthma_prev_risk_factor)
     } else { # aged 4 or more
         df_results$obj_value <- inc_sol[1]
         df_results$inc_correction <- inc_sol[2]
