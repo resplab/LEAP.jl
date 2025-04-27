@@ -315,7 +315,8 @@ inc_loss_function <- function(
 }
 
 
-inc_correction_calculator <- function(target_inc,
+inc_correction_calculator <- function(
+    target_inc,
                               past_target_prev,
                               past_target_OR,
                               target_OR,
@@ -324,7 +325,8 @@ inc_correction_calculator <- function(target_inc,
                               misDx=0,
                               Dx=1,
                               risk_set,
-                              log_inc_OR){
+    log_inc_OR
+){
   
   beta0 <- logit(target_inc)
   
@@ -342,11 +344,9 @@ inc_correction_calculator <- function(target_inc,
   no_asthma_p_risk_dist <- no_asthma_p_risk_dist/sum(no_asthma_p_risk_dist)
   
   # for each OR, we need to obtain the contingency table
-  
   prev_table <- c()
   
-  for(i in 1:(length(past_target_OR)-1)){
-    # print(i)
+    for(i in 1:(length(past_target_OR) - 1)){
     tmp_p_risk <- p_risk[c(1,i+1)]
     tmp_p_risk <- tmp_p_risk/sum(tmp_p_risk)
     tmp_p <- calibrated_p[c(1,i+1)]
@@ -403,7 +403,6 @@ inc_correction_calculator <- function(target_inc,
     
     # # x = log(OR) for incidence eqn
     
-    q <- length(no_asthma_p_risk_dist)-1
     target_OR_no_ref <- target_OR[-1]
     # # calibrate the current inc to the target inc
     tmp_sol <- prev_calibrator(
@@ -457,15 +456,8 @@ inc_correction_calculator <- function(target_inc,
       tmp_OR <- a*d/(b*c)
       result <- result +
         abs(log(target_OR_no_ref[i]) - (log(d) + log(a) - log(b) - log(c)))
-      # sum(abs(c(a,b,c,d)-future_prev_table[[i]]))
-      
-      # abs(log(target_OR_no_ref[i]) + log((b0+b1)/b1) + log(d1/(d1+d0)) + log(a1/(a0+a1)) + log((c0+c1)/c1)) #figure out why this works
-      # abs(log(target_OR_no_ref[i]) + log((b0+b1)/b1) + log(d1/(d1+d0)) + log(a1/(a0+a1)) + log((c0+c1)/c1)) #figure out why this works
-      
-      # result <- result + abs(log(target_OR_no_ref[i]) + log((b0+b1)/b1) + log(d1/(d1+d0)) + log(a1/(a0+a1)) + log((c0+c1)/c1) - target_x)
     }
     
-    # print(tmp_sol)
     return(c(result %>% 
              unlist() %>% 
              mean(),inc_correction_term))
@@ -477,7 +469,6 @@ inc_correction_calculator <- function(target_inc,
   #                  apply(.,2,function(x){length(unique(x))-1}))
   
   fnc_value <- obj_function(log_inc_OR)
-  
   return(fnc_value)
   
 }
