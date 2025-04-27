@@ -755,15 +755,23 @@ load_optimized_beta_params <- function(
 }
 
 
-# asthma prev and inc -----------------------------------------------------
-
-df_occurrence_list <- load_occurrence_data()
+generate_occurrence_calibration_data <- function(
+    province=PROVINCE,
+    min_year=MIN_YEAR,
+    max_year=MAX_YEAR,
+    baseline_year=BASELINE_YEAR,
+    stabilization_year=STABILIZATION_YEAR,
+    max_age=MAX_AGE
+){
+    df_occurrence_list <- load_occurrence_data(
+        chosen_province=province,
+        min_year=min_year,
+        max_year=max_year
+    )
 df_incidence <- df_occurrence_list$df_incidence
 df_prevalence <- df_occurrence_list$df_prevalence
-df_reassessment <- load_reassessment_data()
 
-
-# risk factors ------------------------------------------------------------
+    df_reassessment <- load_reassessment_data(chosen_province=province)
 
 p_fam_distribution <- data.frame(
     fam_history=c(0, 1),
@@ -773,20 +781,18 @@ p_fam_distribution <- data.frame(
 df_family_history_or <- load_family_history_data()
 df_abx_or <- load_abx_exposure_data()
 
-
 model_abx <- read_rds(here("R/BC_count_model.rds"))
 
-optimized_inc_beta <- load_optimized_beta_params()
+    optimized_inc_beta <- load_optimized_beta_params(
+        stabilization_year=stabilization_year, baseline_year=baseline_year, max_age=max_age
+    )
 
-
-cal_years <- (BASELINE_YEAR - 1):(STABILIZATION_YEAR + 1)
-ages <- 3:MAX_AGE
+    years <- (baseline_year - 1):(stabilization_year + 1)
+    ages <- 3:max_age
 sexes <- 0:1
-calibration_results <- expand.grid(year=cal_years,sex=sexes,age=ages) %>%
-  as.data.frame()
+    calibration_results <- expand.grid(year=years, sex=sexes, age=ages) %>% as.data.frame()
 
-
-df_correct <- generate_correction(
+    df_correction <- generate_correction(
     df=calibration_results,
     inc_beta_params=optimized_inc_beta,
     model_abx=model_abx,
@@ -798,22 +804,24 @@ df_correct <- generate_correction(
     df_reassessment=df_reassessment
 )
 
-
-df_correct_prev <- df_correct %>% 
+    df_correction_prevalence <- df_correction %>% 
     select(year, sex, age, prev_correction) %>% 
     rename(correction=prev_correction) %>% 
     mutate(type='prev')
 
-df_correct_inc <- df_correct %>% 
+    df_correction_incidence <- df_correction %>% 
     select(year, sex, age, inc_correction) %>% 
     rename(correction=inc_correction) %>% 
     mutate(type='inc')
 
-master_correct <- rbind(df_correct_prev, df_correct_inc)
-master_correct <- master_correct %>% 
+    df_correction <- rbind(df_correction_prevalence, df_correction_incidence)
+    df_correction <- df_correction %>% 
   mutate(correction=ifelse(is.na(correction), 0, correction))
 
-write_csv(master_correct, here("src/processed_data/master_asthma_occurrence_correction.csv"))
+    write_csv(df_correction, here("src/processed_data/master_asthma_occurrence_correction.csv"))
+}
+
+
 
 # examine_results <- df_correct %>% 
 #   filter(age !=3)
