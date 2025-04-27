@@ -344,59 +344,28 @@ inc_correction_calculator <- function(
   no_asthma_p_risk_dist <- no_asthma_p_risk_dist/sum(no_asthma_p_risk_dist)
   
   # for each OR, we need to obtain the contingency table
-  prev_table <- c()
+
+    prev_table <- generate_prev_table(
+        risk_factor_prev=p_risk,
+        past_target_OR=past_target_OR,
+        target_OR=past_target_OR,
+        calibrated_p=calibrated_p
+    )
   
-    for(i in 1:(length(past_target_OR) - 1)){
-    tmp_p_risk <- p_risk[c(1,i+1)]
-    tmp_p_risk <- tmp_p_risk/sum(tmp_p_risk)
-    tmp_p <- calibrated_p[c(1,i+1)]
-    # return: a b c d
-    # a: no exp, no asthma
-    # b: no exp, yes asthma
-    # c: yes exp, no asthma
-    # d: yes exp, yes asthma
-    # Solve the following:
-    # tmp_target_prev  = (b+d)/(a+b+c+d) 
-    # tmp_p[1] = b/(a+b) 
-    # tmp_p[2] = d/(c+d) 
-    # tmp_target_OR  = (a*d)/(b*c) 
     
-    # someone else has done it;
-    # use the metafor pkg
-    # Bonett, D. G. (2007).
-    # Transforming odds ratios into correlations for meta-analytic research. 
-    # American Psychologist, 62(3), 254–255. ⁠https://doi.org/10.1037/0003-066x.62.3.254⁠
-    
-    nn <- 1e10
-    prev_table[[i]] <-  rev(metafor::conv.2x2(ori=past_target_OR[i+1],
-                                              ni = nn,
-                                              # prev of exposure
-                                              n1i = ((1-tmp_p[2])*tmp_p_risk[2] +tmp_p_risk[2] * tmp_p[2])*nn,
-                                              # prev of asthma
-                                              n2i=  sum(tmp_p_risk * tmp_p)*nn)/nn)
-  }
-  
-  future_prev_table <- c()
   target_prev <- (past_target_prev*ra + target_inc*(1-past_target_prev)*Dx +
                     (1-target_inc)*(1-past_target_prev)*misDx)
   tmp_sol <- prev_calibrator(target_prev,target_OR, p_risk)
   tmp_p0 <- inverse_logit(logit(target_prev) - sum(p_risk[-1]*tmp_sol))
   tmp_calibrated_p <- inverse_logit(logit(tmp_p0) + log(target_OR))
   
-  for(i in 1:(length(past_target_OR)-1)){
-    # print(i)
-    tmp_p_risk <- p_risk[c(1,i+1)]
-    tmp_p_risk <- tmp_p_risk/sum(tmp_p_risk)
-    tmp_p <- tmp_calibrated_p[c(1,i+1)]
-    
-    nn <- 1e10
-    future_prev_table[[i]] <-  rev(metafor::conv.2x2(ori=target_OR[i+1],
-                                                     ni = nn,
-                                                     # prev of exposure
-                                                     n1i = ((1-tmp_p[2])*tmp_p_risk[2] +tmp_p_risk[2] * tmp_p[2])*nn,
-                                                     # prev of asthma
-                                                     n2i=  sum(tmp_p_risk * tmp_p)*nn)/nn)
-  }
+    future_prev_table <- c()
+    future_prev_table <- generate_prev_table(
+        risk_factor_prev=p_risk,
+        past_target_OR=past_target_OR,
+        target_OR=target_OR,
+        calibrated_p=tmp_calibrated_p
+    )
   
   obj_function <- function(y){
     x <- y
