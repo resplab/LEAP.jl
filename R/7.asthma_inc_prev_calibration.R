@@ -5,7 +5,7 @@ library(roptim)
 source(here("R/calibration_helper_function.R"))
 options(dplyr.summarise.inform = FALSE)
 
-chosen_province <- "CA"
+PROVINCE <- "CA"
 MAX_YEAR <- 2065 # 2065 for CA; 2043 for BC
 MIN_YEAR <- 2000
 stabilization_year <- 2025
@@ -36,7 +36,7 @@ asthma_predictor <- function(age, sex, year, type, asthma_inc_model, asthma_prev
 
 
 load_occurrence_data <- function(
-    chosen_province,
+    chosen_province=PROVINCE,
     min_year=MIN_YEAR,
     max_year=MAX_YEAR
 ) {
@@ -86,7 +86,7 @@ load_occurrence_data <- function(
 }
 
 
-load_reassessment_data <- function(chosen_province){
+load_reassessment_data <- function(chosen_province=PROVINCE){
     df_reassessment <- read_csv(here("src/processed_data/master_asthma_reassessment.csv")) %>% 
         filter(province==chosen_province)
 
@@ -687,10 +687,10 @@ inc_beta_solver <- function(
 
 # asthma prev and inc -----------------------------------------------------
 
-df_occurrence_list <- load_occurrence_data(chosen_province)
+df_occurrence_list <- load_occurrence_data()
 df_incidence <- df_occurrence_list$df_incidence
 df_prevalence <- df_occurrence_list$df_prevalence
-df_reassessment <- load_reassessment_data(chosen_province)
+df_reassessment <- load_reassessment_data()
 
 
 # risk factors ------------------------------------------------------------
