@@ -118,7 +118,7 @@ prev_calibrator <- function(
 ) {
 
     if(is.null(beta0)){
-        beta0 <- logit(target_prev)
+        beta0 <- logit(asthma_prev_target)
     }
 
   if(!multiple_risk_factors){
@@ -427,7 +427,11 @@ inc_correction_calculator <- function(target_inc,
     q <- length(no_asthma_p_risk_dist)-1
     target_OR_no_ref <- target_OR[-1]
     # # calibrate the current inc to the target inc
-    tmp_sol <- prev_calibrator(target_inc,target_OR = exp(c(0,x)),p_risk = no_asthma_p_risk_dist)
+    tmp_sol <- prev_calibrator(
+        asthma_prev_target=target_inc,
+        target_OR=exp(c(0,x)),
+        risk_factor_prev=no_asthma_p_risk_dist
+    )
     logit_p0 <- beta0 - sum(tmp_sol*no_asthma_p_risk_dist[-1])
     # logit_p0 <- beta0
     calibrated_inc <- inverse_logit(logit_p0 + c(0,x))
