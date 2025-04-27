@@ -18,6 +18,15 @@ OR_generator <- function(risk_set,params){
 }
 
 
+#' @title obj_function
+#' @description This function calculates the objective function for the optimization process.
+#' @param x A vector of parameters to be optimized.
+#' @param multiple_risk_factors A boolean indicating if there are multiple risk factors.
+#' @param target_OR A vector of odds ratios for the risk factors.
+#' @param p_risk A vector of the prevalence of the risk factors.
+#' @param beta0 The intercept of the logistic regression model.
+#' @return The absolute difference between the calculated and target prevalence.
+#' @details This function is used internally by the prev_calibrator function.
     obj_function <- function(x, multiple_risk_factors, target_OR, p_risk, beta0) {
     # binary
         if(!multiple_risk_factors) {
@@ -34,15 +43,16 @@ OR_generator <- function(risk_set,params){
             }
         } else {
       # number of risk factors
-      num_p <- length(p_risk)
+        n_risk_factors <- length(p_risk)
       # number of levels of risk factors
-      p_length <- lapply(p_risk,length) %>% unlist()
+        p_length <- lapply(p_risk, length) %>% unlist()
       p_length_optim <- p_length - 1 
       
       # break up x
-      indices <- xs <- c()
+        indices <- c()
+        xs <- c()
       index_start <- 1
-      for(i in 1:num_p){
+        for(i in 1:n_risk_factors){
         index_end <- index_start + p_length_optim[[i]] - 1 
         xs[[i]] <- x[index_start:index_end]
                 index_start <- index_end + 1
