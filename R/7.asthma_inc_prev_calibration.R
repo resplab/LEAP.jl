@@ -581,7 +581,7 @@ calibrator <- function(
 
     args <- list(
         target_inc=risk_set$inc[1],
-        past_asthma_prev_target=past_asthma_prev_target,
+        past_target_prev=past_asthma_prev_target,
         past_target_OR=past_risk_set$OR,
         target_OR=risk_set$OR,
         p_risk=past_risk_set$prob,
