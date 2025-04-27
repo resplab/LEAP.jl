@@ -99,6 +99,26 @@ load_reassessment_data <- function(chosen_province=PROVINCE){
 }
 
 
+# fam_history + \beta_age * (age-3) + dose()
+# free parameters are : age
+load_family_history_data <- function(){
+    df_fam_history_or <- list(
+        c(1, OR_ASTHMA_AGE_3),
+        c(1, exp((log(OR_ASTHMA_AGE_3) + log(OR_ASTHMA_AGE_5)) / 2)),
+        c(1, OR_ASTHMA_AGE_5)
+    )
+    df_fam_history_or <- data.frame(
+        age=c(3, 4, 5), do.call(rbind, df_fam_history_or)
+    )
+    colnames(df_fam_history_or)[-1] <- c(0,1)
+    df_fam_history_or <- pivot_longer(
+        df_fam_history_or, cols=-1, names_to="fam_history", values_to="OR_fam"
+    ) %>% 
+        mutate(fam_history=as.numeric(fam_history))
+    return(df_fam_history_or)
+}
+
+
 #' Compute the probability of number of courses of antibiotics during infancy.
 #' 
 #' @param chosen_year The birth year of the infant.
@@ -700,27 +720,12 @@ p_fam_distribution <- data.frame(
     prob_fam=c(1 - PROB_FAM_HIST, PROB_FAM_HIST)
 )
 
+df_family_history_or <- load_family_history_data()
+
 # Abx exposure: 0 1 2 3 4 5+
 # differs by year
 model_abx <- read_rds(here("R/BC_count_model.rds"))
 
-# prev eqn OR
-df_fam_history_or <- list(
-    c(1, OR_ASTHMA_AGE_3),
-    c(1, exp((log(OR_ASTHMA_AGE_3) + log(OR_ASTHMA_AGE_5)) / 2)),
-    c(1, OR_ASTHMA_AGE_5)
-)
-df_fam_history_or <- data.frame(
-    age=c(3, 4, 5), do.call(rbind, df_fam_history_or)
-)
-colnames(df_fam_history_or)[-1] <- c(0,1)
-df_fam_history_or <- pivot_longer(
-    df_fam_history_or, cols=-1, names_to="fam_history", values_to="OR_fam"
-) %>% 
-    mutate(fam_history=as.numeric(fam_history))
-
-# fam_history + \beta_age * (age-3) + dose()
-# free parameters are : age
 
 df_abx_or <- read_csv(here("R/dose_response_log_aOR.csv"))
 colnames(df_abx_or) <- c("age", paste0("OR", c(1:5)))
