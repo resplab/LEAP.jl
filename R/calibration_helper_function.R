@@ -156,7 +156,7 @@ generate_prev_table <- function(
 ) {
     prev_table <- c()
 
-    for(i in 1:(length(past_target_OR) - 1)){
+    for(i in 1:(length(target_OR) - 1)){
         tmp_risk_factor_prev <- risk_factor_prev[c(1, i + 1)]
         tmp_risk_factor_prev <- tmp_risk_factor_prev / sum(tmp_risk_factor_prev)
         tmp_p <- asthma_prev_calibrated[c(1, i + 1)]
