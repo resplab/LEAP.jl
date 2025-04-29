@@ -156,10 +156,15 @@ generate_prev_table <- function(
 ) {
     prev_table <- c()
 
-    for(i in 1:(length(target_OR) - 1)){
-        tmp_risk_factor_prev <- risk_factor_prev[c(1, i + 1)]
-        tmp_risk_factor_prev <- tmp_risk_factor_prev / sum(tmp_risk_factor_prev)
-        tmp_p <- asthma_prev_calibrated[c(1, i + 1)]
+    asthma_prev_ref <- asthma_prev_calibrated[1]
+    risk_factor_prev_ref <- risk_factor_prev[1]
+
+    for(i in 2:(length(target_OR))){
+
+        # risk factor prevalence at level x
+        risk_factor_prev_i <- risk_factor_prev[i] / (risk_factor_prev[i] + risk_factor_prev_ref)
+        # calibrated asthma prevalence
+        asthma_prev <- asthma_prev_calibrated[i]
 
         # return: a b c d
         # a: no exp, no asthma
@@ -180,10 +185,10 @@ generate_prev_table <- function(
         nn <- 1e10
         prev_table[[i]] <- rev(
             metafor::conv.2x2(
-                ori=target_OR[i + 1],
+                ori=target_OR[i],
                 ni=nn,
-                n1i=((1 - tmp_p[2]) * tmp_risk_factor_prev[2] + tmp_risk_factor_prev[2] * tmp_p[2]) * nn, # prev of exposure
-                n2i=sum(tmp_risk_factor_prev * tmp_p) * nn # prev of asthma
+                n1i=((1 - asthma_prev) * risk_factor_prev_i + risk_factor_prev_i * asthma_prev) * nn, # prev of exposure
+                n2i=sum(c(1 - risk_factor_prev_i, risk_factor_prev_i) * c(asthma_prev_ref, asthma_prev)) * nn # prev of asthma
             ) / nn
         )
     }
