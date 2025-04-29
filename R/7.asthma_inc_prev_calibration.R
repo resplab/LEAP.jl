@@ -341,7 +341,6 @@ calibrator <- function(
     df_prevalence,
     df_reassessment,
     inc_beta_params=c(0.3766256, -0.225),
-    inc_function=inc_loss_function,
     min_year=MIN_YEAR
 ){
   
@@ -506,7 +505,7 @@ calibrator <- function(
         }
     }
 
-    args <- list(
+    inc_sol <- inc_correction_calculator(
         asthma_inc_target=risk_set$inc[1],
         asthma_prev_target_past=past_asthma_prev_target,
         past_target_OR=past_risk_set$OR,
