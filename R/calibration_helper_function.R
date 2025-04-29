@@ -152,7 +152,7 @@ prev_calibrator <- function(
 
 
 generate_prev_table <- function(
-    risk_factor_prev, past_target_OR, target_OR, calibrated_p
+    risk_factor_prev, target_OR, calibrated_p
 ) {
     prev_table <- c()
 
@@ -309,29 +309,8 @@ inc_correction_calculator <- function(
     # for each OR, we need to obtain the contingency table
     prev_table <- generate_prev_table(
         risk_factor_prev=risk_factor_prev,
-        past_target_OR=past_target_OR,
         target_OR=past_target_OR,
         calibrated_p=calibrated_p
-    )
-
-    target_prev <- (
-        asthma_prev_target_past * ra + 
-        asthma_inc_target * (1 - asthma_prev_target_past) * Dx +
-        (1 - asthma_inc_target) * (1 - asthma_prev_target_past) * misDx
-    )
-    tmp_sol <- prev_calibrator(
-        asthma_prev_target=target_prev,
-        target_OR=target_OR,
-        risk_factor_prev=risk_factor_prev
-    )
-    tmp_p0 <- inverse_logit(logit(target_prev) - sum(risk_factor_prev[-1] * tmp_sol))
-    tmp_calibrated_p <- inverse_logit(logit(tmp_p0) + log(target_OR))
-  
-    future_prev_table <- generate_prev_table(
-        risk_factor_prev=risk_factor_prev,
-        past_target_OR=past_target_OR,
-        target_OR=target_OR,
-        calibrated_p=tmp_calibrated_p
     )
     
     fnc_value <- obj_function(
