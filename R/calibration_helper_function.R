@@ -152,14 +152,14 @@ prev_calibrator <- function(
 
 
 generate_prev_table <- function(
-    risk_factor_prev, target_OR, calibrated_p
+    risk_factor_prev, target_OR, asthma_prev_calibrated
 ) {
     prev_table <- c()
 
     for(i in 1:(length(past_target_OR) - 1)){
         tmp_risk_factor_prev <- risk_factor_prev[c(1, i + 1)]
         tmp_risk_factor_prev <- tmp_risk_factor_prev / sum(tmp_risk_factor_prev)
-        tmp_p <- calibrated_p[c(1, i + 1)]
+        tmp_p <- asthma_prev_calibrated[c(1, i + 1)]
 
         # return: a b c d
         # a: no exp, no asthma
@@ -296,13 +296,13 @@ inc_correction_calculator <- function(
         risk_factor_prev=risk_factor_prev
     )
 
-    calibrated_p <- inverse_logit(
+    asthma_prev_calibrated <- inverse_logit(
         logit(asthma_prev_target_past) +
         log(past_target_OR) - 
         sum(risk_factor_prev[-1] * asthma_prev_risk_factor_params) 
     )
     # distribution of the risk factors for the population without asthma
-    no_asthma_risk_factor_prev_dist <- (1 - calibrated_p) * risk_factor_prev
+    no_asthma_risk_factor_prev_dist <- (1 - asthma_prev_calibrated) * risk_factor_prev
     # normalize
     no_asthma_risk_factor_prev_dist <- no_asthma_risk_factor_prev_dist / sum(no_asthma_risk_factor_prev_dist)
     
@@ -310,7 +310,7 @@ inc_correction_calculator <- function(
     prev_table <- generate_prev_table(
         risk_factor_prev=risk_factor_prev,
         target_OR=past_target_OR,
-        calibrated_p=calibrated_p
+        asthma_prev_calibrated=asthma_prev_calibrated
     )
     
     fnc_value <- obj_function(
