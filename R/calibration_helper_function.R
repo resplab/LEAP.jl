@@ -264,7 +264,10 @@ obj_function <- function(
     }
     
     return(
-        c(result %>% unlist() %>% mean(), -inc_correction_term)
+        list(
+            mean_diff_log_OR=result %>% unlist() %>% mean(),
+            asthma_inc_correction=-inc_correction_term
+        )
     )
 }
 
@@ -336,34 +339,4 @@ inc_correction_calculator <- function(
         prev_table, ra, misDx, Dx
     )
     return(fnc_value)
-}
-
-
-inc_loss_function <- function(
-    asthma_inc_target,
-    asthma_prev_target_past,
-                              past_target_OR,
-                              target_OR,
-    risk_factor_prev,
-                              ra=1,
-                              misDx=0,
-                              Dx=1,
-                              risk_set,
-    log_inc_OR
-){
-  
-    fnc_value <- inc_correction_calculator(
-        asthma_inc_target=asthma_inc_target,
-        asthma_prev_target_past=asthma_prev_target_past,
-        past_target_OR=past_target_OR,
-        target_OR=target_OR,
-        risk_factor_prev=risk_factor_prev,
-        ra=ra,
-        misDx=misDx,
-        Dx=Dx,
-        risk_set=risk_set,
-        log_inc_OR=log_inc_OR
-    )
-    return(fnc_value[1])
-  
 }

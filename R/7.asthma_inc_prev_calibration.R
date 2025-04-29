@@ -392,18 +392,17 @@ calibrator <- function(
         
     if(chosen_year == 2000){
             return(list(
-                risk_set=risk_set,
-                asthma_prev_risk_factor_params=asthma_prev_risk_factor_params,
-                inc_sol=c()
+            prev_correction=-sum(risk_set$prob[-1] * asthma_prev_risk_factor_params),
+            inc_correction=NULL,
+            mean_diff_log_OR=NULL
             ))
         }
     
     if (chosen_age == 3) {
-            risk_set$calibrated_inc <- risk_set$calibrated_prev
             return(list(
-                risk_set=risk_set,
-                asthma_prev_risk_factor_params=asthma_prev_risk_factor_params,
-                inc_sol=c()
+            prev_correction=-sum(risk_set$prob[-1] * asthma_prev_risk_factor_params),
+            inc_correction=NULL,
+            mean_diff_log_OR=NULL
             ))
         } else { # aged 4 or more
         
@@ -519,13 +518,10 @@ calibrator <- function(
         risk_set=inc_risk_set,
         log_inc_OR=log(inc_risk_set$OR)[-1]
     )
-
-    inc_sol <- do.call(inc_function, args)
-  
     return(list(
-        risk_set=risk_set,
-        asthma_prev_risk_factor_params=asthma_prev_risk_factor_params,
-        inc_sol=inc_sol
+        prev_correction=-sum(risk_set$prob[-1] * asthma_prev_risk_factor_params),
+        inc_correction=inc_sol$asthma_inc_correction,
+        mean_diff_log_OR=inc_sol$mean_diff_log_OR
     ))
 }
 
@@ -541,8 +537,7 @@ calculate_correction <- function(
     df_incidence,
     df_prevalence,
     df_reassessment,
-    inc_beta_params=optimized_inc_beta,
-    inc_function=inc_correction_calculator
+    inc_beta_params=optimized_inc_beta
 ){
 
     df_results <- data.frame(
@@ -564,19 +559,16 @@ calculate_correction <- function(
         df_incidence,
         df_prevalence,
         df_reassessment,
-        inc_beta_params=inc_beta_params,
-        inc_function=inc_function
+        inc_beta_params=inc_beta_params
     )
-    risk_set <- results$risk_set
-    asthma_prev_risk_factor_params <- results$asthma_prev_risk_factor_params
-    inc_sol <- results$inc_sol
-    df_results$prev_correction <- -sum(risk_set$prob[-1]*asthma_prev_risk_factor_params)
+
+    df_results$prev_correction <- results$prev_correction
     if (chosen_year > 2000) {
     if(chosen_age==3) {
-            df_results$inc_correction <- -sum(risk_set$prob[-1]*asthma_prev_risk_factor_params)
+            df_results$inc_correction <- results$prev_correction
     } else { # aged 4 or more
-        df_results$obj_value <- inc_sol[1]
-        df_results$inc_correction <- inc_sol[2]
+            df_results$obj_value <- results$mean_diff_log_OR
+            df_results$inc_correction <- results$inc_correction
     }
     }
     return(df_results)
@@ -606,7 +598,7 @@ inc_beta_solver <- function(
             calibrator(
                 x[1], x[2], x[3], model_abx, p_fam_distribution, df_fam_history_or,
                 df_abx_or, df_incidence, df_prevalence, df_reassessment, inc_beta_params
-            )$inc_sol
+            )$mean_diff_log_OR
         }) %>% mean()
     }
   
