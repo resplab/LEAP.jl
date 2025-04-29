@@ -294,7 +294,6 @@ inc_correction_calculator <- function(
     prop_no_asthma <- (1 - asthma_prev_target_past) # proportion without asthma
     
     # reconstruct contingency table for each OR
-    ref_risk_factor_prev <- risk_factor_prev[1]
     asthma_prev_risk_factor_params <- prev_calibrator(
         asthma_prev_target=asthma_prev_target_past,
         target_OR=past_target_OR,
