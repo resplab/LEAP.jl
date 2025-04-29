@@ -507,11 +507,11 @@ calibrator <- function(
     }
 
     args <- list(
-        target_inc=risk_set$inc[1],
-        past_target_prev=past_asthma_prev_target,
+        asthma_inc_target=risk_set$inc[1],
+        asthma_prev_target_past=past_asthma_prev_target,
         past_target_OR=past_risk_set$OR,
         target_OR=risk_set$OR,
-        p_risk=past_risk_set$prob,
+        risk_factor_prev=past_risk_set$prob,
         ra=target_RA,
         misDx=0, # target misdiagnosis
         Dx=1, # target diagnosis
