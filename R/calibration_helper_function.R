@@ -285,11 +285,11 @@ inc_correction_calculator <- function(
     ra=1,
     misDx=0,
     Dx=1,
-    risk_set,
-    log_inc_OR
+    risk_set
 ){
   
     beta0 <- logit(asthma_inc_target)
+    log_inc_OR <- log(risk_set$OR)
     prop_asthma <- asthma_prev_target_past # proportion with asthma
     prop_no_asthma <- (1 - asthma_prev_target_past) # proportion without asthma
     
