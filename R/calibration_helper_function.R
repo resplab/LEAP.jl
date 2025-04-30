@@ -218,7 +218,7 @@ compute_contingency_table <- function(
 
   
 obj_function <- function(
-    y,
+    log_inc_OR,
     no_asthma_risk_factor_prev_dist,
     target_OR,
     asthma_inc_target,
@@ -228,70 +228,82 @@ obj_function <- function(
                            misDx=0,
     Dx=1
     ) {
-        x <- y
-    target_OR_no_ref <- target_OR[-1]
-        # calibrate the current inc to the target inc
+
+    # calibrate the current incidence to the target incidence
     asthma_prev_risk_factor_params <- prev_calibrator(
             asthma_prev_target=asthma_inc_target,
-            target_OR=exp(c(0, x)),
+        target_OR=exp(log_inc_OR),
             risk_factor_prev=no_asthma_risk_factor_prev_dist
         )
 
-    inc_correction_term <- sum(
+    asthma_inc_correction <- sum(
         asthma_prev_risk_factor_params * no_asthma_risk_factor_prev_dist[-1]
     )
-    calibrated_inc <- inverse_logit(
-        beta0 +
-        c(0, x) - 
-        inc_correction_term
-    )
+
+    asthma_inc_calibrated <- inverse_logit(beta0 + log_inc_OR - asthma_inc_correction)
+    asthma_inc_calibrated_ref <- asthma_inc_calibrated[1]
     
-    ref_cal_inc <- calibrated_inc[1]
-    calibrated_inc_no_ref <- calibrated_inc[-1]
+    total_diff_log_OR <- 0
     
-    result <- 0
-    
-        for(i in 1:(length(target_OR) - 1)){
-      cal_inc <- calibrated_inc_no_ref[i]
-      target_x <- x[i]
+    for(i in 2:(length(target_OR))){
+        asthma_inc <- asthma_inc_calibrated[i]
       
-      ref_a0 <- prev_table[[i]][1]
-      ref_b0 <- prev_table[[i]][2]
-      ref_c0 <- prev_table[[i]][3]
-      ref_d0 <- prev_table[[i]][4]
+        ref_a0 <- prev_table[[i]][1] # proportion of population labelled as no asthma at reference level
+        ref_b0 <- prev_table[[i]][2] # proportion of population labelled as asthma at reference level
+        ref_c0 <- prev_table[[i]][3] # proportion of population labelled as no asthma at level x
+        ref_d0 <- prev_table[[i]][4] # proportion of population labelled as asthma at level x
       
       # contingency table of the population with asthma from a previous year
       # if ra=1, no reversibility
-            a0 <- ref_b0 * (1 - ra)
-            c0 <- ref_d0 * (1 - ra)
-            b0 <- ref_b0 * ra
-            d0 <- ref_d0 * ra
+        a0 <- ref_b0 * (1 - ra) # proportion of population who lose asthma diagnosis at reference level
+        c0 <- ref_d0 * (1 - ra) # proportion of population who lose asthma diagnosis at level x
+        b0 <- ref_b0 * ra # proportion of population who keep asthma diagnosis at reference level
+        d0 <- ref_d0 * ra # proportion of population who keep asthma diagnosis at level x
       
       # contingency table of the exposure level 
-      # no exposure & no asthma: did not get asthma and did not get misdx + got asthma but misDx
-            a1 <- (1 - ref_cal_inc) * ref_a0 * (1-misDx) + ref_cal_inc * ref_a0 * (1 - Dx)
-      # no exposure & yes asthma: get asthma and correctly Dx + did not get asthma but misDx
-            b1 <- (1 - ref_cal_inc) * ref_a0 * misDx + ref_cal_inc * ref_a0 * Dx
-      # yes exposure & no asthma: got asthma but incorrectly Dx + did not get asthma and correctly Dx
-            c1 <- (1 - cal_inc) * ref_c0 * (1 - misDx) + cal_inc * ref_c0 * (1 - Dx)
+        # no antibiotic exposure & no asthma at reference level: 
+        # t0 = no asthma diagnosis, t1 = no asthma diagnosis * correct Dx = no asthma + 
+        # t0 = no asthma diagnosis, t1 = asthma diagnosis * misDx = no asthma
+        a1 <- ref_a0 * ((1 - asthma_inc_calibrated_ref) * (1 - misDx) + asthma_inc_calibrated_ref * (1 - Dx))
+        # no antibiotic exposure & yes asthma: get asthma and correctly Dx + did not get asthma but misDx
+        # t0 = no asthma diagnosis, t1 = no asthma diagnosis * misdiagnosis = has asthma + 
+        # t0 = no asthma diagnosis, t1 = asthma diagnosis * correct Dx = has asthma
+        b1 <- ref_a0 * ((1 - asthma_inc_calibrated_ref) *  misDx + asthma_inc_calibrated_ref * Dx)
+        # yes antibiotic exposure & no asthma: did not get asthma and correctly Dx + got asthma but incorrectly Dx
+        # t0 = no asthma diagnosis, t1 = no asthma diagnosis * correct Dx = no asthma +
+        # t0 = no asthma diagnosis, t1 = asthma diagnosis * misDx = no asthma
+        c1 <- ref_c0 * ((1 - asthma_inc) * (1 - misDx) + asthma_inc * (1 - Dx))
       # yes exposure & yes asthma: got asthma and correctly Dx
-            d1 <- (1 - cal_inc) * ref_c0 * misDx + cal_inc * ref_c0 * Dx
+        # t0 = no asthma diagnosis, t1 = no asthma diagnosis * misDx = has asthma +
+        # t0 = no asthma diagnosis, t1 = asthma diagnosis * correct Dx = has asthma
+        d1 <- ref_c0 * ((1 - asthma_inc) * misDx + asthma_inc * Dx)
       
       # two targets
             # objective: asthma prev OR
+        # (ref) proportion of population who either lose asthma diagnosis from t0 - t1 or do not get new asthma diagnosis at t1
       a <- a0 + a1
+        # (ref) proportion of population who either keep asthma diagnosis from t0 - t1 or get new asthma diagnosis at t1
       b <- b0 + b1
+        # (level x) proportion of population who either lose asthma diagnosis from t0 - t1 or do not get new asthma diagnosis at t1
       c <- c0 + c1
+        # (level x) proportion of population who either keep asthma diagnosis from t0 - t1 or get new asthma diagnosis at t1
       d <- d0 + d1
-            tmp_OR <- a * d / (b * c)
-      result <- result +
-        abs(log(target_OR_no_ref[i]) - (log(d) + log(a) - log(b) - log(c)))
+
+        # odds ratio = (a*d)/(b*c)
+        print(paste0("a: ", a))
+        print(paste0("b: ", b))
+        print(paste0("c: ", c))
+        print(paste0("d: ", d))
+        print(target_OR[i])
+        diff_log_OR <- abs(log(target_OR[i]) - (log(d) + log(a) - log(b) - log(c)))
+        total_diff_log_OR <- total_diff_log_OR + diff_log_OR
+        print(total_diff_log_OR)
     }
     
     return(
         list(
-            mean_diff_log_OR=result %>% unlist() %>% mean(),
-            asthma_inc_correction=-inc_correction_term
+            mean_diff_log_OR=total_diff_log_OR %>% unlist() %>% mean(),
+            asthma_inc_correction=-asthma_inc_correction
         )
     )
 }
