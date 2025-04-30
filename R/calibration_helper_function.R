@@ -310,6 +310,22 @@ compute_odds_ratio_difference <- function(
     return(total_diff_log_OR %>% unlist() %>% mean())
 }
 
+
+#' @title inc_correction_calculator
+#' @description This function calculates the correction for asthma incidence based on the target
+#'   prevalence and the odds ratios of risk factors.
+#' @param asthma_inc_target The target incidence of asthma.
+#' @param asthma_prev_target_past The target prevalence of asthma in the previous year.
+#' @param past_target_OR A vector of odds ratios for the risk factors in the previous year.
+#' @param target_OR A vector of odds ratios for the risk factors.
+#' @param risk_factor_prev_past A vector of the prevalence of the risk factors in the previous year.
+#' @param risk_set A data frame containing the risk factors and their corresponding odds ratios.
+#' @param ra_target A value between 0 and 1 indicating the target reassessment.
+#' @param misDx A numeric value representing the misdiagnosis rate.
+#' @param Dx A numeric value representing the diagnosis rate.
+#' @return A list containing two entries:
+#' - mean_diff_log_OR: mean difference between the target and calibrated log odds ratios.
+#' - asthma_inc_correction: the calibrated asthma incidence correction.
 inc_correction_calculator <- function(
     asthma_inc_target,
     asthma_prev_target_past,
