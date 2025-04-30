@@ -383,55 +383,55 @@ calibrator <- function(
         select(prev) %>% 
         unlist()
 
-        asthma_prev_risk_factor_params <- prev_calibrator(
-            asthma_prev_target=asthma_prev_target,
-            target_OR=risk_set$OR,
-            risk_factor_prev=risk_set$prob
-        )
+    asthma_prev_risk_factor_params <- prev_calibrator(
+        asthma_prev_target=asthma_prev_target,
+        target_OR=risk_set$OR,
+        risk_factor_prev=risk_set$prob
+    )
 
-        risk_set$prev <- asthma_prev_target
-        risk_set$calibrated_prev <- inverse_logit(
-            logit(asthma_prev_target) + 
-            log(risk_set$OR) - 
-            sum(risk_set$prob[-1] * asthma_prev_risk_factor_params) 
-        )
-        
+    risk_set$prev <- asthma_prev_target
+    risk_set$calibrated_prev <- inverse_logit(
+        logit(asthma_prev_target) + 
+        log(risk_set$OR) - 
+        sum(risk_set$prob[-1] * asthma_prev_risk_factor_params) 
+    )
+
     if(chosen_year == 2000){
-            return(list(
+        return(list(
             prev_correction=-sum(risk_set$prob[-1] * asthma_prev_risk_factor_params),
             inc_correction=NULL,
             mean_diff_log_OR=NULL
-            ))
-        }
-    
+        ))
+    }
+
     if (chosen_age == 3) {
-            return(list(
+        return(list(
             prev_correction=-sum(risk_set$prob[-1] * asthma_prev_risk_factor_params),
             inc_correction=NULL,
             mean_diff_log_OR=NULL
-            ))
-        } else { # aged 4 or more
-        
-            risk_set$inc <- df_incidence %>% 
-                filter(
-                    age==chosen_age & 
-                    year==chosen_year &
-                    sex==chosen_sex
-                ) %>% 
-                select(inc) %>% 
-                unlist()
-      
+        ))
+    } else { # aged 4 or more
+
+        risk_set$inc <- df_incidence %>% 
+        filter(
+            age==chosen_age & 
+            year==chosen_year &
+            sex==chosen_sex
+        ) %>% 
+        select(inc) %>% 
+        unlist()
+
         # target marginal asthma prevalence for the previous year and age
-            past_asthma_prev_target <- df_prevalence %>% 
-                filter(
-                    age==chosen_age - 1 & 
-                    year==max(min_year, chosen_year - 1) &
-                    sex==chosen_sex
-                ) %>% 
-                select(prev) %>% 
-                unlist()
-        
-            past_risk_set <- risk_factor_generator(
+        past_asthma_prev_target <- df_prevalence %>% 
+            filter(
+                age==chosen_age - 1 & 
+                year==max(min_year, chosen_year - 1) &
+                sex==chosen_sex
+            ) %>% 
+            select(prev) %>% 
+            unlist()
+
+        past_risk_set <- risk_factor_generator(
                 max(min_year, chosen_year - 1),
                 chosen_sex,
                 chosen_age - 1,
@@ -440,72 +440,72 @@ calibrator <- function(
                 df_fam_history_or,
                 df_abx_or
             )
-        
+
         ra_target <- df_reassessment %>% 
-                filter(
-                    age==chosen_age & 
-                    year==chosen_year &
-                    sex==chosen_sex
-                ) %>% 
-                select(ra) %>% 
-                unlist()
+            filter(
+                age==chosen_age & 
+                year==chosen_year &
+                sex==chosen_sex
+            ) %>% 
+            select(ra) %>% 
+            unlist()
 
         if(chosen_age > 8){
-                past_risk_set <- past_risk_set %>% 
-                    group_by(fam_history) %>% 
-                    summarise(
-                        prob=sum(prob),
-                        OR=mean(OR)
-                    )
+            past_risk_set <- past_risk_set %>% 
+                group_by(fam_history) %>% 
+                summarise(
+                    prob=sum(prob),
+                    OR=mean(OR)
+                )
         } else if (chosen_age == 8) {
 
-                ttt_asthma_prev_risk_factor_params <- prev_calibrator(
-                    asthma_prev_target=past_asthma_prev_target,
-                    target_OR=past_risk_set$OR,
-                    risk_factor_prev=past_risk_set$prob
-                )
+            ttt_asthma_prev_risk_factor_params <- prev_calibrator(
+                asthma_prev_target=past_asthma_prev_target,
+                target_OR=past_risk_set$OR,
+                risk_factor_prev=past_risk_set$prob
+            )
 
-                past_risk_set$calibrated_prev <- inverse_logit(
-                    logit(past_asthma_prev_target) + 
-                    log(past_risk_set$OR) -
-                    sum(past_risk_set$prob[-1] * ttt_asthma_prev_risk_factor_params)
+            past_risk_set$calibrated_prev <- inverse_logit(
+                logit(past_asthma_prev_target) + 
+                log(past_risk_set$OR) -
+                sum(past_risk_set$prob[-1] * ttt_asthma_prev_risk_factor_params)
+            )
+            tmp_look <- past_risk_set %>% 
+                mutate(
+                    yes_asthma=calibrated_prev * prob,
+                    no_asthma=(1 - calibrated_prev) * prob
                 )
-                tmp_look <- past_risk_set %>% 
-                    mutate(
-                        yes_asthma=calibrated_prev * prob,
-                        no_asthma=(1 - calibrated_prev) * prob
-                    )
-                past_tmp_OR <- (
-                    sum(tmp_look$no_asthma[tmp_look$fam_history==0]) * 
-                    sum(tmp_look$yes_asthma[tmp_look$fam_history==1]) /
-                    (sum(tmp_look$yes_asthma[tmp_look$fam_history==0]) * 
-                    sum(tmp_look$no_asthma[tmp_look$fam_history==1]))
-                )
-                past_risk_set <- past_risk_set %>% 
-                    group_by(fam_history) %>% 
-                    summarise(prob=sum(prob))
-                past_risk_set$OR <- c(1, past_tmp_OR)
-            }
-            
+            past_tmp_OR <- (
+                sum(tmp_look$no_asthma[tmp_look$fam_history==0]) * 
+                sum(tmp_look$yes_asthma[tmp_look$fam_history==1]) /
+                (sum(tmp_look$yes_asthma[tmp_look$fam_history==0]) * 
+                sum(tmp_look$no_asthma[tmp_look$fam_history==1]))
+            )
+            past_risk_set <- past_risk_set %>% 
+                group_by(fam_history) %>% 
+                summarise(prob=sum(prob))
+            past_risk_set$OR <- c(1, past_tmp_OR)
+        }
+
         inc_risk_set <- risk_factor_generator(
             chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
             df_fam_history_or, df_abx_or
-                ) %>% 
+        ) %>% 
             select(fam_history, abx_exposure, year, sex, age, prob)
 
         if (chosen_age > 7) {
             inc_risk_set <- inc_risk_set %>% filter(abx_exposure==0)
         }
-      
-            inc_risk_set$OR <- inc_risk_set %>% 
-                apply(., 1, FUN=function(x){
-                    OR_risk_factor_calculator(
-                        fam_hist=x[1],
-                        age=x[5],
-                        dose=x[2],
-                        params=inc_beta_params
-                    )
-                })
+
+        inc_risk_set$OR <- inc_risk_set %>% 
+            apply(., 1, FUN=function(x){
+                OR_risk_factor_calculator(
+                    fam_hist=x[1],
+                    age=x[5],
+                    dose=x[2],
+                    params=inc_beta_params
+                )
+            })
 
         if (chosen_age <= 7) {
             inc_risk_set$prob <- inc_risk_set$prob / sum(inc_risk_set$prob)
@@ -569,12 +569,12 @@ calculate_correction <- function(
 
     df_results$prev_correction <- results$prev_correction
     if (chosen_year > 2000) {
-    if(chosen_age==3) {
+        if(chosen_age==3) {
             df_results$inc_correction <- results$prev_correction
-    } else { # aged 4 or more
+        } else { # aged 4 or more
             df_results$obj_value <- results$mean_diff_log_OR
             df_results$inc_correction <- results$inc_correction
-    }
+        }
     }
     return(df_results)
 }
@@ -651,20 +651,20 @@ generate_occurrence_calibration_data <- function(
         min_year=min_year,
         max_year=max_year
     )
-df_incidence <- df_occurrence_list$df_incidence
-df_prevalence <- df_occurrence_list$df_prevalence
-
+    df_incidence <- df_occurrence_list$df_incidence
+    df_prevalence <- df_occurrence_list$df_prevalence
+    
     df_reassessment <- load_reassessment_data(chosen_province=province)
 
-p_fam_distribution <- data.frame(
-    fam_history=c(0, 1),
-    prob_fam=c(1 - PROB_FAM_HIST, PROB_FAM_HIST)
-)
+    p_fam_distribution <- data.frame(
+        fam_history=c(0, 1),
+        prob_fam=c(1 - PROB_FAM_HIST, PROB_FAM_HIST)
+    )
 
     df_fam_history_or <- load_family_history_data()
-df_abx_or <- load_abx_exposure_data()
+    df_abx_or <- load_abx_exposure_data()
 
-model_abx <- read_rds(here("R/BC_count_model.rds"))
+    model_abx <- read_rds(here("R/BC_count_model.rds"))
 
     optimized_inc_beta <- load_optimized_beta_params(
         stabilization_year=stabilization_year, baseline_year=baseline_year, max_age=max_age
@@ -672,7 +672,7 @@ model_abx <- read_rds(here("R/BC_count_model.rds"))
 
     years <- (baseline_year - 1):(stabilization_year + 1)
     ages <- 3:max_age
-sexes <- 0:1
+    sexes <- 0:1
     df_correction <- expand.grid(year=years, sex=sexes, age=ages) %>% as.data.frame()
 
     df_correction <- apply(df_correction, 1, FUN=function(x) {
@@ -683,28 +683,28 @@ sexes <- 0:1
             df_incidence=df_incidence,
             df_prevalence=df_prevalence,
             df_reassessment=df_reassessment,
-    p_fam_distribution=p_fam_distribution,
-    df_fam_history_or=df_fam_history_or,
-    df_abx_or=df_abx_or,
+            p_fam_distribution=p_fam_distribution,
+            df_fam_history_or=df_fam_history_or,
+            df_abx_or=df_abx_or,
             model_abx=model_abx,
             inc_beta_params=optimized_inc_beta
-)
+        )
     }) %>% 
         do.call(rbind, .)
 
     df_correction_prevalence <- df_correction %>% 
-    select(year, sex, age, prev_correction) %>% 
-    rename(correction=prev_correction) %>% 
-    mutate(type='prev')
+        select(year, sex, age, prev_correction) %>% 
+        rename(correction=prev_correction) %>% 
+        mutate(type='prev')
 
     df_correction_incidence <- df_correction %>% 
-    select(year, sex, age, inc_correction) %>% 
-    rename(correction=inc_correction) %>% 
-    mutate(type='inc')
+        select(year, sex, age, inc_correction) %>% 
+        rename(correction=inc_correction) %>% 
+        mutate(type='inc')
 
     df_correction <- rbind(df_correction_prevalence, df_correction_incidence)
     df_correction <- df_correction %>% 
-  mutate(correction=ifelse(is.na(correction), 0, correction))
+        mutate(correction=ifelse(is.na(correction), 0, correction))
 
     write_csv(df_correction, here("src/processed_data/master_asthma_occurrence_correction.csv"))
 }
