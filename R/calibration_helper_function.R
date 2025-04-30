@@ -2,17 +2,20 @@ library(tidyverse)
 library(epitools)
 library(mgcv)
 
+
 logit <- function(p){
-  log(p/(1-p))
+    log(p / (1 - p))
 }
+
 
 inverse_logit <-function(x){
-  exp(x)/(1+exp(x))
+    exp(x) / (1 + exp(x))
 }
 
-OR_generator <- function(risk_set,params){
-  risk_set$OR <- apply(risk_set,1,FUN = function(x){
-    exp(sum(x*params))
+
+OR_generator <- function(risk_set, params){
+    risk_set$OR <- apply(risk_set, 1, FUN = function(x){
+        exp(sum(x * params))
   })
   return(risk_set)
 }
@@ -145,10 +148,6 @@ prev_calibrator <- function(
     ) 
 }
 
-
-# return 1) correction term for prev
-#        2) correction term for inc
-#        3) OR for inc
 
 
 #' @title compute_contingency_table
