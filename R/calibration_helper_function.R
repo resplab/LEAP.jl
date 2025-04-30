@@ -24,7 +24,7 @@ OR_generator <- function(risk_set, params){
 #' @title compute_asthma_prev_risk_factors
 #' @description This function calculates the asthma prevalence based on the risk factors and the
 #' parameters provided by x.
-#' @param x A vector of parameters to be optimized.
+#' @param asthma_prev_risk_factor_params A vector of parameters to be optimized.
 #' @param multiple_risk_factors A boolean indicating if there are multiple risk factors.
 #' @param target_OR A vector of odds ratios between the risk factors and asthma.
 #' @param risk_factor_prev A vector of the prevalence of the risk factor levels.
@@ -32,25 +32,29 @@ OR_generator <- function(risk_set, params){
 #' @return The calibrated asthma prevalence.
 #' @details This function is used internally by the prev_calibrator function.
 compute_asthma_prev_risk_factors <- function(
-    x, multiple_risk_factors, target_OR, risk_factor_prev, beta0
+    asthma_prev_risk_factor_params, multiple_risk_factors, target_OR, risk_factor_prev, beta0
 ) {
     # binary
         if(!multiple_risk_factors) {
             if(length(target_OR) == 1) {
-            p0 <- inverse_logit(beta0 - risk_factor_prev * x)
-            asthma_prev_x <- inverse_logit(logit(p0) + log(target_OR))
+            asthma_prev_x <- inverse_logit(
+                beta0 +
+                log(c(1.0, target_OR)) -
+                risk_factor_prev * asthma_prev_risk_factor_params
+            )
             return(
-                sum(asthma_prev_x * risk_factor_prev) + 
-                (1 - risk_factor_prev) * p0
+                sum(asthma_prev_x * c(1 - risk_factor_prev, risk_factor_prev))
             )
             } else {
             # asthma_prev_x: asthma prevalence at risk factor level x
-            asthma_prev_x <- inverse_logit(beta0 + log(target_OR) - sum(risk_factor_prev[-1] * x))
+            asthma_prev_x <- inverse_logit(
+                beta0 + 
+                log(target_OR) - 
+                sum(risk_factor_prev[-1] * asthma_prev_risk_factor_params)
+            )
             return(sum(asthma_prev_x * risk_factor_prev))
             }
         } else {
-      # number of risk factors
-        n_risk_factors <- length(risk_factor_prev)
       # number of levels of risk factors
         p_length <- lapply(risk_factor_prev, length) %>% unlist()
       p_length_optim <- p_length - 1 
@@ -59,24 +63,28 @@ compute_asthma_prev_risk_factors <- function(
         indices <- c()
         xs <- c()
       index_start <- 1
-        for(i in 1:n_risk_factors){
+        for(i in 1:length(risk_factor_prev)){
         index_end <- index_start + p_length_optim[[i]] - 1 
-        xs[[i]] <- x[index_start:index_end]
+            xs[[i]] <- asthma_prev_risk_factor_params[index_start:index_end]
                 index_start <- index_end + 1
       } 
       
             penalty <- mapply(
-            function(tmp_risk_factor_prev, tmp_x){
-                sum(tmp_risk_factor_prev[-1] * tmp_x)
+            function(tmp_risk_factor_prev, x){
+                sum(tmp_risk_factor_prev[-1] * x)
                 },
             risk_factor_prev,
                 xs,
                 SIMPLIFY=FALSE
             ) %>% unlist()
       
-        asthma_prev_x_unlisted <- inverse_logit(beta0 - sum(penalty) + log(unlist(target_OR)))
-        risk_factor_prev_unlisted <- unlist(risk_factor_prev)
-        return(sum(asthma_prev_x_unlisted * risk_factor_prev_unlisted))
+        asthma_prev_x <- inverse_logit(
+            beta0 + 
+            log(unlist(target_OR)) - 
+            sum(penalty)
+        )
+
+        return(sum(asthma_prev_x * unlist(risk_factor_prev)))
     }
 }
 
@@ -91,11 +99,16 @@ compute_asthma_prev_risk_factors <- function(
 #' @return The absolute difference between the calculated and target prevalence.
 #' @details This function is used internally by the prev_calibrator function.
 compute_asthma_prevalence_difference <- function(
-    x, multiple_risk_factors, target_OR, risk_factor_prev, beta0, asthma_prev_target
+    asthma_prev_risk_factor_params,
+    multiple_risk_factors,
+    target_OR,
+    risk_factor_prev,
+    beta0,
+    asthma_prev_target
 ) {
     
     asthma_prev_calibrated <- compute_asthma_prev_risk_factors(
-        x, multiple_risk_factors, target_OR, risk_factor_prev, beta0
+        asthma_prev_risk_factor_params, multiple_risk_factors, target_OR, risk_factor_prev, beta0
     )
     return(abs(asthma_prev_calibrated - asthma_prev_target))
     }
