@@ -17,6 +17,12 @@ MIN_ASTHMA_AGE <- 3
 OR_ASTHMA_AGE_3 <- 1.13
 # odds ratio between asthma prevalence at age 5 and family history (CHILD Study)
 OR_ASTHMA_AGE_5 <- 2.4
+# beta parameter for the antibiotic dose term in the odds ratio equation for antibiotic courses
+BETA_ABX_DOSE <- 0.053
+# beta parameter for the age term in the odds ratio equation for antibiotic courses
+BETA_ABX_AGE <- -0.225
+# beta parameter for the constant term in the odds ratio equation for antibiotic courses
+BETA_ABX_0 <- 1.711 + 0.115
 INC_BETA_PARAMS <- c((log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2, -0.225)
 # the probability that one or more parents have asthma (CHILD Study)
 PROB_FAM_HIST <- 0.2927242
@@ -206,7 +212,7 @@ OR_risk_factor_calculator <- function(
     dose,
     params=list(
         c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_3) + log(OR_ASTHMA_AGE_5)) / 2 - log(OR_ASTHMA_AGE_3)),
-        c(1.711 + 0.115, -0.225, 0.053)
+        c(BETA_ABX_0, BETA_ABX_AGE, BETA_ABX_DOSE)
     )
 ){
     if (age < MIN_ASTHMA_AGE) {
