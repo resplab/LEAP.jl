@@ -512,10 +512,10 @@ calibrator <- function(
         past_target_OR=past_risk_set$OR,
         target_OR=risk_set$OR,
         risk_factor_prev_past=past_risk_set$prob,
+        risk_set=inc_risk_set,
         ra=target_RA,
         misDx=0, # target misdiagnosis
         Dx=1, # target diagnosis
-        risk_set=inc_risk_set
     )
     return(list(
         prev_correction=-sum(risk_set$prob[-1] * asthma_prev_risk_factor_params),

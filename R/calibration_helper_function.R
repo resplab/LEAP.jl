@@ -313,16 +313,16 @@ inc_correction_calculator <- function(
     past_target_OR,
     target_OR,
     risk_factor_prev_past,
+    risk_set,
     ra=1,
     misDx=0,
     Dx=1,
-    risk_set
 ){
   
     beta0 <- logit(asthma_inc_target)
     log_inc_OR <- log(risk_set$OR)
     
-    # reconstruct contingency table for each OR
+    # asthma prevalance ~ risk factor parameters for the previous year
     asthma_prev_risk_factor_params_past <- prev_calibrator(
         asthma_prev_target=asthma_prev_target_past,
         target_OR=past_target_OR,
@@ -340,7 +340,7 @@ inc_correction_calculator <- function(
     # normalize
     risk_factor_prev_past_no_asthma <- risk_factor_prev_past_no_asthma / sum(risk_factor_prev_past_no_asthma)
     
-
+    # asthma prevalance ~ risk factor parameters for incidence
     asthma_prev_risk_factor_params <- prev_calibrator(
         asthma_prev_target=asthma_inc_target,
         target_OR=exp(log_inc_OR),
@@ -351,6 +351,7 @@ inc_correction_calculator <- function(
         asthma_prev_risk_factor_params * risk_factor_prev_past_no_asthma[-1]
     )
 
+    # calibrated asthma incidence
     asthma_inc_calibrated <- inverse_logit(beta0 + log_inc_OR - asthma_inc_correction)
     
     # for each OR, we need to obtain the contingency table
