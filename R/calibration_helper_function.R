@@ -151,7 +151,22 @@ prev_calibrator <- function(
 #        3) OR for inc
 
 
-generate_prev_table <- function(
+#' @title compute_contingency_table
+#' @description This function generates a table of the proportions of the population
+#' at different levels of family history and antibiotic exposure.
+#' @param risk_factor_prev A vector of the prevalence of the risk factor levels.
+#' @param target_OR A vector of odds ratios for the risk factors.
+#' @param asthma_prev_calibrated A vector of the calibrated asthma prevalence.
+#' @return A list of vectors representing the proportions of the population at different levels.
+#' The list index corresponds to the index in the risk_set table. Each list entry contains a vector
+#' of length 4, with the following entries:
+#' - di: proportion of population labelled as no asthma with no risk factors
+#' - ci: proportion of population labelled as asthma with no risk factors
+#' - bi: proportion of population labelled as no asthma with risk factors
+#' - ai: proportion of population labelled as asthma with risk factors
+#' @details This function is used internally by the inc_correction_calculator function.
+#' @note The function uses the metafor package to convert odds ratios into proportions.
+compute_contingency_table <- function(
     risk_factor_prev, target_OR, asthma_prev_calibrated
 ) {
     prev_table <- c()
@@ -161,16 +176,12 @@ generate_prev_table <- function(
 
     for(i in 2:(length(target_OR))){
 
-        # risk factor prevalence at level x
+        # prevalence of risk factor combination i
         risk_factor_prev_i <- risk_factor_prev[i] / (risk_factor_prev[i] + risk_factor_prev_ref)
         # calibrated asthma prevalence
         asthma_prev <- asthma_prev_calibrated[i]
 
         # return: a b c d
-        # a: no exp, no asthma
-        # b: no exp, yes asthma
-        # c: yes exp, no asthma
-        # d: yes exp, yes asthma
         # Solve the following:
         # tmp_target_prev  = (b+d)/(a+b+c+d) 
         # tmp_p[1] = b/(a+b) 
@@ -182,14 +193,23 @@ generate_prev_table <- function(
         # Transforming odds ratios into correlations for meta-analytic research. 
         # American Psychologist, 62(3), 254–255. ⁠https://doi.org/10.1037/0003-066x.62.3.254⁠
 
-        nn <- 1e10
+        #                | asthma | no asthma |
+        # --------------------------------------------
+        # risk factor    |   ai   |     bi    |  n1i
+        # --------------------------------------------
+        # no risk factor |   ci   |     di    |
+        # --------------------------------------------
+        #                |  n2i   |           |  ni
+
+
+        sample_size <- 1e10
         prev_table[[i]] <- rev(
             metafor::conv.2x2(
                 ori=target_OR[i],
-                ni=nn,
-                n1i=((1 - asthma_prev) * risk_factor_prev_i + risk_factor_prev_i * asthma_prev) * nn, # prev of exposure
-                n2i=sum(c(1 - risk_factor_prev_i, risk_factor_prev_i) * c(asthma_prev_ref, asthma_prev)) * nn # prev of asthma
-            ) / nn
+                ni=sample_size,
+                n1i=risk_factor_prev_i * sample_size, # prev of exposure
+                n2i=sum(c(1 - risk_factor_prev_i, risk_factor_prev_i) * c(asthma_prev_ref, asthma_prev)) * sample_size # prev of asthma
+            ) / sample_size
         )
     }
     return(prev_table)
@@ -311,7 +331,7 @@ inc_correction_calculator <- function(
     no_asthma_risk_factor_prev_dist <- no_asthma_risk_factor_prev_dist / sum(no_asthma_risk_factor_prev_dist)
     
     # for each OR, we need to obtain the contingency table
-    prev_table <- generate_prev_table(
+    contingency_table <- compute_contingency_table(
         risk_factor_prev=risk_factor_prev,
         target_OR=past_target_OR,
         asthma_prev_calibrated=asthma_prev_calibrated
@@ -319,7 +339,7 @@ inc_correction_calculator <- function(
     
     fnc_value <- obj_function(
         log_inc_OR, no_asthma_risk_factor_prev_dist, target_OR, asthma_inc_target, beta0,
-        prev_table, ra, misDx, Dx
+        contingency_table, ra, misDx, Dx
     )
     return(fnc_value)
 }
