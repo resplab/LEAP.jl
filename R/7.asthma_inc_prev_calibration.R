@@ -240,7 +240,8 @@ OR_risk_factor_calculator <- function(
 #' - year: the current year
 #' - sex: 0 or 1; 0 = female, 1 = male
 #' - age: the age of the person in years
-#' - prob: the probability of antibiotic exposure * probability of family history
+#' - prob: the probability of antibiotic exposure * probability of one or more parents having asthma 
+#'   given that the person has asthma
 #' - OR: the odds ratio of antibiotic exposure * odds ratio of family history
 risk_factor_generator <- function(
     chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution, df_fam_history_or, df_abx_or
@@ -252,11 +253,11 @@ risk_factor_generator <- function(
     # combine abx_exposure = 3, 4, 5+ into 3+
     df_abx_exposure$prob_abx[4] <- sum(df_abx_exposure$prob_abx[4:6])
     df_abx_exposure <- df_abx_exposure %>% 
-        filter(abx_exposure<=3)
+        filter(abx_exposure <= 3)
 
     # select the given age if <= 5, otherwise select age == 5
     df_fam_history_or_age <- df_fam_history_or %>% 
-        filter(age==min(chosen_age, 5)) %>% 
+        filter(age == min(chosen_age, 5)) %>% 
         select(-age)
 
     # select the given age if <= 8, otherwise select age == 8
@@ -264,7 +265,7 @@ risk_factor_generator <- function(
     df_abx_or_age <- df_abx_or %>% 
         filter(age == min(chosen_age, 8)) %>% 
         select(-age) %>%
-        filter(abx_exposure<=3)        
+        filter(abx_exposure <= 3)        
 
 
     risk_set <- expand.grid(
