@@ -233,7 +233,7 @@ compute_contingency_table <- function(
 #' - ci: proportion of population labelled as asthma with no risk factors
 #' - bi: proportion of population labelled as no asthma with risk factors
 #' - ai: proportion of population labelled as asthma with risk factors
-#' @param ra TODO.
+#' @param ra_target A value between 0 and 1 indicating the target reassessment.
 #' @param misDx A numeric value representing the misdiagnosis rate.
 #' @param Dx A numeric value representing the diagnosis rate.
 #' @return The mean difference in log odds ratios.
@@ -242,7 +242,7 @@ compute_odds_ratio_difference <- function(
     asthma_inc_calibrated,
     target_OR,
     contingency_table_past,
-                           ra=1,
+    ra_target=1,
                            misDx=0,
     Dx=1
     ) {
@@ -261,10 +261,10 @@ compute_odds_ratio_difference <- function(
       
       # contingency table of the population with asthma from a previous year
       # if ra=1, no reversibility
-        a0 <- ref_b0 * (1 - ra) # proportion of population who lose asthma diagnosis with no risk factors
-        c0 <- ref_d0 * (1 - ra) # proportion of population who lose asthma diagnosis at risk factors level i
-        b0 <- ref_b0 * ra # proportion of population who keep asthma diagnosis with no risk factors
-        d0 <- ref_d0 * ra # proportion of population who keep asthma diagnosis at risk factors level i
+        a0 <- ref_b0 * (1 - ra_target) # proportion of population who lose asthma diagnosis with no risk factors
+        c0 <- ref_d0 * (1 - ra_target) # proportion of population who lose asthma diagnosis at risk factors level i
+        b0 <- ref_b0 * ra_target # proportion of population who keep asthma diagnosis with no risk factors
+        d0 <- ref_d0 * ra_target # proportion of population who keep asthma diagnosis at risk factors level i
       
       # contingency table of the exposure level 
         # no risk factors & no asthma: 
@@ -314,7 +314,7 @@ inc_correction_calculator <- function(
     target_OR,
     risk_factor_prev_past,
     risk_set,
-    ra=1,
+    ra_target=1.0,
     misDx=0,
     Dx=1,
 ){
@@ -362,7 +362,7 @@ inc_correction_calculator <- function(
     )
     
     mean_diff_log_OR <- compute_odds_ratio_difference(
-        asthma_inc_calibrated, target_OR, contingency_table, ra, misDx, Dx
+        asthma_inc_calibrated, target_OR, contingency_table, ra_target, misDx, Dx
     )
 
     return(list(

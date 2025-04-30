@@ -435,7 +435,7 @@ calibrator <- function(
                 df_abx_or
             )
         
-            target_RA <- df_reassessment %>% 
+        ra_target <- df_reassessment %>% 
                 filter(
                     age==chosen_age & 
                     year==chosen_year &
@@ -513,7 +513,7 @@ calibrator <- function(
         target_OR=risk_set$OR,
         risk_factor_prev_past=past_risk_set$prob,
         risk_set=inc_risk_set,
-        ra=target_RA,
+        ra_target=ra_target,
         misDx=0, # target misdiagnosis
         Dx=1, # target diagnosis
     )
