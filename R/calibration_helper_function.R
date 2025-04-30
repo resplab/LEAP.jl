@@ -106,7 +106,7 @@ compute_asthma_prevalence_difference <- function(
 #' @param risk_factor_prev A vector of the prevalence of the risk factors.
 #' @param beta0 The intercept of the logistic regression model.
 #' @param multiple_risk_factors A boolean indicating if there are multiple risk factors.
-#' @param chosen_trace A boolean indicating if the trace should be printed.
+#' @param verbose A boolean indicating if the trace should be printed.
 #' @return A vector of the calibrated asthma prevalence for each risk factor level.
 prev_calibrator <- function(
     asthma_prev_target,
@@ -114,7 +114,7 @@ prev_calibrator <- function(
     risk_factor_prev,
     beta0=NULL,
     multiple_risk_factors=FALSE,
-    chosen_trace=FALSE
+    verbose=FALSE
 ) {
 
     if(is.null(beta0)){
@@ -139,7 +139,7 @@ prev_calibrator <- function(
         risk_factor_prev=risk_factor_prev,
         beta0=beta0,
         asthma_prev_target=asthma_prev_target,
-        control=list(abstol=1e-15, maxit=10000, trace=chosen_trace),
+        control=list(abstol=1e-15, maxit=10000, trace=verbose),
         method="BFGS",
         hessian=TRUE)$par
     ) 
