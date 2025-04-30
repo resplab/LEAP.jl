@@ -168,7 +168,9 @@ prev_calibrator <- function(
 #' - bi: proportion of population labelled as no asthma with risk factors
 #' - ai: proportion of population labelled as asthma with risk factors
 #' @details This function is used internally by the inc_correction_calculator function.
-#' @note The function uses the metafor package to convert odds ratios into proportions.
+#' @note The function uses the metafor package to convert odds ratios into proportions. See:
+#' Bonett, D. G. (2007). Transforming odds ratios into correlations for meta-analytic research. 
+#' American Psychologist, 62(3), 254–255. ⁠https://doi.org/10.1037/0003-066x.62.3.254⁠
 compute_contingency_table <- function(
     risk_factor_prev, target_OR, asthma_prev_calibrated
 ) {
@@ -184,18 +186,6 @@ compute_contingency_table <- function(
         # calibrated asthma prevalence
         asthma_prev <- asthma_prev_calibrated[i]
 
-        # return: a b c d
-        # Solve the following:
-        # tmp_target_prev  = (b+d)/(a+b+c+d) 
-        # tmp_p[1] = b/(a+b) 
-        # tmp_p[2] = d/(c+d) 
-        # tmp_target_OR  = (a*d)/(b*c) 
-    
-        # metafor pkg
-        # Bonett, D. G. (2007).
-        # Transforming odds ratios into correlations for meta-analytic research. 
-        # American Psychologist, 62(3), 254–255. ⁠https://doi.org/10.1037/0003-066x.62.3.254⁠
-
         #                | asthma | no asthma |
         # --------------------------------------------
         # risk factor    |   ai   |     bi    |  n1i
@@ -203,6 +193,13 @@ compute_contingency_table <- function(
         # no risk factor |   ci   |     di    |
         # --------------------------------------------
         #                |  n2i   |           |  ni
+
+        # return: di ci bi ai
+        # Solve the following:
+        # asthma_prev_target = (ci + ai) / (ai + bi + ci + di) = n2i / ni
+        # asthma_prev_ref = ci / (ci + di) 
+        # asthma_prev = ai / (ai + bi)
+        # target_OR = (ai * di) / (bi * ci)
 
 
         sample_size <- 1e10
