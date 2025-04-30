@@ -23,7 +23,7 @@ BETA_ABX_DOSE <- 0.053
 BETA_ABX_AGE <- -0.225
 # beta parameter for the constant term in the odds ratio equation for antibiotic courses
 BETA_ABX_0 <- 1.711 + 0.115
-INC_BETA_PARAMS <- c((log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2, -0.225)
+INC_BETA_PARAMS <- c((log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2, BETA_ABX_AGE)
 # the probability that one or more parents have asthma (CHILD Study)
 PROB_FAM_HIST <- 0.2927242
 
@@ -183,7 +183,7 @@ p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx){
 
 
 OR_abx_calculator <- function(
-    age, dose, params=c(1.711 + 0.115, -0.225, 0.053)
+    age, dose, params=c(BETA_ABX_0, BETA_ABX_AGE, BETA_ABX_DOSE)
 ){
     if (dose == 0) {
         return(1)
@@ -347,14 +347,14 @@ calibrator <- function(
     df_incidence,
     df_prevalence,
     df_reassessment,
-    inc_beta_params=c(0.3766256, -0.225),
+    inc_beta_params=c(0.3766256, BETA_ABX_AGE),
     min_year=MIN_YEAR
 ){
   
     if(!is.list(inc_beta_params)){
         inc_beta_params <- list(
             c(log(OR_ASTHMA_AGE_3), inc_beta_params[1]),
-            c(1.826, inc_beta_params[2], 0.053)
+            c(BETA_ABX_0, inc_beta_params[2], BETA_ABX_DOSE)
         )
     }
 
