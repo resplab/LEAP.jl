@@ -157,9 +157,13 @@ prev_calibrator <- function(
 #' @param risk_factor_prev A vector of the prevalence of the risk factor levels.
 #' @param target_OR A vector of odds ratios for the risk factors.
 #' @param asthma_prev_calibrated A vector of the calibrated asthma prevalence.
-#' @return A list of vectors representing the proportions of the population at different levels.
-#' The list index corresponds to the index in the risk_set table. Each list entry contains a vector
-#' of length 4, with the following entries:
+#' @return A list of vectors representing the proportions of the population for different risk
+#' factor levels / combinations. For example, if we have the risk factors of family history {0, 1}
+#' and antibiotic exposure {0, 1, 2, 3}, then we have 2 * 4 = 8 combinations. Each combination is
+#' called a "risk factor level" and is indexed by i (this corresponds to the index in the risk_set
+#' table). The first combination, i = 1 is a special case; this is where there are no risk factors.
+#' We use this combination, referred to as the "ref" level, in the calculation of all the tables.
+#' Each list entry contains a vector of length 4, with the following entries:
 #' - di: proportion of population labelled as no asthma with no risk factors
 #' - ci: proportion of population labelled as asthma with no risk factors
 #' - bi: proportion of population labelled as no asthma with risk factors
