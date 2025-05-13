@@ -196,7 +196,7 @@ OR_abx_calculator <- function(
 OR_fam_calculator <- function(
     age,
     fam_hist,
-    params=c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_5) + log(OR_ASTHMA_AGE_3)) / 2)
+    params=c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2)
 ){
     if (age < MIN_ASTHMA_AGE | fam_hist == 0 | age > 7) {
         return(1)
