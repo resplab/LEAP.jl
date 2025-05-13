@@ -211,7 +211,7 @@ OR_risk_factor_calculator <- function(
     age,
     dose,
     params=list(
-        c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_3) + log(OR_ASTHMA_AGE_5)) / 2 - log(OR_ASTHMA_AGE_3)),
+        c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2),
         c(BETA_ABX_0, BETA_ABX_AGE, BETA_ABX_DOSE)
     )
 ){
