@@ -218,10 +218,10 @@ OR_risk_factor_calculator <- function(
     if (age < MIN_ASTHMA_AGE) {
         return(1)
     } else {
-        return(exp(
-            log(OR_fam_calculator(age, fam_hist, params[[1]])) + 
-            log(OR_abx_calculator(age, dose, params[[2]]))
-        ))
+        return(
+            OR_fam_calculator(age, fam_hist, params[[1]]) *
+            OR_abx_calculator(age, dose, params[[2]])
+        )
     }
 }
 
