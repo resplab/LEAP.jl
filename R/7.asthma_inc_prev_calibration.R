@@ -350,7 +350,8 @@ calibrator <- function(
     inc_beta_params=c(0.3766256, BETA_ABX_AGE),
     min_year=MIN_YEAR
 ){
-  
+
+    print(paste0("Calibrating for year ", chosen_year, ", age ", chosen_age, ", sex ", chosen_sex))
     if(!is.list(inc_beta_params)){
         inc_beta_params <- list(
             c(log(OR_ASTHMA_AGE_3), inc_beta_params[1]),
