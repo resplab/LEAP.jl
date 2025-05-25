@@ -175,7 +175,7 @@ p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx){
         mutate(after2005year=after2005*year)
 
     mu <- exp(predict(model_abx, newdata=df, type='link'))
-    size <- exp(model_abx$family$getTheta())
+    size <- model_abx$family$getTheta(trans=TRUE)
     prob <- dnbinom(c(0:5), mu=mu, size=size)
     prob[6] <- 1 - sum(prob[1:5])
     return(data.frame(abx_exposure=c(0:5), prob_abx=prob))
