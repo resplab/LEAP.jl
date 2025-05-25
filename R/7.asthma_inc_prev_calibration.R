@@ -1,7 +1,6 @@
 library(tidyverse)
 library(here)
 library(mgcv)
-library(roptim)
 source(here("R/calibration_helper_function.R"))
 options(dplyr.summarise.inform = FALSE)
 
@@ -524,6 +523,7 @@ calibrator <- function(
         misDx=0, # target misdiagnosis
         Dx=1 # target diagnosis
     )
+
     return(list(
         prev_correction=-sum(risk_set$prob[-1] * asthma_prev_risk_factor_params),
         inc_correction=inc_sol$asthma_inc_correction,
@@ -577,6 +577,7 @@ calculate_correction <- function(
             df_results$inc_correction <- results$inc_correction
         }
     }
+
     return(df_results)
 }
 
