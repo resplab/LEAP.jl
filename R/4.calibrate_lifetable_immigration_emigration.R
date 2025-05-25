@@ -270,25 +270,28 @@ for(province_index in 1:length(provinces)) {
     }
 }
 
-write_csv(life_table_list,here("../src","processed_data","master_life_table.csv"))
-write_csv(immigration_list,here("../src","processed_data","master_immigration_table.csv"))
-write_csv(emigration_list,here("../src","processed_data","master_emigration_table.csv"))
+write_csv(life_table_list, here("src/processed_data/master_life_table.csv"))
+write_csv(immigration_list, here("src/processed_data/master_immigration_table.csv"))
+write_csv(emigration_list, here("src/processed_data/master_emigration_table.csv"))
 
 # offset
-immigration_list <- read_csv("../src/processed_data/master_immigration_table.csv")
+immigration_list = read_csv(here("src/processed_data/master_immigration_table.csv"))
 
-immigration_list %>% 
-  filter(year==2023) %>% 
-  filter(proj_scenario=="M3") %>% 
-  filter(province=="CA") -> tmp
+immigration_list <- immigration_list %>% 
+    filter(proj_scenario=="M3") %>% 
+    filter(province=="CA")
 
-tmp$n_prop_birth[1:2] <- tmp$n_prop_birth[1:2]*4
-tmp$weights <- tmp$n_prop_birth/sum(tmp$n_prop_birth)
+immigration_list_2023 <- immigration_list %>% 
+    filter(year==2023)
 
-immigration_list %>% 
-  filter(!(year==2023 & proj_scenario=="M3" & province=="CA")) -> look
+immigration_list_2023$n_prop_birth[1:2] <- immigration_list_2023$n_prop_birth[1:2]*4
+immigration_list_2023$weights <- immigration_list_2023$n_prop_birth / sum(immigration_list_2023$n_prop_birth)
 
-rbind(look,tmp) %>% 
-  arrange(year,age,sex,province,proj_scenario) -> final_look
+immigration_list_mod <- rbind(
+    immigration_list %>% filter(!(year==2023)),
+    immigration_list_2023
+) %>% 
+    arrange(year, age, sex, province, proj_scenario)
 
-write_csv(final_look,"../src/processed_data/master_immigration_table_modified.csv")
+write_csv(immigration_list_mod, here("src/processed_data/master_immigration_table_modified.csv"))
+
