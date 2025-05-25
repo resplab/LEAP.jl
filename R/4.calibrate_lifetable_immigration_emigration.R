@@ -93,12 +93,11 @@ for(province_index in 1:length(provinces)) {
     chosen_province <- provinces[province_index]
     calibration_year <- calibration_years[province_index]
     desired_life_expectancy <- desired_life_expectancys[[province_index]]
-    print(chosen_province)
   
     # life table --------------------------------------------------------------
 
     life_table <- read_csv(here("life_table.csv")) %>% 
-    filter(province==chosen_province)
+        filter(province==chosen_province)
 
     death_final_year <- max(life_table$year)
 
@@ -163,7 +162,10 @@ for(province_index in 1:length(provinces)) {
 
     # Get the total number of male / female population for given year/age/projection_scenario
     df_population <- df_population %>% 
-        mutate(M=prop_male*n, F=(1-prop_male)*n)
+        mutate(
+            M=prop_male * n,
+            F=(1 - prop_male) * n
+        )
         
     df_population <- df_population %>% 
         select(year, age, province, M, F, projection_scenario)
@@ -187,12 +189,15 @@ for(province_index in 1:length(provinces)) {
             select(-projection_scenario)
   
         df_diff <- expand.grid(
-            year=(baseline_year+1):max_pop_year,
+            year=(baseline_year + 1):max_pop_year,
             age=1:100,
-            sex=c("F","M")
-        ) %>% mutate(n = 0)
+            sex=c("F", "M")
+        ) %>% mutate(
+            n=0
+        )
   
-        df_proj <- df_proj %>% left_join(life_table, by=c("age",'sex','year','province'))
+        df_proj <- df_proj %>% 
+            left_join(life_table, by=c("age",'sex','year','province'))
   
         delta_n <- mclapply(
             X=split(df_diff, 1:nrow(df_diff)),
@@ -224,7 +229,7 @@ for(province_index in 1:length(provinces)) {
             
         # Get the proportion of immigrants relative to the number of people born that year
         df_immigration <- df_immigration %>% 
-            mutate(prop_immigrants_birth = n_immigrants / n_birth)
+            mutate(prop_immigrants_birth=n_immigrants / n_birth)
 
         df_immigration <- df_immigration %>%
             select(year, age, sex, prop_immigrants_birth)
@@ -233,7 +238,7 @@ for(province_index in 1:length(provinces)) {
             group_by(year) %>% 
             mutate(tot=sum(prop_immigrants_birth)) %>% 
             ungroup() %>% 
-            mutate(weights = prop_immigrants_birth/tot) %>% 
+            mutate(weights=prop_immigrants_birth/tot) %>% 
             select(-tot) %>% 
             mutate(province=chosen_province, proj_scenario = pop_scenarios[i])
   
