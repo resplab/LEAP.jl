@@ -10,10 +10,12 @@ starting_year <- 1999
 end_year <- 2065
 stabilization_year <- 2025
 
-asthma_tuner <- function(chosen_province="CA",
-                         starting_year= 1999,
-                         end_year = 2065,
-                         stabilization_year=2025){
+get_reassessment_data <- function(
+    chosen_province="CA",
+    starting_year=1999,
+    end_year=2065,
+    stabilization_year=2025
+){
   
   asthma_inc_model <- read_rds("asthma_incidence_model.rds")
   asthma_prev_model <- read_rds("asthma_prevalence_model.rds")
@@ -97,8 +99,8 @@ asthma_tuner <- function(chosen_province="CA",
 }
 
 
-CA_tuner <- asthma_tuner(chosen_province="CA",end_year=2066,stabilization_year = 2025)
-BC_tuner <- asthma_tuner(chosen_province = "BC",end_year=2043,stabilization_year=2025)
+CA_tuner <- get_reassessment_data(chosen_province="CA",end_year=2066,stabilization_year = 2025)
+BC_tuner <- get_reassessment_data(chosen_province="BC",end_year=2043,stabilization_year=2025)
 
 # look <- results_assessment %>%
 #   do.call(rbind,.) %>%
