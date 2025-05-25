@@ -177,15 +177,15 @@ for(province_index in 1:length(provinces)) {
         select(year, sex, age, province, n, projection_scenario) %>% 
         arrange(year, desc(sex), age, province, projection_scenario)
 
-    pop_scenarios <- df_population$projection_scenario %>% unique()
-    pop_scenarios <- pop_scenarios[-which(pop_scenarios=="past")]
+    projection_scenarios <- df_population$projection_scenario %>% unique()
+    projection_scenarios <- projection_scenarios[-which(projection_scenarios=="past")]
 
     max_pop_year <- min(max(df_population$year), 2065)
 
-    for(i in 1:length(pop_scenarios)){
+    for(i in 1:length(projection_scenarios)){
         df_proj <- df_population %>% 
-            filter(projection_scenario %in% c("past", pop_scenarios[i])) %>% 
-            filter(!(year==2021 & projection_scenario %in% c(pop_scenarios[i]))) %>% 
+            filter(projection_scenario %in% c("past", projection_scenarios[i])) %>% 
+            filter(!(year==2021 & projection_scenario %in% c(projection_scenarios[i]))) %>% 
             select(-projection_scenario)
   
         df_diff <- expand.grid(
@@ -240,11 +240,14 @@ for(province_index in 1:length(provinces)) {
             ungroup() %>% 
             mutate(weights=prop_immigrants_birth/tot) %>% 
             select(-tot) %>% 
-            mutate(province=chosen_province, proj_scenario = pop_scenarios[i])
+            mutate(
+                province=chosen_province,
+                proj_scenario=projection_scenarios[i]
+            )
   
         immigration_list <- rbind(immigration_list, df_immigration)
 
-        df_emigration <- df_diff %>% 
+        df_emigration <- df_diff %>%
             mutate(n= ifelse(n>0,0,-n)) %>% 
             left_join(df_proj,by=c("year",'sex','age')) %>% 
             mutate(prob = n.x/n.y) %>% 
@@ -252,7 +255,8 @@ for(province_index in 1:length(provinces)) {
             rename(n=n.x) %>% 
             select(year,age,sex,prob) %>% 
             pivot_wider(names_from=sex,values_from=prob) %>%
-            mutate(province=chosen_province, proj_scenario = pop_scenarios[i])
+            mutate(province=chosen_province, proj_scenario = projection_scenarios[i])
+        
 
         emigration_list <- rbind(emigration_list, df_emigration)
     }
