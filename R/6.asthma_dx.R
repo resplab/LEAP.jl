@@ -17,10 +17,10 @@ get_reassessment_data <- function(
     stabilization_year=2025
 ){
   
-  asthma_inc_model <- read_rds("asthma_incidence_model.rds")
-  asthma_prev_model <- read_rds("asthma_prevalence_model.rds")
-  asthma_max_age <- 62
-  
+    asthma_inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
+    asthma_prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
+    asthma_max_age <- 62
+
   asthma_predictor <- function(age,sex,year,type){
     age <- pmin(age,asthma_max_age)
     
