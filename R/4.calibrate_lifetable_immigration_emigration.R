@@ -25,17 +25,17 @@ get_prev_year_population <- function(row, tmp_combined){
 }
 
 for(province_index in 1:length(provinces)) {
-  chosen_province <- provinces[province_index]
-  calibration_year <- calibration_years[province_index]
-  desired_life_expectancy <- desired_life_expectancys[[province_index]]
-  print(chosen_province)
+    chosen_province <- provinces[province_index]
+    calibration_year <- calibration_years[province_index]
+    desired_life_expectancy <- desired_life_expectancys[[province_index]]
+    print(chosen_province)
   
-# life table --------------------------------------------------------------
+    # life table --------------------------------------------------------------
 
-life_table <- read_csv("life_table.csv") %>% 
-  filter(province==chosen_province)
+    life_table <- read_csv(here("life_table.csv")) %>% 
+    filter(province==chosen_province)
 
-death_final_year <- max(life_table$year)
+    death_final_year <- max(life_table$year)
 
     ref_life_table <- life_table %>% filter(year==death_final_year)
 
@@ -43,22 +43,22 @@ death_final_year <- max(life_table$year)
         p <- pmin(p, 0.9999999999)
         odds <- p/(1 - p)*exp(year*beta)
         pmax(pmin(odds/(1 + odds), 1), 0)
-}
+    }
 
     project_life_year <- function(
         ref_lt, proj_year, baseyear, beta_year
     ){
         tmp <- death_adjustment(ref_lt$prob_death, proj_year-baseyear, beta_year)
-  tmp_factor <- tmp/ref_lt$prob_death
-  ref_lt %>% 
+        tmp_factor <- tmp/ref_lt$prob_death
+        ref_lt %>% 
             mutate(
                 prob_death=tmp_factor*prob_death,
                 se=tmp_factor*se,
                 year=proj_year
             )
-}
+    }
 
-projected_life_table <- c()
+    projected_life_table <- c()
 
     obj_function <- function(mortality_year_adjustment, SEX){
 
@@ -69,70 +69,70 @@ projected_life_table <- c()
                 baseyear=death_final_year,
                 beta_year=mortality_year_adjustment
             )
-  }
+        }
   
-  life_expectancy_calculator <- function(lf){
-    lf$I <- NA
-    lf$I[1] <- 100000
-      for(i in 2:nrow(lf)){
-        lf$I[i] <- lf$I[i-1]*(1-lf$q[i-1])
-      }
-      
+        life_expectancy_calculator <- function(lf){
+            lf$I <- NA
+            lf$I[1] <- 100000
+            for(i in 2:nrow(lf)){
+                lf$I[i] <- lf$I[i-1]*(1-lf$q[i-1])
+            }
+            
             lf %>% mutate(d=I*q, L=lead(I) + 0.5*d) -> lf
-    lf$L[1] <- lf$L[2] + 0.1*lf$d[1]
-    lf$L[111] <- lf$I[111]*1.4
-      
-    lf$TT <- rev(cumsum(rev(lf$L)))
+            lf$L[1] <- lf$L[2] + 0.1*lf$d[1]
+            lf$L[111] <- lf$I[111]*1.4
+            
+            lf$TT <- rev(cumsum(rev(lf$L)))
             lf %>% mutate(E=TT/I) -> sol
-      sol$E[1]
-  }
-  
+            sol$E[1]
+        }
+
         projected_life_table <- do.call(rbind, projected_life_table)
-  
-  projected_life_table %>% 
-    filter(sex==SEX & year==calibration_year) %>% 
+        
+        projected_life_table %>% 
+            filter(sex==SEX & year==calibration_year) %>% 
             select(age, prob_death) %>% 
             rename(q=prob_death) -> lf
-  
-  return(life_expectancy_calculator(lf) - desired_life_expectancy[as.numeric(SEX=="F")+1])
-}
 
-projected_life_table_male <- projected_life_table_female <- c()
+        return(life_expectancy_calculator(lf) - desired_life_expectancy[as.numeric(SEX=="F")+1])
+    }
 
-for(yr in 1:(projected_last_year-death_final_year)){
+    projected_life_table_male <- projected_life_table_female <- c()
+
+    for(yr in 1:(projected_last_year-death_final_year)){
         projected_life_table_male[[yr]] <- project_life_year(
             ref_life_table,
-                                                  yr+death_final_year,
-                                                  baseyear=death_final_year,
+            yr+death_final_year,
+            baseyear=death_final_year,
             beta_year=uniroot(obj_function, SEX="M", interval=c(-0.03,-0.01), tol=0.00001)$root
         )
-} 
+    } 
 
     projected_life_table_male <- do.call(rbind, projected_life_table_male) %>% filter(sex=="M")
 
-for(yr in 1:(projected_last_year-death_final_year)){
+    for(yr in 1:(projected_last_year-death_final_year)){
         projected_life_table_female[[yr]] <- project_life_year(
             ref_life_table,
-                                                       yr+death_final_year,
-                                                       baseyear=death_final_year,
+            yr+death_final_year,
+            baseyear=death_final_year,
             beta_year=uniroot(obj_function, SEX="F", interval=c(-0.03,-0.01), tol=0.00001)$root
         )
-} 
+    } 
 
     projected_life_table_female <- do.call(rbind, projected_life_table_female) %>% filter(sex=="F")
 
     projected_life_table <- rbind(projected_life_table_male, projected_life_table_female)
 
-life_table <- rbind(life_table,projected_life_table)
-life_table_list <- rbind(life_table_list,life_table)
+    life_table <- rbind(life_table, projected_life_table)
+    life_table_list <- rbind(life_table_list, life_table)
 
-# pop growth --------------------------------------------------------------
+    # pop growth --------------------------------------------------------------
 
     df_population <- read_csv(here("src/processed_data", "master_initial_pop_distribution_prop.csv"))
 
     # Select province and years
     df_population <- df_population %>% 
-  filter(province==chosen_province) %>%
+        filter(province==chosen_province) %>%
         filter(year >= baseline_year)
 
     # Get the total number of male / female population for given year/age/projection_scenario
@@ -150,69 +150,79 @@ life_table_list <- rbind(life_table_list,life_table)
         arrange(year, desc(sex), age, province, projection_scenario)
 
     pop_scenarios <- df_population$projection_scenario %>% unique()
-pop_scenarios <- pop_scenarios[-which(pop_scenarios=="past")]
+    pop_scenarios <- pop_scenarios[-which(pop_scenarios=="past")]
 
     max_pop_year <- min(max(df_population$year), 2065)
 
-for(i in 1:length(pop_scenarios)){
+    for(i in 1:length(pop_scenarios)){
         df_proj <- df_population %>% 
             filter(projection_scenario %in% c("past", pop_scenarios[i])) %>% 
-    filter(!(year==2021 & projection_scenario %in% c(pop_scenarios[i]))) %>% 
-    select(-projection_scenario)
+            filter(!(year==2021 & projection_scenario %in% c(pop_scenarios[i]))) %>% 
+            select(-projection_scenario)
   
         df_diff <- expand.grid(
             year=(baseline_year+1):max_pop_year,
             age=1:100,
             sex=c("F","M")
         ) %>% mutate(n = 0)
-
-        tmp_combined <- df_proj %>% left_join(life_table, by=c("age",'sex','year','province'))
   
-        tmp_n <- mclapply(
+        df_proj <- df_proj %>% left_join(life_table, by=c("age",'sex','year','province'))
+  
+        delta_n <- mclapply(
             X=split(df_diff, 1:nrow(df_diff)),
             mc.cores=7,
             FUN=get_prev_year_population,
-            tmp_combined=tmp_combined
+            tmp_combined=df_proj
         )
   
-  df_diff$n <- unlist(tmp_n)
+        df_diff$delta_n <- unlist(delta_n)
   
-        look <- df_diff %>%
+        df_diff <- df_diff %>%
             arrange(year, age, sex) %>%
             filter(age<=100)
   
-        tmp_pop_birth <- df_proj %>% 
-    filter(age==0) %>% 
-    select(1,2,5) %>% 
-    rename(n_birth = n) %>% 
-    group_by(year) %>% 
-    summarise(n_birth=sum(n_birth))
+        df_birth <- df_proj %>% 
+            filter(age==0) %>% 
+            select(1, 2, 5) %>% 
+            rename(n_birth=n) %>% 
+            group_by(year) %>% 
+            summarise(n_birth=sum(n_birth))
   
-        df_immigration <- look %>% 
-    mutate(n= ifelse(n<0,0,n)) %>% 
-    left_join(tmp_pop_birth,by=c("year")) %>% 
-    mutate(n_prop_birth = n/n_birth) %>% 
-    select(year,age,sex,n_prop_birth) %>% 
-    group_by(year) %>% 
-    mutate(tot=sum(n_prop_birth)) %>% 
-    ungroup() %>% 
-    mutate(weights = n_prop_birth/tot) %>% 
-    select(-tot) %>% 
-    mutate(sex=as.numeric(sex=="M")) %>% 
+        # If delta_n is negative, set n = 0, else n = delta_n
+        df_immigration <- df_diff %>% 
+            mutate(n_immigrants=ifelse(delta_n < 0, 0, delta_n))
+
+        # Add the n_birth column
+        df_immigration <- df_immigration %>%
+            left_join(df_birth, by=c("year"))
+            
+        # Get the proportion of immigrants relative to the number of people born that year
+        df_immigration <- df_immigration %>% 
+            mutate(prop_immigrants_birth = n_immigrants / n_birth)
+
+        df_immigration <- df_immigration %>%
+            select(year, age, sex, prop_immigrants_birth)
+        
+        df_immigration <- df_immigration %>%
+            group_by(year) %>% 
+            mutate(tot=sum(prop_immigrants_birth)) %>% 
+            ungroup() %>% 
+            mutate(weights = prop_immigrants_birth/tot) %>% 
+            select(-tot) %>% 
             mutate(province=chosen_province, proj_scenario = pop_scenarios[i])
   
         immigration_list <- rbind(immigration_list, df_immigration)
-  
-        df_emigration <- look %>% 
-    mutate(n= ifelse(n>0,0,-n)) %>% 
+
+        df_emigration <- df_diff %>% 
+            mutate(n= ifelse(n>0,0,-n)) %>% 
             left_join(df_proj,by=c("year",'sex','age')) %>% 
-    mutate(prob = n.x/n.y) %>% 
-    select(year,age,sex,n.x,prob) %>% 
-    rename(n=n.x) %>% 
-    select(year,age,sex,prob) %>% 
-    pivot_wider(names_from=sex,values_from=prob) %>%
+            mutate(prob = n.x/n.y) %>% 
+            select(year,age,sex,n.x,prob) %>% 
+            rename(n=n.x) %>% 
+            select(year,age,sex,prob) %>% 
+            pivot_wider(names_from=sex,values_from=prob) %>%
             mutate(province=chosen_province, proj_scenario = pop_scenarios[i])
-  
+
         emigration_list <- rbind(emigration_list, df_emigration)
     }
 }
