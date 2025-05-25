@@ -9,6 +9,8 @@ life_table_list <- c()
 immigration_list <- c()
 emigration_list <- c()
 life_table_checker <- c()
+LIFE_TABLE = read_csv(here("src/processed_data/master_life_table.csv"))
+
 
 provinces <- c("BC", "CA")
 desired_life_expectancys <- list(c(84.6,88.0),c(87,90.1)) # BC: male, female; CANADA: male, female
@@ -94,7 +96,7 @@ for(province_index in 1:length(provinces)) {
   
     # life table --------------------------------------------------------------
 
-    life_table <- read_csv(here("life_table.csv")) %>% 
+    life_table <- LIFE_TABLE %>% 
         filter(province==chosen_province)
 
     death_final_year <- max(life_table$year)
