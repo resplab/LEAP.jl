@@ -247,16 +247,24 @@ for(province_index in 1:length(provinces)) {
   
         immigration_list <- rbind(immigration_list, df_immigration)
 
-        df_emigration <- df_diff %>%
-            mutate(n= ifelse(n>0,0,-n)) %>% 
-            left_join(df_proj,by=c("year",'sex','age')) %>% 
-            mutate(prob = n.x/n.y) %>% 
-            select(year,age,sex,n.x,prob) %>% 
-            rename(n=n.x) %>% 
-            select(year,age,sex,prob) %>% 
-            pivot_wider(names_from=sex,values_from=prob) %>%
-            mutate(province=chosen_province, proj_scenario = projection_scenarios[i])
+        # If delta_n is positive, set n = 0, else n = -delta_n
+        df_emigration <- df_diff %>% 
+            mutate(n_emigrants=ifelse(delta_n > 0, 0, -delta_n))
+
+        df_emigration <- df_emigration %>% 
+            left_join(df_proj, by=c("year",'sex','age'))
+        # Get the proportion of emigrants relative to the population
+        df_emigration <- df_emigration %>% 
+            mutate(prop_emigrants=n_emigrants / n)
         
+        df_emigration <- df_emigration %>%
+            select(year, age, sex, prop_emigrants) %>% 
+            rename(prob=prop_emigrants) %>%
+            pivot_wider(names_from=sex, values_from=prob) %>%
+            mutate(
+                province=chosen_province,
+                proj_scenario=projection_scenarios[i]
+            )
 
         emigration_list <- rbind(emigration_list, df_emigration)
     }
