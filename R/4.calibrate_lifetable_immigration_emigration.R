@@ -14,6 +14,12 @@ provinces <- c("BC","CA")
 desired_life_expectancys <- list(c(84.6,88.0),c(87,90.1)) # BC: male, female; CANADA: male, female
 calibration_years <- c(2043, 2068)
 
+get_prob_death_projected = function(prob_death, year_index, beta) {
+    prob_death = pmin(prob_death, 0.9999999999)
+    odds = (prob_death/(1 - prob_death)) * exp(year_index * beta)
+    return(pmax(pmin(odds/(1 + odds), 1), 0))
+}
+
 
 get_prev_year_population <- function(row, tmp_combined){
     YEAR <- row$year
@@ -39,16 +45,10 @@ for(province_index in 1:length(provinces)) {
 
     ref_life_table <- life_table %>% filter(year==death_final_year)
 
-    death_adjustment <- function(p, year, beta){
-        p <- pmin(p, 0.9999999999)
-        odds <- p/(1 - p)*exp(year*beta)
-        pmax(pmin(odds/(1 + odds), 1), 0)
-    }
-
     project_life_year <- function(
         ref_lt, proj_year, baseyear, beta_year
     ){
-        tmp <- death_adjustment(ref_lt$prob_death, proj_year-baseyear, beta_year)
+        tmp <- get_prob_death_projected(ref_lt$prob_death, proj_year-baseyear, beta_year)
         tmp_factor <- tmp/ref_lt$prob_death
         ref_lt %>% 
             mutate(
