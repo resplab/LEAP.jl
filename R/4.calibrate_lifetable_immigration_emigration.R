@@ -44,10 +44,10 @@ life_expectancy_calculator <- function(life_table_year){
     life_table_year$I <- NA
     life_table_year$I[1] <- 100000
     for(i in 2:nrow(life_table_year)){
-        life_table_year$I[i] <- life_table_year$I[i-1]*(1-life_table_year$q[i-1])
+        life_table_year$I[i] <- life_table_year$I[i-1]*(1-life_table_year$prob_death[i-1])
     }
     
-    life_table_year <- life_table_year %>% mutate(d=I*q, L=lead(I) + 0.5*d)
+    life_table_year <- life_table_year %>% mutate(d=I*prob_death, L=lead(I) + 0.5*d)
     life_table_year$L[1] <- life_table_year$L[2] + 0.1*life_table_year$d[1]
     life_table_year$L[111] <- life_table_year$I[111]*1.4
     
@@ -75,8 +75,7 @@ beta_year_optimizer <- function(
     
     lf <- projected_life_table %>% 
         filter(sex==SEX & year==calibration_year) %>% 
-        select(age, prob_death) %>% 
-        rename(q=prob_death)
+        select(age, prob_death)
 
     life_expectancy = life_expectancy_calculator(lf)
     return(life_expectancy - desired_life_expectancy[as.numeric(SEX=="F") + 1])
