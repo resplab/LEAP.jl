@@ -1,5 +1,5 @@
 ---
-title: "Analysis of asthma control"
+title: "Analysis of Asthma Control"
 author: "Tae Yoon (Harry) Lee"
 output: pdf_document
 ---
@@ -13,71 +13,143 @@ select <- dplyr::select
 ```
 
 # Data source
-Economic Burden of Asthma (EBA) data contains measurements of asthma control levels for 618 patients (74% are >= 18 years old). The measurements were taken every 3 months for a year. We followed the 2020 GINA guidelines to define asthma control level by using the sum of the four indicator variables (0 if no and 1 if yes): daily symptoms, nocturnal symptoms, inhaler use, and limited activities in the last 3 months before each measurement. If the sum is zero, then the asthma control level is controlled. If it is less than 3, then it is partially controlled. Otherwise, it is uncontrolled. For responses with \textit{do not know} to the indicator variables, we treated them as a \textit{no}. In this analysis, we did not consider treatment nor whether a patient experienced an exacerbation in the last 3 months before the visit. We excluded two patients whose asthma diagnosis dates were earlier than they were born and three patients who had no asthma diagnosis dates.
+Economic Burden of Asthma (EBA) data contains measurements of asthma control levels for 618 patients
+(74% are >= 18 years old). The measurements were taken every 3 months for a year. We followed the
+2020 GINA guidelines to define asthma control level by using the sum of the four indicator variables
+(0 if no and 1 if yes): daily symptoms, nocturnal symptoms, inhaler use, and limited activities in
+the last 3 months before each measurement. If the sum is zero, then the asthma control level is
+controlled. If it is less than 3, then it is partially controlled. Otherwise, it is uncontrolled.
+For responses with \textit{do not know} to the indicator variables, we treated them as a \textit{no}.
+In this analysis, we did not consider treatment nor whether a patient experienced an exacerbation
+in the last 3 months before the visit. We excluded two patients whose asthma diagnosis dates were
+earlier than they were born and three patients who had no asthma diagnosis dates.
 
-```{r balance, echo = F}
-df_demo <- haven::read_sas(here("private_dataset","demo.sas7bdat")) %>% 
-  mutate(age = as.numeric(startDate-birthdate)/365.25) %>% # age in years
-  mutate(sex = if_else(gender=='f',0,1)) %>%  # female: 0; male: 1
-  select(studyId,sex,age)
-df_baseline <- haven::read_sas(here("private_dataset","astat0.sas7bdat"))
-df_fu <- haven::read_sas(here("private_dataset","astatf.sas7bdat"))
+```{r balance, echo=FALSE, eval=FALSE}
+df_demo <- haven::read_sas(here("private_dataset", "demo.sas7bdat")) %>% 
+    mutate(age=as.numeric(startDate - birthdate) / 365.25) %>% # age in years
+    mutate(sex=if_else(gender=='f', 0, 1)) %>%  # female: 0; male: 1
+    select(studyId, sex, age)
+df_baseline <- haven::read_sas(here("private_dataset", "astat0.sas7bdat"))
+df_fu <- haven::read_sas(here("private_dataset", "astatf.sas7bdat"))
 
 df_EBA <- (df_baseline %>% 
-  select(studyId,visit,daytimeSymptoms,nocturnalSymptoms,inhalerUse,limitedActivities,exacerbations)) %>% 
-  rbind(.,df_fu %>% 
-          select(studyId,visit,daytimeSymptoms,nocturnalSymptoms,inhalerUse,limitedActivities,exacerbations)) %>% 
-  left_join(df_demo,by='studyId') %>% 
-  left_join(df_baseline %>% 
-              select(studyId,ageAtAsthmaDx),
-            by='studyId') %>% 
-  mutate(control_score = as.numeric(daytimeSymptoms==1) + as.numeric(nocturnalSymptoms==1) +
-           as.numeric(inhalerUse==1) + as.numeric(limitedActivities==1),
-         control_score_missing = as.numeric(!(daytimeSymptoms %in% c(1,2))) + as.numeric(!(nocturnalSymptoms %in% c(1,2))) +
-           as.numeric(!(inhalerUse %in% c(1,2))) + as.numeric(!(limitedActivities %in% c(1,2)))) %>% 
-  # use the GINA guidelines to determine the control level (Box 2-2, GINA guidelines 2020)
-  mutate(control_level = case_when(control_score == 0 ~ 1,
-                                   control_score < 3 & control_score > 0  ~ 2,
-                                   control_score >=3 ~ 3)) %>% 
-  mutate(studyid=studyId,
-         exac=as.numeric(exacerbations==1)) %>% 
-  filter(!(studyId %in% c("13205707","23207811"))) %>% # asthma diagnosis before birth? => something wrong with the data
-  na.omit() # no asthma Dx date => ??? data quality issues omit them (3 patients)
-  # treat "don't know/missing" as "no" for the four asthma control indicators and exacerbation
-# write_rds(df_EBA,"df_EBA.rds")
+    select(
+        studyId, visit, daytimeSymptoms, nocturnalSymptoms, inhalerUse, limitedActivities, exacerbations
+    )) %>% 
+    rbind(
+        .,
+        df_fu %>% 
+        select(studyId, visit, daytimeSymptoms,nocturnalSymptoms, inhalerUse, limitedActivities, exacerbations)
+    ) %>% 
+    left_join(df_demo, by='studyId') %>% 
+    left_join(
+        df_baseline %>% select(studyId, ageAtAsthmaDx),
+        by='studyId'
+    ) %>% 
+    mutate(
+        control_score=as.numeric(daytimeSymptoms==1) + 
+        as.numeric(nocturnalSymptoms==1) +
+        as.numeric(inhalerUse==1) +
+        as.numeric(limitedActivities==1)
+    ) %>%
+    mutate(
+        control_score_missing=as.numeric(!(daytimeSymptoms %in% c(1,2))) +
+        as.numeric(!(nocturnalSymptoms %in% c(1,2))) +
+        as.numeric(!(inhalerUse %in% c(1,2))) +
+        as.numeric(!(limitedActivities %in% c(1,2)))
+    ) %>% 
+    # use the GINA guidelines to determine the control level (Box 2-2, GINA guidelines 2020)
+    mutate(
+        control_level=case_when(
+        control_score == 0 ~ 1,
+        control_score < 3 & control_score > 0 ~ 2,
+        control_score >=3 ~ 3)
+    ) %>% 
+    mutate(
+        studyid=studyId,
+        exac=as.numeric(exacerbations==1)
+    ) %>% 
+    filter(!(studyId %in% c("13205707","23207811"))) %>% # asthma diagnosis before birth? => something wrong with the data
+    na.omit() # no asthma Dx date => ??? data quality issues omit them (3 patients)
+    # treat "don't know/missing" as "no" for the four asthma control indicators and exacerbation
+write_rds(df_EBA, here("R/private_dataset/df_EBA.rds"))
+```
 
+The `df_EBA` dataset contains the following variables:
+
+| name        | type           | description |
+| ------------- |:------| :---------|
+| studyID   | str           | 8 numeric characters |
+| visit      | int  |    |
+| daytimeSymptoms |  int  | 1 = TODO, 2 = TODO |
+| nocturnalSymptoms | int  | 1 = TODO, 2 = TODO |
+| inhalerUse | int  | 1 = TODO, 2 = TODO |
+| limitedActivities | int  | 1 = TODO, 2 = TODO |
+| exacerbations | int  | 1 = TODO, 2 = TODO |
+| sex | int  | 0 = female, 1 = male |
+| age | float | age in years |
+| ageAtAsthmaDx | float |  |
+| control_score | int  | 0 = fully-controlled, 1 = partially-controlled, 2 = partially-controlled, 3 = uncontrolled, 4 = uncontrolled |
+| control_score_missing | int  | 0 = TODO, 1 = TODO |
+| control_level | int  | 1 = fully-controlled, 2 = partially-controlled, 3 = uncontrolled |
+| time_since_Dx | float | years? |
+| studyid | str | 8 numeric characters, copy of studyId |
+| exac | int  | 0 = TODO, 1 = TODO |
+| time_since_Dx_cat | int  | 1 = TODO, 2 = TODO, 3 = TODO |
+
+
+```{r, echo = F}
+df_EBA <- read_rds(here("R/private_dataset/df_EBA.rds"))
 new_id <- 1:length(unique(df_EBA$studyId))
-df_id <- data.frame(new_id=new_id,studyId = unique(df_EBA$studyId))
+df_id <- data.frame(new_id=new_id, studyId = unique(df_EBA$studyId))
 
 df_EBA_analysis <- df_EBA %>% 
-  left_join(df_id,by=c('studyId')) %>% 
-  select(-studyId) %>% 
-  rename(studyId = new_id) %>% 
-  mutate(studyid= studyId) %>% 
-  mutate(group = as.numeric(age>=18)) %>% # 0 pediatric 1 adult
-  mutate(sex=as.factor(sex),
-         control_level=as.ordered(control_level),
-         studyid = as.factor(studyId),
-         age = age/100,
-         age_sq = age^2) %>% 
-  select(studyid,visit,group,control_level,sex,age,age_sq,exac)
+    left_join(df_id, by=c('studyId')) %>% 
+    select(-studyId) %>% 
+    rename(studyId =new_id) %>% 
+    mutate(studyid=studyId) %>% 
+    mutate(group=as.numeric(age>=18)) %>% # 0 pediatric 1 adult
+    mutate(
+        sex=as.factor(sex),
+        control_level=ifelse(control_level==1,0,1),
+        control_level=as.ordered(control_level),
+        studyid=as.factor(studyId),
+        age=age/100,
+        age_sq=age^2
+    ) %>% 
+    select(studyid, visit, group, control_level, sex, age, age_sq, exac)
 ```
 
 # Descriptive analysis
-Among 613 patients, only 6\% were lost during the one-year follow-up. There were at least 500 cases for each asthma control level. More females were in the cohort as expected (adult asthma is more prevalent among females). Asthma control level changed during the FU for 79\% of the patients. There were at least 500 cases for each control level.
+Among 613 patients, only 6\% were lost during the one-year follow-up. There were at least 500 cases
+for each asthma control level. More females were in the cohort as expected
+(adult asthma is more prevalent among females). Asthma control level changed during the FU for
+79\% of the patients. There were at least 500 cases for each control level.
 
 # Modeling
-We used a random-effects proportional ordinal logistic regression using the package $\textit{ordinal}$. The model is:
+We used a random-effects proportional ordinal logistic regression using the package
+$\textit{ordinal}$. The model is:
+
 $$
-\mbox{logit}(P(Y_i \leq j|X_i)) = \theta_j + X_i^\top \beta - u_i, ~\mbox{for } j=1,2, ~ \sum_{j}P(Y_i=j|X_i)=1,
+\begin{align}
+\mbox{logit}(P(Y_i \leq j|X_i)) &= \theta_j + X_i^\top \beta - u_i, ~\mbox{for } j \in \{1,2\} \\
+ \sum_{j}P(Y_i=j|X_i) &= 1
+\end{align}
 $$
-where $\theta_j$ are the cut points or threshold parameters, $X_i$ is the covariates for patient $i$, $\beta$ is the corresponding parameters, and $u_i \sim N(0,\sigma^2_u)$ are patient-specific random-effects. The individual probability at level $j$ was computed as:
+
+where $\theta_j$ are the cut points or threshold parameters, $X_i$ is the covariates for
+patient $i$, $\beta$ is the corresponding parameters, and $u_i \sim N(0,\sigma^2_u)$ are
+patient-specific random-effects. The individual probability at level $j$ was computed as:
+
 $$
 P(Y_i=j) = P(Y_i\leq j) - P(Y_i \leq j-1).
 $$
 
-#  Random-effects ordinal regression
-We compared the two links, probit and logit, and chose the link that provided better goodness-of-fit based on Akaike information criterion (the lower the better). The model with the logit link better fitted the data (AIC = 5512) than that with the probit link (AIC=5522).
+# Random-effects ordinal regression
+We compared the two links, probit and logit, and chose the link that provided better goodness-of-fit
+based on Akaike information criterion (the lower the better). The model with the logit link better
+fitted the data (AIC = 5512) than that with the probit link (AIC=5522).
+
 ```{r, echo = F}
 library(ordinal)
 library(sure)
