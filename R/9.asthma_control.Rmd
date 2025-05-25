@@ -100,6 +100,10 @@ The `df_EBA` dataset contains the following variables:
 
 ```{r, echo = F}
 df_EBA <- read_rds(here("R/private_dataset/df_EBA.rds"))
+write_csv(
+  df_EBA %>% select(-studyid, -exac, -control_score, -control_score_missing, -control_level),
+  here("R/private_dataset/df_EBA.csv")
+)
 new_id <- 1:length(unique(df_EBA$studyId))
 df_id <- data.frame(new_id=new_id, studyId = unique(df_EBA$studyId))
 
