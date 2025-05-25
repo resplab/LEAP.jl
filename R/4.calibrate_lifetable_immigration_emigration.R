@@ -3,7 +3,7 @@ library(parallel)
 library(here)
 
 baseline_year <- 2000
-last_year <- 2020
+last_year <- 2022
 projected_last_year <- 2068
 life_table_list <- c()
 immigration_list <- c()
