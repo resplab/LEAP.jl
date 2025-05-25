@@ -10,7 +10,7 @@ immigration_list <- c()
 emigration_list <- c()
 life_table_checker <- c()
 
-provinces <- c("BC","CA")
+provinces <- c("BC", "CA")
 desired_life_expectancys <- list(c(84.6,88.0),c(87,90.1)) # BC: male, female; CANADA: male, female
 calibration_years <- c(2043, 2068)
 
@@ -76,8 +76,6 @@ beta_year_optimizer <- function(
     life_expectancy = life_expectancy_calculator(lf)
     return(life_expectancy - desired_life_expectancy[as.numeric(SEX=="F") + 1])
 }
-
-
 
 
 get_prev_year_population <- function(row, tmp_combined){
