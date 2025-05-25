@@ -59,27 +59,25 @@ life_expectancy_calculator <- function(life_table_year){
 
 beta_year_optimizer <- function(
     mortality_year_adjustment, SEX, projected_last_year, death_final_year,
-    projected_life_table, ref_life_table, desired_life_expectancy, calibration_year
+    ref_life_table, desired_life_expectancy, calibration_year
 ){
 
-    for(yr in 1:(projected_last_year - death_final_year)){
-        projected_life_table[[yr]] <- get_projected_life_table_single_year(
-            ref_life_table=ref_life_table,
-            death_final_year=death_final_year,
-            year_index=yr,
-            beta_year=mortality_year_adjustment
-        )
-    }
-
-    projected_life_table <- do.call(rbind, projected_life_table)
+    ref_life_table_projected <- get_projected_life_table_single_year(
+        ref_life_table=ref_life_table,
+        death_final_year=death_final_year,
+        year_index=calibration_year-death_final_year,
+        beta_year=mortality_year_adjustment
+    )
     
-    lf <- projected_life_table %>% 
+    lf <- ref_life_table_projected %>% 
         filter(sex==SEX & year==calibration_year) %>% 
         select(age, prob_death)
 
     life_expectancy = life_expectancy_calculator(lf)
     return(life_expectancy - desired_life_expectancy[as.numeric(SEX=="F") + 1])
 }
+
+
 
 
 get_prev_year_population <- function(row, tmp_combined){
@@ -106,8 +104,6 @@ for(province_index in 1:length(provinces)) {
 
     ref_life_table <- life_table %>% filter(year==death_final_year)
 
-
-
     projected_life_table <- c()
 
     projected_life_table_male <- projected_life_table_female <- c()
@@ -118,7 +114,6 @@ for(province_index in 1:length(provinces)) {
             SEX="M",
             projected_last_year=projected_last_year,
             death_final_year=death_final_year,
-            projected_life_table=projected_life_table,
             ref_life_table=ref_life_table,
             desired_life_expectancy=desired_life_expectancy,
             calibration_year=calibration_year,
@@ -141,7 +136,6 @@ for(province_index in 1:length(provinces)) {
             SEX="F",
             projected_last_year=projected_last_year,
             death_final_year=death_final_year,
-            projected_life_table=projected_life_table,
             ref_life_table=ref_life_table,
             desired_life_expectancy=desired_life_expectancy,
             calibration_year=calibration_year,
