@@ -21,6 +21,23 @@ get_prob_death_projected = function(prob_death, year_index, beta) {
 }
 
 
+life_expectancy_calculator <- function(life_table_year){
+    life_table_year$I <- NA
+    life_table_year$I[1] <- 100000
+    for(i in 2:nrow(life_table_year)){
+        life_table_year$I[i] <- life_table_year$I[i-1]*(1-life_table_year$q[i-1])
+    }
+    
+    life_table_year <- life_table_year %>% mutate(d=I*q, L=lead(I) + 0.5*d)
+    life_table_year$L[1] <- life_table_year$L[2] + 0.1*life_table_year$d[1]
+    life_table_year$L[111] <- life_table_year$I[111]*1.4
+    
+    life_table_year$T <- rev(cumsum(rev(life_table_year$L)))
+    life_table_year = life_table_year %>% mutate(E=T/I)
+    return(life_table_year$E[1])
+}
+
+
 get_prev_year_population <- function(row, tmp_combined){
     YEAR <- row$year
     AGE <- row$age
@@ -69,22 +86,6 @@ for(province_index in 1:length(provinces)) {
                 baseyear=death_final_year,
                 beta_year=mortality_year_adjustment
             )
-        }
-  
-        life_expectancy_calculator <- function(lf){
-            lf$I <- NA
-            lf$I[1] <- 100000
-            for(i in 2:nrow(lf)){
-                lf$I[i] <- lf$I[i-1]*(1-lf$q[i-1])
-            }
-            
-            lf %>% mutate(d=I*q, L=lead(I) + 0.5*d) -> lf
-            lf$L[1] <- lf$L[2] + 0.1*lf$d[1]
-            lf$L[111] <- lf$I[111]*1.4
-            
-            lf$TT <- rev(cumsum(rev(lf$L)))
-            lf %>% mutate(E=TT/I) -> sol
-            sol$E[1]
         }
 
         projected_life_table <- do.call(rbind, projected_life_table)
