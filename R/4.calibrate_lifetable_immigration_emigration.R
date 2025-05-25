@@ -21,6 +21,25 @@ get_prob_death_projected = function(prob_death, year_index, beta) {
 }
 
 
+get_projected_life_table_single_year <- function(
+    ref_life_table, death_final_year, year_index, beta_year
+){
+    prob_death_projected = get_prob_death_projected(
+        prob_death=ref_life_table$prob_death,
+        year_index=year_index,
+        beta=beta_year
+    )
+    return(
+        ref_life_table %>% 
+            mutate(
+                prob_death=prob_death_projected,
+                se=se * prob_death_projected / ref_life_table$prob_death,
+                year=year_index + death_final_year
+            )
+    )
+}
+
+
 life_expectancy_calculator <- function(life_table_year){
     life_table_year$I <- NA
     life_table_year$I[1] <- 100000
@@ -62,28 +81,17 @@ for(province_index in 1:length(provinces)) {
 
     ref_life_table <- life_table %>% filter(year==death_final_year)
 
-    project_life_year <- function(
-        ref_lt, proj_year, baseyear, beta_year
-    ){
-        tmp <- get_prob_death_projected(ref_lt$prob_death, proj_year-baseyear, beta_year)
-        tmp_factor <- tmp/ref_lt$prob_death
-        ref_lt %>% 
-            mutate(
-                prob_death=tmp_factor*prob_death,
-                se=tmp_factor*se,
-                year=proj_year
-            )
-    }
+
 
     projected_life_table <- c()
 
     obj_function <- function(mortality_year_adjustment, SEX){
 
         for(yr in 1:(projected_last_year - death_final_year)){
-            projected_life_table[[yr]] <- project_life_year(
-                ref_life_table,
-                yr+death_final_year,
-                baseyear=death_final_year,
+            projected_life_table[[yr]] <- get_projected_life_table_single_year(
+                ref_life_table=ref_life_table,
+                death_final_year=death_final_year,
+                year_index=yr,
                 beta_year=mortality_year_adjustment
             )
         }
@@ -101,10 +109,10 @@ for(province_index in 1:length(provinces)) {
     projected_life_table_male <- projected_life_table_female <- c()
 
     for(yr in 1:(projected_last_year-death_final_year)){
-        projected_life_table_male[[yr]] <- project_life_year(
-            ref_life_table,
-            yr+death_final_year,
-            baseyear=death_final_year,
+        projected_life_table_male[[yr]] <- get_projected_life_table_single_year(
+            ref_life_table=ref_life_table,
+            death_final_year=death_final_year,
+            year_index=yr,
             beta_year=uniroot(obj_function, SEX="M", interval=c(-0.03,-0.01), tol=0.00001)$root
         )
     } 
@@ -112,10 +120,10 @@ for(province_index in 1:length(provinces)) {
     projected_life_table_male <- do.call(rbind, projected_life_table_male) %>% filter(sex=="M")
 
     for(yr in 1:(projected_last_year-death_final_year)){
-        projected_life_table_female[[yr]] <- project_life_year(
-            ref_life_table,
-            yr+death_final_year,
-            baseyear=death_final_year,
+        projected_life_table_female[[yr]] <- get_projected_life_table_single_year(
+            ref_life_table=ref_life_table,
+            death_final_year=death_final_year,
+            year_index=yr,
             beta_year=uniroot(obj_function, SEX="F", interval=c(-0.03,-0.01), tol=0.00001)$root
         )
     } 
