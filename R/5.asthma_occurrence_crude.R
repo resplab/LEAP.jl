@@ -6,11 +6,11 @@ library(mgcv)
 max_year <- 2019
 df_raw <- read_csv(here("public_dataset","13100096.csv"))
 chosen_province <- "British Columbia"
-baseline_year <- 2000
+STARTING_YEAR <- 2000
 # chosen_province <- "Canada"
 
 
-load_asthma_df_admin <- function(starting_year=baseline_year) {
+load_asthma_df_admin <- function(starting_year=STARTING_YEAR) {
     df <- readxl::read_xlsx(here("R/private_dataset/asthma_inc_prev.xlsx"), sheet=1)
 
     df <- df %>% filter(age_group_desc != "<1 year") %>% 
@@ -33,7 +33,7 @@ load_asthma_df_admin <- function(starting_year=baseline_year) {
 
 # BC asthma prev and inc equation -----------------------------------------
 
-load_asthma_df_bc <- function(starting_year=baseline_year) {
+load_asthma_df_bc <- function(starting_year=STARTING_YEAR) {
     df <- readxl::read_xlsx(here("R/private_dataset/asthma_inc_prev.xlsx"), sheet=1)
 
     df <- df %>% filter(age_group_desc != "<1 year") %>% 
@@ -89,7 +89,7 @@ plot_occurrence_comparison <- function(
 # INCIDENCE MODEL: BC ---------------------------------------------------------
 # INCIDENCE: log(incidence) ~ sex(year + sex*poly(age,5))
 
-generate_incidence_model <- function(df_asthma, min_age=3, max_age=65, starting_year=baseline_year) {
+generate_incidence_model <- function(df_asthma, min_age=3, max_age=65, starting_year=STARTING_YEAR) {
     # Create incidence dataframe
     df <- df_asthma %>% select(year, sex, age, incidence)
 
@@ -128,7 +128,7 @@ generate_incidence_model <- function(df_asthma, min_age=3, max_age=65, starting_
 # PREVALENCE MODEL: BC ---------------------------------------------------------
 # PREVALENCE: sex*poly(year,degree=2)*poly(age,degree=5)
 
-generate_prevalence_model <- function(df_asthma, min_age=3, max_age=65, starting_year=baseline_year) {
+generate_prevalence_model <- function(df_asthma, min_age=3, max_age=65, starting_year=STARTING_YEAR) {
     # Create prevalence dataframe
     df <- df_asthma %>% select(year, sex, age, prevalence)
 
