@@ -9,28 +9,6 @@ STARTING_YEAR <- 2000
 STABILIZATION_YEAR <- 2025
 
 
-load_asthma_df_admin <- function(starting_year=STARTING_YEAR) {
-    df <- readxl::read_xlsx(here("R/private_dataset/asthma_inc_prev.xlsx"), sheet=1)
-
-    df <- df %>% filter(age_group_desc != "<1 year") %>% 
-        mutate(year=substr(fiscal_year,1,4) %>% as.numeric()) %>% 
-        rename(sex=gender) %>% 
-        filter(year>=starting_year) %>% 
-        rename(age_group = age_group_desc)
-
-    lapply(df$age_group,function(x){
-        ceiling(mean(parse_number(str_split(x,"-")[[1]])))
-    })  %>% unlist() -> df$age
-
-    # Key assumption: set the incidence level at age 3 to the prevelance level
-    df <- df %>% 
-        mutate(incidence = ifelse(age==3, prevalence, incidence)) %>% 
-        mutate(age= ifelse(age==90, 100, age))
-
-    return(df)
-}
-
-
 #' Load the asthma incidence and prevalence data from BC administrative dataset
 #'
 #' Data Columns:
