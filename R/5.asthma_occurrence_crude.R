@@ -171,26 +171,6 @@ master_BC_asthma <- load_asthma_df_bc()
 generate_incidence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
 generate_prevalence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
 
-# test poly
-
-z <- poly(df_prev$year,2)
-
-z_attr <- attributes(z)
-alpha <- z_attr$coefs$alpha
-nd <- z_attr$coefs$norm2
-degree <- 5
-
-basis <- function(x,alpha,nd,degree){
-  fs <-  1/sqrt(nd[2])
-  fs <- append(fs,(x-alpha[1]) / sqrt(nd[3]))
-  if(degree>1){
-    for(i in 2:degree){
-      fs <- append(fs,((x-alpha[i]) * sqrt(nd[i+1]) * fs[i] - nd[i+1] / sqrt(nd[i]) * fs[i-1]) / sqrt(nd[i+2]))
-    }
-  }
-  fs[-1]
-}
-
 
 
 
