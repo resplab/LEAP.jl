@@ -10,18 +10,11 @@ starting_year <- 1999
 end_year <- 2065
 stabilization_year <- 2025
 
-asthma_predictor <- function(age, sex, year, type){
+predict_asthma_occurrence <- function(model, age, asthma_max_age, sex, year, stabilization_year=STABILIZATION_YEAR){
 
-    age <- pmin(age,asthma_max_age)
-    year <- pmin(year,stabilization_year)
-
-    if(type == "prev"){
-        return( exp(predict(asthma_prev_model,newdata=data.frame(age,sex,year))) %>% 
-                unlist())
-    } else{
-        return( exp(predict(asthma_inc_model,newdata=data.frame(age,sex,year))) %>% 
-                unlist())
-    }
+    age <- pmin(age, asthma_max_age)
+    year <- pmin(year, stabilization_year)
+    return(exp(predict(model, newdata=data.frame(age, sex, year))) %>% unlist())
 
 }
 
@@ -42,8 +35,14 @@ get_reassessment_data <- function(
   
     df_asthma <- df_asthma %>% 
         mutate(
-            inc=asthma_predictor(age,sex,year,type='inc'),
-            prev=asthma_predictor(age,sex,year,type='prev')
+            inc=predict_asthma_occurrence(
+                asthma_inc_model, age, asthma_max_age, sex, year,
+                stabilization_year
+            ),
+            prev=predict_asthma_occurrence(
+                asthma_prev_model, age, asthma_max_age, sex, year,
+                stabilization_year
+            )
         ) %>% 
         # let inc be prev for age = 3
         mutate(inc=ifelse(age==3, prev, inc))
