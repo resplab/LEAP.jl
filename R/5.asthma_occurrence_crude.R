@@ -281,6 +281,7 @@ df <- expand.grid(year=STARTING_YEAR:2065, sex=c(0:1), age=MIN_AGE:110) %>%
         inc=as.numeric(inc)
     )
 
+write_csv(df, here("R/master_asthma_prev_inc.csv"))
 ggplot(
     data=df %>% 
         mutate(sex = ifelse(sex==1, "Male", "Female")) %>% 
