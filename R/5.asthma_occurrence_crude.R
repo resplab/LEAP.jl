@@ -6,6 +6,7 @@ library(mgcv)
 max_year <- 2019
 STARTING_YEAR <- 2000
 STABILIZATION_YEAR <- 2025
+MIN_AGE <- 3
 
 
 #' Load the asthma incidence and prevalence data from BC administrative dataset
@@ -91,7 +92,7 @@ plot_occurrence_comparison <- function(
 # INCIDENCE MODEL: BC ---------------------------------------------------------
 # INCIDENCE: log(incidence) ~ sex(year + sex*poly(age,5))
 
-generate_incidence_model <- function(df_asthma, min_age=3, max_age=65, starting_year=STARTING_YEAR) {
+generate_incidence_model <- function(df_asthma, min_age=MIN_AGE, max_age=65, starting_year=STARTING_YEAR) {
     # Create incidence dataframe
     df <- df_asthma %>% select(year, sex, age, incidence)
 
@@ -130,7 +131,7 @@ generate_incidence_model <- function(df_asthma, min_age=3, max_age=65, starting_
 # PREVALENCE MODEL: BC ---------------------------------------------------------
 # PREVALENCE: sex*poly(year,degree=2)*poly(age,degree=5)
 
-generate_prevalence_model <- function(df_asthma, min_age=3, max_age=65, starting_year=STARTING_YEAR) {
+generate_prevalence_model <- function(df_asthma, min_age=MIN_AGE, max_age=65, starting_year=STARTING_YEAR) {
     # Create prevalence dataframe
     df <- df_asthma %>% select(year, sex, age, prevalence)
 
@@ -172,8 +173,8 @@ generate_prevalence_model <- function(df_asthma, min_age=3, max_age=65, starting
 
 df_admin <- load_asthma_df_admin()
 master_BC_asthma <- load_asthma_df_bc()
-generate_incidence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
-generate_prevalence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
+generate_incidence_model(df_asthma=master_BC_asthma, min_age=MIN_AGE, max_age=65)
+generate_prevalence_model(df_asthma=master_BC_asthma, min_age=MIN_AGE, max_age=65)
 
 
 
@@ -183,7 +184,7 @@ generate_prevalence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
 prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
 inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
 max_age <- 63
-df <- expand.grid(year=2000:2065,sex=c(0:1),age=3:110) %>% 
+df <- expand.grid(year=2000:2065,sex=c(0:1),age=MIN_AGE:110) %>% 
     as.data.frame() %>% 
     mutate(
         prev=exp(predict(
