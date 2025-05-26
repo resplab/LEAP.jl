@@ -98,17 +98,27 @@ get_reassessment_data <- function(
 }
 
 
-CA_tuner <- get_reassessment_data(chosen_province="CA",end_year=2066,stabilization_year = 2025)
-BC_tuner <- get_reassessment_data(chosen_province="BC",end_year=2043,stabilization_year=2025)
+provinces = c("BC", "CA")
+end_years = c(2043, 2066)
+reassessment_list = c()
+for (i in length(provinces)) {
+    df <- get_reassessment_data(province=provinces[i], end_year=end_years[i], stabilization_year=STABILIZATION_YEAR)
+    reassessment_list[[i]] <- df
+}
 
-master_assessment <- rbind(CA_tuner,
-                           BC_tuner)
-master_assessment %>% 
-  mutate(M = ifelse(M>1,1,M))
-master_assessment <- master_assessment %>% select(year,age,`F`,M,province)
+df_reassessment <- do.call(rbind, reassessment_list) %>% as.data.frame()
+df_reassessment <- do.call(rbind, reassessment_list) %>% as.data.frame()
 
-write_csv(master_assessment %>% 
-            mutate(M = ifelse(M>1,1,M),
-                   `F` = ifelse(`F`>1,1,`F`)),"../src/processed_data/master_asthma_reassessment.csv")
+df_reassessment <- df_reassessment %>% pivot_longer(3:4, names_to="sex", values_to="reassessment")
+df_reassessment <- df_reassessment %>% mutate(reassessment=ifelse(reassessment > 1, 1, reassessment))
+
+write_csv(df_reassessment, here("src/processed_data/asthma_reassessment.csv"))
+
+df_reassessment <- do.call(rbind, reassessment_list) %>% as.data.frame()
+
+df_reassessment <- df_reassessment %>% pivot_longer(3:4, names_to="sex", values_to="reassessment")
+df_reassessment <- df_reassessment %>% mutate(reassessment=ifelse(reassessment > 1, 1, reassessment))
+
+write_csv(df_reassessment, here("src/processed_data/asthma_reassessment.csv"))
 
 
