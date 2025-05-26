@@ -198,8 +198,8 @@ basis <- function(x,alpha,nd,degree){
 
 # generate crude asthma inc & prev  ----------------------------------------
 
-prev_model <- read_rds("asthma_prevalence_model.rds")
-inc_model <- read_rds("asthma_incidence_model.rds")
+prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
+inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
 stabilization_year <- 2025
 max_age <- 63
 df <- expand.grid(year=2000:2065,sex=c(0:1),age=3:110) %>% 
@@ -235,5 +235,5 @@ ggplot(data=df %>%
   theme(legend.position='top',
         legend.title=element_blank())
 
-# write_csv(df,"master_asthma_prev_inc.csv")
+write_csv(df, here("R/master_asthma_prev_inc.csv"))
 
