@@ -9,6 +9,55 @@ STABILIZATION_YEAR <- 2025
 MIN_AGE <- 3
 
 
+#' Load the asthma incidence and prevalence data from BC HSDA dataset
+#'
+#' Data Columns:
+#' agegrp: str, format "X-Y", "80+"
+#' Year: int, format XXXX
+#' SEX: str, "M", "F", or "T"
+#' incidence
+#' prevalence
+#' incidence_numerator
+#' prevalence_numerator
+#' pop: int, number of people in the age group
+#' @param starting_year An integer. The starting year of the data. Default is 2000.
+#' @param min_age An integer. The minimum age for asthma diagnosis. Default is 3.
+#' @return Returns an object of class "?". Description of what the function returns
+#' @details This function can be used in place of the `load_asthma_df_bc` function if needed.
+load_asthma_df_hsda <- function(starting_year=STARTING_YEAR, min_age=MIN_AGE) {
+    df <- read_csv(here("R/private_dataset/asthma_incidence_prevalence_bc_hsda_2001_2023.csv"))
+    # Rename columns
+    df <- df %>% rename(age_group=agegrp)
+
+    # Filter for year >= starting_year
+    df <- df %>% filter(year >= starting_year)
+
+    # Age groups are in the format "X-Y" or "X+"
+    # Set the age to the average of the age group
+    lapply(df$age_group, function(x){
+        ceiling(mean(parse_number(str_split(x, "-")[[1]])))
+    })  %>% 
+    unlist() -> df$age
+
+    # Key assumption: asthma starts at age 3
+    # Set incidence = prevalence at age 3
+    df <- df %>% 
+        mutate(
+            incidence=ifelse(age==min_age, PREV_CRUDE_RATE, INC_CRUDE_RATE)
+        )
+
+    # AH
+    df <- df %>% 
+        filter(REGION == "BC") %>%
+        filter(DISEASE == "Asthma 1+") %>%
+        filter(SEX != "Total") %>%
+        filter(age_group != "Total") %>%
+        rename(year=Year, sex=SEX)
+
+    return(df)
+}
+
+
 #' Load the asthma incidence and prevalence data from BC administrative dataset
 #'
 #' Data Columns:
