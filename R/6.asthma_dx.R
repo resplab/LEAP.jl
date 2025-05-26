@@ -105,14 +105,6 @@ for (i in length(provinces)) {
 }
 
 df_reassessment <- do.call(rbind, reassessment_list) %>% as.data.frame()
-df_reassessment <- do.call(rbind, reassessment_list) %>% as.data.frame()
-
-df_reassessment <- df_reassessment %>% pivot_longer(3:4, names_to="sex", values_to="reassessment")
-df_reassessment <- df_reassessment %>% mutate(reassessment=ifelse(reassessment > 1, 1, reassessment))
-
-write_csv(df_reassessment, here("src/processed_data/asthma_reassessment.csv"))
-
-df_reassessment <- do.call(rbind, reassessment_list) %>% as.data.frame()
 
 df_reassessment <- df_reassessment %>% pivot_longer(3:4, names_to="sex", values_to="reassessment")
 df_reassessment <- df_reassessment %>% mutate(reassessment=ifelse(reassessment > 1, 1, reassessment))
