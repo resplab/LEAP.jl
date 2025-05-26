@@ -6,6 +6,7 @@ library(mgcv)
 max_year <- 2019
 chosen_province <- "British Columbia"
 STARTING_YEAR <- 2000
+STABILIZATION_YEAR <- 2025
 
 
 load_asthma_df_admin <- function(starting_year=STARTING_YEAR) {
@@ -178,18 +179,18 @@ generate_prevalence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
 
 prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
 inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
-stabilization_year <- 2025
 max_age <- 63
 df <- expand.grid(year=2000:2065,sex=c(0:1),age=3:110) %>% 
-  as.data.frame() %>% 
-  mutate(prev = exp(predict(prev_model,data.frame(year=pmin(2025,year),sex,age=pmin(age,max_age)))),
-         inc = exp(predict(inc_model,data.frame(year=pmin(2025,year),sex,age=pmin(age,max_age))))) %>% 
-  mutate(prev=as.numeric(prev),
-         inc = as.numeric(inc))
+    as.data.frame() %>% 
+    mutate(
+        prev=exp(predict(prev_model, data.frame(year=pmin(STABILIZATION_YEAR, year),sex,age=pmin(age,max_age)))),
+            inc = exp(predict(inc_model,data.frame(year=pmin(STABILIZATION_YEAR,year),sex,age=pmin(age,max_age))))) %>% 
+    mutate(prev=as.numeric(prev),
+            inc = as.numeric(inc))
 
 ggplot(data=df %>% 
          mutate(sex = ifelse(sex==1,"Male","Female")) %>% 
-         filter(year %in% seq(2000,2025,5)) %>% 
+         filter(year %in% seq(2000, STABILIZATION_YEAR, 5)) %>% 
          mutate(year=as.factor(year)),aes(x=age,y=prev,col=year)) +
   geom_line() +
   xlim(c(0,60)) +
@@ -202,7 +203,7 @@ ggplot(data=df %>%
 
 ggplot(data=df %>% 
          mutate(sex = ifelse(sex==1,"Male","Female")) %>% 
-         filter(year %in% seq(2000,2025,5)) %>% 
+         filter(year %in% seq(2000,STABILIZATION_YEAR,5)) %>% 
          mutate(year=as.factor(year)),aes(x=age,y=inc,col=year)) +
   geom_line() +
   xlim(c(0,60)) +
