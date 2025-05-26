@@ -24,26 +24,40 @@ STABILIZATION_YEAR <- 2025
 load_asthma_df_bc <- function(starting_year=STARTING_YEAR) {
     df <- readxl::read_xlsx(here("R/private_dataset/asthma_inc_prev.xlsx"), sheet=1)
 
-    df <- df %>% filter(age_group_desc != "<1 year") %>% 
-        mutate(year=substr(fiscal_year, 1, 4) %>% as.numeric()) %>% 
-        rename(sex=gender) %>% 
-        filter(year>=starting_year) %>% 
-        rename(age_group = age_group_desc) %>% 
-        mutate(prev_sd = sqrt(prevalence_numerator)*qnorm(0.975),
-                prev_upper = (prevalence_numerator+prev_sd)/pop,
-                prev_lower = (prevalence_numerator-prev_sd)/pop)
+    # Rename columns
+    df <- df %>% rename(age_group=age_group_desc, sex=gender)
 
+    # Filter out the "<1 year" age group
+    df <- df %>%
+        filter(age_group != "<1 year")
+
+    df <- df %>% 
+        mutate(year=substr(fiscal_year, 1, 4) %>% as.numeric())
+
+    # Filter for year >= starting_year
+    df <- df %>%
+        filter(year >= starting_year)
+
+    df <- df %>%
+        mutate(
+            prev_sd=sqrt(prevalence_numerator) * qnorm(0.975),
+            prev_upper=(prevalence_numerator + prev_sd)/pop,
+            prev_lower=(prevalence_numerator - prev_sd)/pop
+        )
+
+    # Age groups are in the format "X-Y years" or "<1 year"
+    # Set the age to the average of the age group
     lapply(df$age_group,function(x){
-        ceiling(mean(parse_number(str_split(x,"-")[[1]])))
+        ceiling(mean(parse_number(str_split(x, "-")[[1]])))
     })  %>% 
     unlist() -> df$age
 
     # Key assumption: asthma starts at age 3
-    # Set the inc = prev at age 3
+    # Set incidence = prevalence at age 3
     df <- df %>% 
         mutate(
-            incidence=ifelse(age==3,prevalence,incidence),
-            incidence_numerator=ifelse(age==3,prevalence_numerator,incidence_numerator)
+            incidence=ifelse(age==3, prevalence, incidence),
+            incidence_numerator=ifelse(age==3, prevalence_numerator, incidence_numerator)
         )
 
     return(df)
