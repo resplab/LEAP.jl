@@ -66,39 +66,52 @@ load_asthma_df_bc <- function(starting_year=baseline_year) {
 master_BC_asthma <- load_asthma_df_bc()
 
 
-# INCIDENCE: log(inc) ~ sex(year + sex*poly(age,5))
-df_inc <- master_BC_asthma %>% 
-  select(year,sex,age,incidence) %>% 
-  filter(year >= baseline_year & year <= max_year) %>%
-  mutate(sex=as.numeric(sex=="M"),
-         y= incidence) %>% 
-  filter(age <= 65)
+# INCIDENCE MODEL: BC ---------------------------------------------------------
+# INCIDENCE: log(incidence) ~ sex(year + sex*poly(age,5))
 
-inc_model <- gam(log(incidence)~ sex*year + 
-                   sex*poly(age,degree = 5),
-                 data=df_inc)
+generate_incidence_model <- function(df_asthma, min_age=3, max_age=65, starting_year=baseline_year) {
+    # Create incidence dataframe
+    df <- df_asthma %>% select(year, sex, age, incidence)
 
-inc_pred <- expand.grid(year=c(2000:2065),sex=c(0,1),age=seq(3,65,by=1)) %>% 
-  as.data.frame()
+    # Filter for year <= max_year
+    df <- df %>% filter(year <= max_year)
+        filter(year >= starting_year & year <= max_year)
 
-inc_pred$y <- exp(predict(inc_model,newdata=inc_pred))
+    df <- df %>%
+        mutate(sex=as.numeric(sex=="M"), y=incidence)
+        filter(age <= max_age)
 
-df_inc_pred <- df_inc %>% 
-  left_join(inc_pred,by=c("year","sex","age"))
+    model <- mgcv::gam(
+        formula=log(incidence)~ sex*year + sex*poly(age, degree = 5), data=df
+    )
+    print(summary(model))
 
-chosen_year <- seq(2000,2020,by=2)
+    df_pred <- expand.grid(year=c(2000:2065), sex=c(0,1), age=seq(min_age, max_age, by=1)) %>% 
+        as.data.frame()
 
-ggplot(data=df_inc %>% 
-         filter(year %in% chosen_year) %>% 
-         mutate(year=as.factor(year)),
-       aes(x=age,y=y,color=year)) +
-  geom_line() +
-  geom_line(data=inc_pred %>% 
-              filter(year %in% chosen_year) %>% 
-              mutate(year=as.factor(year)),aes(x=age,y=y,color=year),
-            linetype="dashed") +
-  ylab("Asthma incidence per 100 in BC") +
-  facet_grid(.~sex)
+    df_pred$y <- exp(predict(model, newdata=df_pred))
+
+    df_inc_pred <- df %>% 
+    left_join(df_pred, by=c("year","sex","age"))
+
+    chosen_year <- seq(2000,2020,by=2)
+
+    ggplot(data=df_inc %>% 
+            filter(year %in% chosen_year) %>% 
+            mutate(year=as.factor(year)),
+        aes(x=age,y=y,color=year)) +
+    geom_line() +
+    geom_line(data=inc_pred %>% 
+                filter(year %in% chosen_year) %>% 
+                mutate(year=as.factor(year)),aes(x=age,y=y,color=year),
+                linetype="dashed") +
+    ylab("Asthma incidence per 100 in BC") +
+    facet_grid(.~sex)
+
+    write_rds(model, here("R/private_dataset/asthma_incidence_model.rds"))
+}
+
+generate_incidence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
 
 # PREV: sex*poly(year,degree=2)*poly(age,degree=5)
 
@@ -137,7 +150,6 @@ ggplot(data=df_prev %>%
   facet_grid(.~sex)
 
 # test poly
-summary(inc_model)
 
 z <- poly(df_prev$year,2)
 
@@ -158,7 +170,7 @@ basis <- function(x,alpha,nd,degree){
 }
 
 write_rds(prev_model,"asthma_prevalence_model.rds")
-write_rds(inc_model,"asthma_incidence_model.rds")
+
 
 
 
