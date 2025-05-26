@@ -138,9 +138,20 @@ plot_occurrence_comparison <- function(
 }
 
 
-# INCIDENCE MODEL: BC ---------------------------------------------------------
-# INCIDENCE: log(incidence) ~ sex(year + sex*poly(age,5))
-
+#' Generate a generalized additive model (GAM) for asthma incidence in BC
+#' 
+#' Formula: log(incidence) ~ sex(year + sex*poly(age, 5))
+#'
+#' @param df_asthma A data frame containing asthma data with columns:
+#' year: int, the calendar year, a value between 2000 and 2020
+#' sex: str, "M" or "F"
+#' age: int, the age of the individual, a value between 3 and 65
+#' incidence: numeric, the incidence rate of asthma per 100 individuals
+#' @param min_age An integer. The minimum age for asthma diagnosis. Default is 3.
+#' @param max_age An integer. The maximum age for the regression analysis. Default is 65.
+#' @param starting_year An integer. The starting year of the data. Default is 2000.
+#' @details This function generates a GAM for asthma incidence in BC, plots the model predictions,
+#' and saves the model to an RDS file.
 generate_incidence_model <- function(
     df_asthma,
     min_age=MIN_AGE,
@@ -182,9 +193,21 @@ generate_incidence_model <- function(
     write_rds(model, here("R/private_dataset/asthma_incidence_model.rds"))
 }
 
-# PREVALENCE MODEL: BC ---------------------------------------------------------
-# PREVALENCE: sex*poly(year,degree=2)*poly(age,degree=5)
 
+#' Generate a generalized additive model (GAM) for asthma prevalence in BC
+#'
+#' Formula: log(prevalalence) ~ sex * poly(year, degree=2) * poly(age, degree=5)
+#' 
+#' @param df_asthma A data frame containing asthma data with columns:
+#' year: int, the calendar year, a value between 2000 and 2020
+#' sex: str, "M" or "F"
+#' age: int, the age of the individual, a value between 3 and 65
+#' prevalence: numeric, the prevalence rate of asthma per 100 individuals
+#' @param min_age An integer. The minimum age for asthma diagnosis. Default is 3.
+#' @param max_age An integer. The maximum age for the regression analysis. Default is 65.
+#' @param starting_year An integer. The starting year of the data. Default is 2000.
+#' @details This function generates a GAM for asthma prevalence in BC, plots the model predictions,
+#' and saves the model to an RDS file.
 generate_prevalence_model <- function(
     df_asthma,
     min_age=MIN_AGE,
