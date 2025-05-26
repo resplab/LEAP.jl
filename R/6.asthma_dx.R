@@ -10,6 +10,22 @@ starting_year <- 1999
 end_year <- 2065
 stabilization_year <- 2025
 
+asthma_predictor <- function(age, sex, year, type){
+
+    age <- pmin(age,asthma_max_age)
+    year <- pmin(year,stabilization_year)
+
+    if(type == "prev"){
+        return( exp(predict(asthma_prev_model,newdata=data.frame(age,sex,year))) %>% 
+                unlist())
+    } else{
+        return( exp(predict(asthma_inc_model,newdata=data.frame(age,sex,year))) %>% 
+                unlist())
+    }
+
+}
+
+
 get_reassessment_data <- function(
     chosen_province="CA",
     starting_year=1999,
@@ -20,21 +36,6 @@ get_reassessment_data <- function(
   
     asthma_inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
     asthma_prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
-
-  asthma_predictor <- function(age,sex,year,type){
-    age <- pmin(age,asthma_max_age)
-    
-    year <- pmin(year,stabilization_year)
-    
-    if(type == "prev"){
-      return( exp(predict(asthma_prev_model,newdata=data.frame(age,sex,year))) %>% 
-                unlist())
-    } else{
-      return( exp(predict(asthma_inc_model,newdata=data.frame(age,sex,year))) %>% 
-                unlist())
-    }
-    
-  }
   
     df_asthma <- expand.grid(age=3:110, sex=c(0,1), year=starting_year:end_year) %>% 
         as.data.frame()
