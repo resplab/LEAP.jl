@@ -4,7 +4,6 @@ library(tidyverse)
 library(here)
 library(mgcv)
 max_year <- 2019
-chosen_province <- "British Columbia"
 STARTING_YEAR <- 2000
 STABILIZATION_YEAR <- 2025
 
