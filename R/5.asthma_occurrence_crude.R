@@ -30,8 +30,20 @@ load_asthma_df_admin <- function(starting_year=STARTING_YEAR) {
     return(df)
 }
 
-# BC asthma prev and inc equation -----------------------------------------
 
+#' Load the asthma incidence and prevalence data from BC administrative dataset
+#'
+#' Data Columns:
+#' age_group_desc: str, format "X-Y years", "<1 year", "90+ years"
+#' fiscal_year: str, format XXXX[A-z0-9]
+#' gender: str, "M", "F", or "T"
+#' incidence
+#' prevalence
+#' incidence_numerator
+#' prevalence_numerator
+#' pop: int, number of people in the age group
+#' @param starting_year An integer. The starting year of the data. Default is 2000.
+#' @return Returns an object of class "?". Description of what the function returns
 load_asthma_df_bc <- function(starting_year=STARTING_YEAR) {
     df <- readxl::read_xlsx(here("R/private_dataset/asthma_inc_prev.xlsx"), sheet=1)
 
