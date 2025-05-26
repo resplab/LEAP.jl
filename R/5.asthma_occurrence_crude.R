@@ -10,22 +10,28 @@ baseline_year <- 2000
 # chosen_province <- "Canada"
 
 
-# admin data --------------------------------------------------------------
-df_admin <- readxl::read_xlsx("private_dataset/asthma_inc_prev.xlsx",sheet=1) %>% 
-  filter(age_group_desc != "<1 year") %>% 
-  mutate(year=substr(fiscal_year,1,4) %>% as.numeric()) %>% 
-  rename(sex=gender) %>% 
-  filter(year>=baseline_year) %>% 
-  rename(age_group = age_group_desc)
+load_asthma_df_admin <- function(starting_year=baseline_year) {
+    df <- readxl::read_xlsx(here("R/private_dataset/asthma_inc_prev.xlsx"), sheet=1)
 
-lapply(df_admin$age_group,function(x){
-  ceiling(mean(parse_number(str_split(x,"-")[[1]])))
-})  %>% unlist() -> df_admin$age
+    df <- df %>% filter(age_group_desc != "<1 year") %>% 
+        mutate(year=substr(fiscal_year,1,4) %>% as.numeric()) %>% 
+        rename(sex=gender) %>% 
+        filter(year>=baseline_year) %>% 
+        rename(age_group = age_group_desc)
 
-# Key assumption: set the incidence level at age 3 to the prevelance level
-df_admin <- df_admin %>% 
-  mutate(incidence = ifelse(age==3,prevalence,incidence)) %>% 
-  mutate(age= ifelse(age==90,100,age))
+    lapply(df$age_group,function(x){
+        ceiling(mean(parse_number(str_split(x,"-")[[1]])))
+    })  %>% unlist() -> df$age
+
+    # Key assumption: set the incidence level at age 3 to the prevelance level
+    df <- df %>% 
+        mutate(incidence = ifelse(age==3, prevalence, incidence)) %>% 
+        mutate(age= ifelse(age==90, 100, age))
+
+    return(df)
+}
+
+df_admin <- load_asthma_df_admin()
 
 # BC asthma prev and inc equation -----------------------------------------
 master_BC_asthma <- readxl::read_xlsx("private_dataset/asthma_inc_prev.xlsx",sheet=1) %>% 
