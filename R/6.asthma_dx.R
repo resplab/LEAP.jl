@@ -4,8 +4,6 @@ library(mgcv)
 # i.e., the prob that an asthma patient "outgrows" asthma and 
 # become undiagnosed with asthma
 
-#iterative method
-chosen_province <- "CA"
 starting_year <- 1999
 end_year <- 2065
 STABILIZATION_YEAR <- 2025
