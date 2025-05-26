@@ -34,26 +34,37 @@ load_asthma_df_admin <- function(starting_year=baseline_year) {
 df_admin <- load_asthma_df_admin()
 
 # BC asthma prev and inc equation -----------------------------------------
-master_BC_asthma <- readxl::read_xlsx("private_dataset/asthma_inc_prev.xlsx",sheet=1) %>% 
-  filter(age_group_desc != "<1 year") %>% 
-  mutate(year=substr(fiscal_year,1,4) %>% as.numeric()) %>% 
-  rename(sex=gender) %>% 
-  filter(year>=baseline_year) %>% 
-  rename(age_group = age_group_desc) %>% 
-  mutate(prev_sd = sqrt(prevalence_numerator)*qnorm(0.975),
-         prev_upper = (prevalence_numerator+prev_sd)/pop,
-         prev_lower = (prevalence_numerator-prev_sd)/pop)
 
-lapply(master_BC_asthma$age_group,function(x){
-  ceiling(mean(parse_number(str_split(x,"-")[[1]])))
-})  %>% 
-  unlist() -> master_BC_asthma$age
+load_asthma_df_bc <- function(starting_year=baseline_year) {
+    df <- readxl::read_xlsx(here("R/private_dataset/asthma_inc_prev.xlsx"), sheet=1)
 
-# Key assumption: asthma starts at age 3
-# Set the inc = prev at age 3
-master_BC_asthma <- master_BC_asthma %>% 
-  mutate(incidence = ifelse(age==3,prevalence,incidence),
-         incidence_numerator = ifelse(age==3,prevalence_numerator,incidence_numerator)) 
+    df <- df %>% filter(age_group_desc != "<1 year") %>% 
+        mutate(year=substr(fiscal_year, 1, 4) %>% as.numeric()) %>% 
+        rename(sex=gender) %>% 
+        filter(year>=starting_year) %>% 
+        rename(age_group = age_group_desc) %>% 
+        mutate(prev_sd = sqrt(prevalence_numerator)*qnorm(0.975),
+                prev_upper = (prevalence_numerator+prev_sd)/pop,
+                prev_lower = (prevalence_numerator-prev_sd)/pop)
+
+    lapply(df$age_group,function(x){
+        ceiling(mean(parse_number(str_split(x,"-")[[1]])))
+    })  %>% 
+    unlist() -> df$age
+
+    # Key assumption: asthma starts at age 3
+    # Set the inc = prev at age 3
+    df <- df %>% 
+        mutate(
+            incidence=ifelse(age==3,prevalence,incidence),
+            incidence_numerator=ifelse(age==3,prevalence_numerator,incidence_numerator)
+        )
+
+    return(df)
+}
+
+master_BC_asthma <- load_asthma_df_bc()
+
 
 # INCIDENCE: log(inc) ~ sex(year + sex*poly(age,5))
 df_inc <- master_BC_asthma %>% 
