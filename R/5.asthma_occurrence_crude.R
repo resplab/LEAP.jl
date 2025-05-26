@@ -180,7 +180,6 @@ generate_prevalence_model <- function(
 }
 
 
-df_admin <- load_asthma_df_admin()
 df_asthma <- load_asthma_df_bc()
 generate_incidence_model(df_asthma=df_asthma, min_age=MIN_AGE, max_age=65)
 generate_prevalence_model(df_asthma=df_asthma, min_age=MIN_AGE, max_age=65)
