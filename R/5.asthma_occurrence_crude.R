@@ -183,36 +183,55 @@ max_age <- 63
 df <- expand.grid(year=2000:2065,sex=c(0:1),age=3:110) %>% 
     as.data.frame() %>% 
     mutate(
-        prev=exp(predict(prev_model, data.frame(year=pmin(STABILIZATION_YEAR, year),sex,age=pmin(age,max_age)))),
-            inc = exp(predict(inc_model,data.frame(year=pmin(STABILIZATION_YEAR,year),sex,age=pmin(age,max_age))))) %>% 
-    mutate(prev=as.numeric(prev),
-            inc = as.numeric(inc))
+        prev=exp(predict(
+            prev_model,
+            data.frame(year=pmin(STABILIZATION_YEAR, year), sex, age=pmin(age, max_age))
+        )),
+        inc=exp(predict(
+            inc_model,
+            data.frame(year=pmin(STABILIZATION_YEAR, year), sex, age=pmin(age, max_age))
+        ))
+    ) %>% 
+    mutate(
+        prev=as.numeric(prev),
+        inc=as.numeric(inc)
+    )
 
-ggplot(data=df %>% 
-         mutate(sex = ifelse(sex==1,"Male","Female")) %>% 
-         filter(year %in% seq(2000, STABILIZATION_YEAR, 5)) %>% 
-         mutate(year=as.factor(year)),aes(x=age,y=prev,col=year)) +
-  geom_line() +
-  xlim(c(0,60)) +
-  facet_grid(.~sex) +
-  ylab("Crude asthma prevalence (per 100)")+
-  xlab("Age (year)")+
-  theme_classic(base_size=20) +
-  theme(legend.position='top',
-        legend.title=element_blank())
+ggplot(
+    data=df %>% 
+        mutate(sex = ifelse(sex==1,"Male","Female")) %>% 
+        filter(year %in% seq(2000, STABILIZATION_YEAR, 5)) %>% 
+        mutate(year=as.factor(year)),
+    aes(x=age,y=prev,col=year)
+) +
+    geom_line() +
+    xlim(c(0, 60)) +
+    facet_grid(.~sex) +
+    ylab("Crude asthma prevalence (per 100)")+
+    xlab("Age (years)")+
+    theme_classic(base_size=20) +
+    theme(
+        legend.position='top',
+        legend.title=element_blank()
+    )
 
-ggplot(data=df %>% 
-         mutate(sex = ifelse(sex==1,"Male","Female")) %>% 
-         filter(year %in% seq(2000,STABILIZATION_YEAR,5)) %>% 
-         mutate(year=as.factor(year)),aes(x=age,y=inc,col=year)) +
-  geom_line() +
-  xlim(c(0,60)) +
-  facet_grid(.~sex) +
-  ylab("Crude asthma incidence (per 100)")+
-  xlab("Age (year)")+
-  theme_classic(base_size=20) +
-  theme(legend.position='top',
-        legend.title=element_blank())
+ggplot(
+    data=df %>% 
+        mutate(sex=ifelse(sex==1, "Male", "Female")) %>% 
+        filter(year %in% seq(2000, STABILIZATION_YEAR, 5)) %>% 
+        mutate(year=as.factor(year)),
+    aes(x=age, y=inc, col=year)
+) +
+    geom_line() +
+    xlim(c(0, 60)) +
+    facet_grid(.~sex) +
+    ylab("Crude asthma incidence (per 100)")+
+    xlab("Age (year)")+
+    theme_classic(base_size=20) +
+    theme(
+        legend.position='top',
+        legend.title=element_blank()
+    )
 
 write_csv(df, here("R/master_asthma_prev_inc.csv"))
 
