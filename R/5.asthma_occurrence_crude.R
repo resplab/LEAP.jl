@@ -188,8 +188,6 @@ basis <- function(x,alpha,nd,degree){
 
 # generate crude asthma inc & prev  ----------------------------------------
 
-library(mgcv)
-library(tidyverse)
 prev_model <- read_rds("asthma_prevalence_model.rds")
 inc_model <- read_rds("asthma_incidence_model.rds")
 stabilization_year <- 2025
