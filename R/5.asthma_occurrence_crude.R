@@ -7,7 +7,6 @@ max_year <- 2019
 df_raw <- read_csv(here("public_dataset","13100096.csv"))
 chosen_province <- "British Columbia"
 STARTING_YEAR <- 2000
-# chosen_province <- "Canada"
 
 
 load_asthma_df_admin <- function(starting_year=STARTING_YEAR) {
