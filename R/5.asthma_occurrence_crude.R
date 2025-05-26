@@ -264,7 +264,7 @@ generate_prevalence_model(df_asthma=df_asthma, min_age=MIN_AGE, max_age=65)
 prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
 inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
 max_age <- 63
-df <- expand.grid(year=2000:2065,sex=c(0:1),age=MIN_AGE:110) %>% 
+df <- expand.grid(year=STARTING_YEAR:2065, sex=c(0:1), age=MIN_AGE:110) %>% 
     as.data.frame() %>% 
     mutate(
         prev=exp(predict(
@@ -283,10 +283,10 @@ df <- expand.grid(year=2000:2065,sex=c(0:1),age=MIN_AGE:110) %>%
 
 ggplot(
     data=df %>% 
-        mutate(sex = ifelse(sex==1,"Male","Female")) %>% 
-        filter(year %in% seq(2000, STABILIZATION_YEAR, 5)) %>% 
+        mutate(sex = ifelse(sex==1, "Male", "Female")) %>% 
+        filter(year %in% seq(STARTING_YEAR, STABILIZATION_YEAR, by=5)) %>% 
         mutate(year=as.factor(year)),
-    aes(x=age,y=prev,col=year)
+    aes(x=age, y=prev, col=year)
 ) +
     geom_line() +
     xlim(c(0, 60)) +
@@ -302,7 +302,7 @@ ggplot(
 ggplot(
     data=df %>% 
         mutate(sex=ifelse(sex==1, "Male", "Female")) %>% 
-        filter(year %in% seq(2000, STABILIZATION_YEAR, 5)) %>% 
+        filter(year %in% seq(STARTING_YEAR, STABILIZATION_YEAR, by=5)) %>% 
         mutate(year=as.factor(year)),
     aes(x=age, y=inc, col=year)
 ) +
