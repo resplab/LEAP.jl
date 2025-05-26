@@ -65,6 +65,29 @@ load_asthma_df_bc <- function(starting_year=baseline_year) {
 
 master_BC_asthma <- load_asthma_df_bc()
 
+plot_occurrence_comparison <- function(
+    df, df_pred, title, year_min=2000, year_max=2020, year_step=2
+) {
+    years <- seq(year_min, year_max, by=year_step)
+    ggplot(
+        data=df %>% 
+            filter(year %in% years) %>% 
+            drop_na() %>%
+            mutate(year=as.factor(year)),
+        aes(x=age, y=y, color=year)
+    ) +
+        geom_line() +
+        geom_line(
+            data=df_pred %>% 
+                filter(year %in% years) %>% 
+                mutate(year=as.factor(year)),
+            aes(x=age, y=y, color=year),
+            linetype="dashed"
+        ) +
+        ylab(title) +
+        facet_grid(.~sex)
+}
+
 
 # INCIDENCE MODEL: BC ---------------------------------------------------------
 # INCIDENCE: log(incidence) ~ sex(year + sex*poly(age,5))
@@ -92,29 +115,15 @@ generate_incidence_model <- function(df_asthma, min_age=3, max_age=65, starting_
     df_pred$y <- exp(predict(model, newdata=df_pred))
 
     df_inc_pred <- df %>% 
-    left_join(df_pred, by=c("year","sex","age"))
+        left_join(df_pred, by=c("year","sex","age"))
 
-    year_min <- 2000
-    year_max <- 2020
-    year_step <- 2
-    years <- seq(year_min, year_max, by=year_step)
-
-    ggplot(
-        data=df %>% 
-            filter(year %in% years) %>% 
-            mutate(year=as.factor(year)),
-        aes(x=age,y=y,color=year)
-    ) +
-    geom_line() +
-    geom_line(
-        data=df_inc_pred %>% 
-            filter(year %in% years) %>% 
-            mutate(year=as.factor(year)),
-        aes(x=age, y=y, color=year),
-        linetype="dashed"
-    ) +
-    ylab("Asthma incidence per 100 in BC") +
-    facet_grid(.~sex)
+    plot_occurrence_comparison(
+        df=df,
+        df_pred=df_inc_pred, 
+        title="Asthma Incidence per 100 in BC",
+        year_min=2000,
+        year_max=2020
+    )
 
     write_rds(model, here("R/private_dataset/asthma_incidence_model.rds"))
 }
@@ -152,28 +161,13 @@ generate_prevalence_model <- function(df_asthma, min_age=3, max_age=65, starting
     df_prev_pred <- df %>% 
         left_join(df_pred, by=c("year","sex","age"))
 
-    year_min <- 2000
-    year_max <- 2025
-    year_step <- 2
-    years <- seq(year_min, year_max, by=year_step)
-
-    ggplot(
-        data=df %>% 
-            filter(year %in% years) %>% 
-            drop_na() %>%
-            mutate(year=as.factor(year)),
-        aes(x=age, y=y, color=year)
-    ) +
-    geom_line() +
-    geom_line(
-        data=df_prev_pred %>% 
-            filter(year %in% years) %>% 
-            mutate(year=as.factor(year)),
-        aes(x=age,y=y,color=year),
-        linetype="dashed"
-    ) +
-    ylab("Asthma prevalence per 100 in BC") +
-    facet_grid(.~sex)
+    plot_occurrence_comparison(
+        df=df,
+        df_pred=df_prev_pred, 
+        title="Asthma Prevalence per 100 in BC",
+        year_min=2000,
+        year_max=2025
+    )
 
     write_rds(model, here("R/private_dataset/asthma_prevalence_model.rds"))
 }
