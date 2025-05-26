@@ -16,7 +16,7 @@ load_asthma_df_admin <- function(starting_year=baseline_year) {
     df <- df %>% filter(age_group_desc != "<1 year") %>% 
         mutate(year=substr(fiscal_year,1,4) %>% as.numeric()) %>% 
         rename(sex=gender) %>% 
-        filter(year>=baseline_year) %>% 
+        filter(year>=starting_year) %>% 
         rename(age_group = age_group_desc)
 
     lapply(df$age_group,function(x){
