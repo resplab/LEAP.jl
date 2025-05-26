@@ -8,7 +8,7 @@ library(mgcv)
 chosen_province <- "CA"
 starting_year <- 1999
 end_year <- 2065
-stabilization_year <- 2025
+STABILIZATION_YEAR <- 2025
 
 predict_asthma_occurrence <- function(model, age, asthma_max_age, sex, year, stabilization_year=STABILIZATION_YEAR){
 
