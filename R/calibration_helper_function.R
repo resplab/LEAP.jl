@@ -345,7 +345,7 @@ inc_correction_calculator <- function(
     risk_set,
     ra_target=1.0,
     misDx=0,
-    Dx=1,
+    Dx=1
 ){
   
     beta0 <- logit(asthma_inc_target)
