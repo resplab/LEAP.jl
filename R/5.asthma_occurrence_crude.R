@@ -92,12 +92,17 @@ plot_occurrence_comparison <- function(
 # INCIDENCE MODEL: BC ---------------------------------------------------------
 # INCIDENCE: log(incidence) ~ sex(year + sex*poly(age,5))
 
-generate_incidence_model <- function(df_asthma, min_age=MIN_AGE, max_age=65, starting_year=STARTING_YEAR) {
+generate_incidence_model <- function(
+    df_asthma,
+    min_age=MIN_AGE,
+    max_age=65,
+    starting_year=STARTING_YEAR
+) {
     # Create incidence dataframe
     df <- df_asthma %>% select(year, sex, age, incidence)
 
     # Filter for year <= max_year
-    df <- df %>% filter(year <= max_year)
+    df <- df %>%
         filter(year >= starting_year & year <= max_year)
 
     df <- df %>%
@@ -131,7 +136,12 @@ generate_incidence_model <- function(df_asthma, min_age=MIN_AGE, max_age=65, sta
 # PREVALENCE MODEL: BC ---------------------------------------------------------
 # PREVALENCE: sex*poly(year,degree=2)*poly(age,degree=5)
 
-generate_prevalence_model <- function(df_asthma, min_age=MIN_AGE, max_age=65, starting_year=STARTING_YEAR) {
+generate_prevalence_model <- function(
+    df_asthma,
+    min_age=MIN_AGE,
+    max_age=65,
+    starting_year=STARTING_YEAR
+) {
     # Create prevalence dataframe
     df <- df_asthma %>% select(year, sex, age, prevalence)
 
@@ -152,7 +162,6 @@ generate_prevalence_model <- function(df_asthma, min_age=MIN_AGE, max_age=65, st
     print(summary(model))
 
     df_pred <- expand.grid(year=c(2000:2065), sex=c(0, 1), age=seq(min_age, 62, by=1)) 
-
 
     df_pred$y <- exp(predict(model, newdata=df_pred))
 
