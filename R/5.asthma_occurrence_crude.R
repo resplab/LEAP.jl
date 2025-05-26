@@ -31,8 +31,6 @@ load_asthma_df_admin <- function(starting_year=baseline_year) {
     return(df)
 }
 
-df_admin <- load_asthma_df_admin()
-
 # BC asthma prev and inc equation -----------------------------------------
 
 load_asthma_df_bc <- function(starting_year=baseline_year) {
@@ -63,7 +61,6 @@ load_asthma_df_bc <- function(starting_year=baseline_year) {
     return(df)
 }
 
-master_BC_asthma <- load_asthma_df_bc()
 
 plot_occurrence_comparison <- function(
     df, df_pred, title, year_min=2000, year_max=2020, year_step=2
@@ -128,8 +125,6 @@ generate_incidence_model <- function(df_asthma, min_age=3, max_age=65, starting_
     write_rds(model, here("R/private_dataset/asthma_incidence_model.rds"))
 }
 
-generate_incidence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
-
 # PREVALENCE MODEL: BC ---------------------------------------------------------
 # PREVALENCE: sex*poly(year,degree=2)*poly(age,degree=5)
 
@@ -172,6 +167,10 @@ generate_prevalence_model <- function(df_asthma, min_age=3, max_age=65, starting
     write_rds(model, here("R/private_dataset/asthma_prevalence_model.rds"))
 }
 
+
+df_admin <- load_asthma_df_admin()
+master_BC_asthma <- load_asthma_df_bc()
+generate_incidence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
 generate_prevalence_model(df_asthma=master_BC_asthma, min_age=3, max_age=65)
 
 # test poly
