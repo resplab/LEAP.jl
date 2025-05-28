@@ -25,53 +25,74 @@ in the last 3 months before the visit. We excluded two patients whose asthma dia
 earlier than they were born and three patients who had no asthma diagnosis dates.
 
 ```{r balance, echo=FALSE, eval=FALSE}
-df_demo <- haven::read_sas(here("private_dataset", "demo.sas7bdat")) %>% 
+df_demo <- haven::read_sas(here("private_dataset", "demo.sas7bdat")) %>%
     mutate(age=as.numeric(startDate - birthdate) / 365.25) %>% # age in years
     mutate(sex=if_else(gender=='f', 0, 1)) %>%  # female: 0; male: 1
     select(studyId, sex, age)
 df_baseline <- haven::read_sas(here("private_dataset", "astat0.sas7bdat"))
 df_fu <- haven::read_sas(here("private_dataset", "astatf.sas7bdat"))
 
-df_EBA <- (df_baseline %>% 
+df_EBA <- df_baseline %>%
     select(
-        studyId, visit, daytimeSymptoms, nocturnalSymptoms, inhalerUse, limitedActivities, exacerbations
-    )) %>% 
+        studyId, visit, daytimeSymptoms, nocturnalSymptoms, inhalerUse, limitedActivities,
+        exacerbations
+    )
+df_EBA <- df_EBA %>%
     rbind(
         .,
-        df_fu %>% 
-        select(studyId, visit, daytimeSymptoms,nocturnalSymptoms, inhalerUse, limitedActivities, exacerbations)
-    ) %>% 
-    left_join(df_demo, by='studyId') %>% 
+        df_fu %>%
+            select(
+                studyId, visit, daytimeSymptoms, nocturnalSymptoms, inhalerUse, limitedActivities,
+                exacerbations
+            )
+    ) %>%
+df_EBA <- df_EBA %>%
+    left_join(df_demo, by="studyId") %>%
     left_join(
         df_baseline %>% select(studyId, ageAtAsthmaDx),
-        by='studyId'
-    ) %>% 
-    mutate(
-        control_score=as.numeric(daytimeSymptoms==1) + 
-        as.numeric(nocturnalSymptoms==1) +
-        as.numeric(inhalerUse==1) +
-        as.numeric(limitedActivities==1)
+        by="studyId"
     ) %>%
     mutate(
-        control_score_missing=as.numeric(!(daytimeSymptoms %in% c(1,2))) +
-        as.numeric(!(nocturnalSymptoms %in% c(1,2))) +
-        as.numeric(!(inhalerUse %in% c(1,2))) +
-        as.numeric(!(limitedActivities %in% c(1,2)))
-    ) %>% 
-    # use the GINA guidelines to determine the control level (Box 2-2, GINA guidelines 2020)
+        control_score=(
+            as.numeric(daytimeSymptoms==1) +
+            as.numeric(nocturnalSymptoms==1) +
+            as.numeric(inhalerUse==1) +
+            as.numeric(limitedActivities==1)
+        )
+    ) %>%
+    mutate(
+        control_score_missing=(
+            as.numeric(!(daytimeSymptoms %in% c(1, 2))) +
+            as.numeric(!(nocturnalSymptoms %in% c(1, 2))) +
+            as.numeric(!(inhalerUse %in% c(1, 2))) +
+            as.numeric(!(limitedActivities %in% c(1, 2)))
+        )
+    )
+
+# use the GINA guidelines to determine the control level (Box 2-2, GINA guidelines 2020)
+df_EBA <- df_EBA %>%
     mutate(
         control_level=case_when(
-        control_score == 0 ~ 1,
-        control_score < 3 & control_score > 0 ~ 2,
-        control_score >=3 ~ 3)
-    ) %>% 
+            control_score == 0 ~ 1,
+            control_score < 3 & control_score > 0 ~ 2,
+            control_score >= 3 ~ 3
+        )
+    )
+df_EBA <- df_EBA %>%
     mutate(
         studyid=studyId,
         exac=as.numeric(exacerbations==1)
-    ) %>% 
-    filter(!(studyId %in% c("13205707","23207811"))) %>% # asthma diagnosis before birth? => something wrong with the data
-    na.omit() # no asthma Dx date => ??? data quality issues omit them (3 patients)
-    # treat "don't know/missing" as "no" for the four asthma control indicators and exacerbation
+    )
+
+# asthma diagnosis before birth? => something wrong with the data
+df_EBA <- df_EBA %>%
+    filter(!(studyId %in% c("13205707", "23207811")))
+
+# no asthma Dx date => ??? data quality issues omit them (3 patients)
+# treat "don't know/missing" as "no" for the four asthma control indicators and exacerbation
+df_EBA <- df_EBA %>%
+    na.omit()
+
 write_rds(df_EBA, here("R/private_dataset/df_EBA.rds"))
 ```
 
@@ -101,26 +122,26 @@ The `df_EBA` dataset contains the following variables:
 ```{r, echo = F}
 df_EBA <- read_rds(here("R/private_dataset/df_EBA.rds"))
 write_csv(
-  df_EBA %>% select(-studyid, -exac, -control_score, -control_score_missing, -control_level),
-  here("R/private_dataset/df_EBA.csv")
+    df_EBA %>% select(-studyid, -exac, -control_score, -control_score_missing, -control_level),
+    here("R/private_dataset/df_EBA.csv")
 )
 new_id <- 1:length(unique(df_EBA$studyId))
-df_id <- data.frame(new_id=new_id, studyId = unique(df_EBA$studyId))
+df_id <- data.frame(new_id=new_id, studyId=unique(df_EBA$studyId))
 
-df_EBA_analysis <- df_EBA %>% 
-    left_join(df_id, by=c('studyId')) %>% 
-    select(-studyId) %>% 
-    rename(studyId =new_id) %>% 
-    mutate(studyid=studyId) %>% 
-    mutate(group=as.numeric(age>=18)) %>% # 0 pediatric 1 adult
+df_EBA_analysis <- df_EBA %>%
+    left_join(df_id, by=c("studyId")) %>%
+    select(-studyId) %>%
+    rename(studyId=new_id) %>%
+    mutate(studyid=studyId) %>%
+    mutate(group=as.numeric(age >= 18)) %>% # 0 pediatric 1 adult
     mutate(
         sex=as.factor(sex),
-        control_level=ifelse(control_level==1,0,1),
+        control_level=ifelse(control_level==1, 0, 1),
         control_level=as.ordered(control_level),
         studyid=as.factor(studyId),
-        age=age/100,
+        age=age / 100,
         age_sq=age^2
-    ) %>% 
+    ) %>%
     select(studyid, visit, group, control_level, sex, age, age_sq, exac)
 ```
 
