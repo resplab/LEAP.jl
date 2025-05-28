@@ -158,12 +158,16 @@ fitted the data (AIC = 5512) than that with the probit link (AIC=5522).
 library(ordinal)
 library(sure)
 formula1 <- as.formula("control_level ~ sex*age + sex*age_sq")
-lm.ordinal.logit <- clmm2(formula1,random=studyid,data=df_EBA_analysis,Hess = T,nAGQ=5,link='logistic')
-# AIC(lm.ordinal.logit)
+model_logistic <- ordinal::clmm2(
+    formula=formula1, random=studyid, data=df_EBA_analysis, Hess=TRUE, nAGQ=5, link="logistic"
+)
+stats::AIC(model_logistic)
 # AIC: 5511.6
-lm.ordinal.probit <- clmm2(formula1,random=studyid,data=df_EBA_analysis,Hess = T,nAGQ=5,link='probit')
-# AIC(lm.ordinal.probit)
-# AIC: 5522.0; 
+model_probit <- ordinal::clmm2(
+    formula=formula1, random=studyid, data=df_EBA_analysis, Hess=TRUE, nAGQ=5, link="probit"
+)
+stats::AIC(model_probit)
+# AIC: 5522.0;
 # logistic better
-summary(lm.ordinal.logit)
+summary(model_logistic)
 ```
