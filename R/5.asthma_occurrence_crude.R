@@ -1,8 +1,13 @@
 # source: https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1310009608
 
 library(tidyverse)
+library(tidyr)
+library(stringr)
 library(here)
 library(mgcv)
+library(readr)
+library(ggplot2)
+library(dplyr)
 max_year <- 2019
 STARTING_YEAR <- 2000
 STABILIZATION_YEAR <- 2025
@@ -34,20 +39,20 @@ load_asthma_df_hsda <- function(starting_year=STARTING_YEAR, min_age=MIN_AGE) {
 
     # Age groups are in the format "X-Y" or "X+"
     # Set the age to the average of the age group
-    lapply(df$age_group, function(x){
+    df$age <- lapply(df$age_group, function(x) {
         ceiling(mean(parse_number(str_split(x, "-")[[1]])))
-    })  %>% 
-    unlist() -> df$age
+    })  %>%
+        unlist()
 
     # Key assumption: asthma starts at age 3
     # Set incidence = prevalence at age 3
-    df <- df %>% 
+    df <- df %>%
         mutate(
             incidence=ifelse(age==min_age, PREV_CRUDE_RATE, INC_CRUDE_RATE)
         )
 
     # AH
-    df <- df %>% 
+    df <- df %>%
         filter(REGION == "BC") %>%
         filter(DISEASE == "Asthma 1+") %>%
         filter(SEX != "Total") %>%
@@ -91,23 +96,23 @@ load_asthma_df_bc <- function(starting_year=STARTING_YEAR) {
     df <- df %>%
         mutate(
             prev_sd=sqrt(prevalence_numerator) * qnorm(0.975),
-            prev_upper=(prevalence_numerator + prev_sd)/pop,
-            prev_lower=(prevalence_numerator - prev_sd)/pop
+            prev_upper=(prevalence_numerator + prev_sd) / pop,
+            prev_lower=(prevalence_numerator - prev_sd) / pop
         )
 
     # Age groups are in the format "X-Y years" or "<1 year"
     # Set the age to the average of the age group
-    lapply(df$age_group,function(x){
+    df$age <- lapply(df$age_group, function(x) {
         ceiling(mean(parse_number(str_split(x, "-")[[1]])))
-    })  %>% 
-    unlist() -> df$age
+    })  %>%
+        unlist()
 
     # Key assumption: asthma starts at age 3
     # Set incidence = prevalence at age 3
-    df <- df %>% 
+    df <- df %>%
         mutate(
-            incidence=ifelse(age==3, prevalence, incidence),
-            incidence_numerator=ifelse(age==3, prevalence_numerator, incidence_numerator)
+            incidence=ifelse(age == 3, prevalence, incidence),
+            incidence_numerator=ifelse(age == 3, prevalence_numerator, incidence_numerator)
         )
 
     return(df)
@@ -189,25 +194,25 @@ generate_incidence_model <- function(
         filter(year >= starting_year & year <= max_year)
 
     df <- df %>%
-        mutate(sex=as.numeric(sex=="M"), y=incidence)
+        mutate(sex=as.numeric(sex=="M"), y=incidence) %>%
         filter(age <= max_age)
 
     model <- mgcv::gam(
-        formula=log(incidence)~ sex*year + sex*poly(age, degree = 5), data=df
+        formula=log(incidence)~ sex * year + sex * poly(age, degree=5), data=df
     )
     print(summary(model))
 
-    df_pred <- expand.grid(year=c(2000:2065), sex=c(0,1), age=seq(min_age, max_age, by=1)) %>% 
+    df_pred <- expand.grid(year=c(2000:2065), sex=c(0, 1), age=seq(min_age, max_age, by=1)) %>%
         as.data.frame()
 
     df_pred$y <- exp(predict(model, newdata=df_pred))
 
-    df_inc_pred <- df %>% 
-        left_join(df_pred, by=c("year","sex","age"))
+    df_inc_pred <- df %>%
+        left_join(df_pred, by=c("year", "sex", "age"))
 
     plot_occurrence_comparison(
         df=df,
-        df_pred=df_inc_pred, 
+        df_pred=df_inc_pred,
         title="Asthma Incidence per 100 in BC",
         year_min=2000,
         year_max=2020
@@ -220,7 +225,7 @@ generate_incidence_model <- function(
 #' Generate a generalized additive model (GAM) for asthma prevalence in BC
 #'
 #' Formula: log(prevalalence) ~ sex * poly(year, degree=2) * poly(age, degree=5)
-#' 
+#'
 #' @param df_asthma A data frame containing asthma data with columns:
 #' year: int, the calendar year, a value between 2000 and 2020
 #' sex: str, "M" or "F"
@@ -251,21 +256,22 @@ generate_prevalence_model <- function(
         filter(age <= max_age)
 
     model <- mgcv::gam(
-        formula=log(prevalence)~ sex*poly(year, degree=2)*poly(age, degree=5), data=df
+        formula=log(prevalence) ~ sex * poly(year, degree=2) * poly(age, degree=5),
+        data=df
     )
 
     print(summary(model))
 
-    df_pred <- expand.grid(year=c(2000:2065), sex=c(0, 1), age=seq(min_age, 62, by=1)) 
+    df_pred <- expand.grid(year=c(2000:2065), sex=c(0, 1), age=seq(min_age, 62, by=1))
 
     df_pred$y <- exp(predict(model, newdata=df_pred))
 
     df_prev_pred <- df %>% 
-        left_join(df_pred, by=c("year","sex","age"))
+        left_join(df_pred, by=c("year", "sex", "age"))
 
     plot_occurrence_comparison(
         df=df,
-        df_pred=df_prev_pred, 
+        df_pred=df_prev_pred,
         title="Asthma Prevalence per 100 in BC",
         year_min=2000,
         year_max=2025
@@ -287,8 +293,8 @@ generate_prevalence_model(df_asthma=df_asthma, min_age=MIN_AGE, max_age=65)
 prev_model <- read_rds(here("R/asthma_prevalence_model.rds"))
 inc_model <- read_rds(here("R/asthma_incidence_model.rds"))
 max_age <- 63
-df <- expand.grid(year=STARTING_YEAR:2065, sex=c(0:1), age=MIN_AGE:110) %>% 
-    as.data.frame() %>% 
+df <- expand.grid(year=STARTING_YEAR:2065, sex=c(0:1), age=MIN_AGE:110) %>%
+    as.data.frame() %>%
     mutate(
         prev=exp(predict(
             prev_model,
@@ -298,7 +304,7 @@ df <- expand.grid(year=STARTING_YEAR:2065, sex=c(0:1), age=MIN_AGE:110) %>%
             inc_model,
             data.frame(year=pmin(STABILIZATION_YEAR, year), sex, age=pmin(age, max_age))
         ))
-    ) %>% 
+    ) %>%
     mutate(
         prev=as.numeric(prev),
         inc=as.numeric(inc)
@@ -306,10 +312,10 @@ df <- expand.grid(year=STARTING_YEAR:2065, sex=c(0:1), age=MIN_AGE:110) %>%
 
 write_csv(df, here("R/master_asthma_prev_inc.csv"))
 
-df <- df %>% 
-    mutate(sex=ifelse(sex==1, "Male", "Female")) 
+df <- df %>%
+    mutate(sex=ifelse(sex == 1, "Male", "Female"))
 
- 
+
 plot_occurrence(
     df=df,
     title="Crude Asthma Prevalence (per 100)",
