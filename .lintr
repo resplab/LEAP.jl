@@ -1,0 +1,14 @@
+linters: linters_with_defaults(
+    line_length_linter=line_length_linter(100L),
+    infix_spaces_linter=infix_spaces_linter(
+        exclude_operators=c("=")),
+    indentation_linter=indentation_linter(
+        indent=4L,
+        hanging_indent_style = c("tidy", "always", "never"),
+        assignment_as_infix = TRUE
+    ),
+    object_name_linter=object_name_linter(
+        styles=c("snake_case", "SNAKE_CASE")
+    ),
+    object_usage_linter=NULL
+ )
