@@ -27,3 +27,5 @@ docs/site/
 Manifest.toml
 
 .vscode/
+
+R/private_dataset/*
