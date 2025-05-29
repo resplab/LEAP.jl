@@ -136,9 +136,7 @@ df_EBA_analysis <- df_EBA %>%
     mutate(group=as.numeric(age >= 18)) %>% # 0 pediatric 1 adult
     mutate(
         sex=as.factor(sex),
-        control_level=ifelse(control_level==1, 0, 1),
-        control_level=as.ordered(control_level),
-        studyid=as.factor(studyId),
+        control_level=ifelse(control_level == 1, 0, 1),
         age=age / 100,
         age_sq=age^2
     ) %>%
@@ -178,17 +176,47 @@ fitted the data (AIC = 5512) than that with the probit link (AIC=5522).
 ```{r, echo = F}
 library(ordinal)
 library(sure)
-formula1 <- as.formula("control_level ~ sex*age + sex*age_sq")
+library(MASS)
+df <- df_EBA_analysis %>%
+    mutate(
+        control_level=as.ordered(control_level),
+        studyid=as.factor(studyId)
+    )
+formula <- as.formula("control_level ~ sex*age + sex*age_sq")
 model_logistic <- ordinal::clmm2(
-    formula=formula1, random=studyid, data=df_EBA_analysis, Hess=TRUE, nAGQ=5, link="logistic"
+    formula=formula, random=studyid, data=df, Hess=TRUE, nAGQ=5, link="logistic"
 )
 stats::AIC(model_logistic)
 # AIC: 5511.6
 model_probit <- ordinal::clmm2(
-    formula=formula1, random=studyid, data=df_EBA_analysis, Hess=TRUE, nAGQ=5, link="probit"
+    formula=formula, random=studyid, data=df, Hess=TRUE, nAGQ=5, link="probit"
 )
 stats::AIC(model_probit)
 # AIC: 5522.0;
 # logistic better
 summary(model_logistic)
+ranef(model)
+```
+
+```{r, echo = F}
+library(MASS)
+library(dplyr)
+library(conflicted)
+conflict_prefer("select", "dplyr")
+formula <- as.formula("control_level ~ sex*age + sex*age_sq +(1|studyid)")
+model <- glmer(formula, data=df_EBA_analysis, family=binomial(link="logit"), nAGQ=5)
+model <- lmer(formula, data=df_EBA_analysis)
+summary(model)
+ranef(model)
+```
+
+```{r, echo = F}
+df <- df_EBA_analysis %>%
+    mutate(
+        control_level=as.ordered(control_level),
+        studyid=as.factor(studyId)
+    )
+formula <- as.formula("control_level ~ sex*age + sex*age_sq")
+model <- MASS::polr(formula=formula, data=df, Hess=TRUE, method="logistic")
+summary(model)
 ```
