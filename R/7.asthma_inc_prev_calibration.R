@@ -125,10 +125,10 @@ load_family_history_data <- function() {
     df_fam_history_or <- data.frame(
         age=c(3, 4, 5), do.call(rbind, df_fam_history_or)
     )
-    colnames(df_fam_history_or)[-1] <- c(0,1)
+    colnames(df_fam_history_or)[-1] <- c(0, 1)
     df_fam_history_or <- pivot_longer(
         df_fam_history_or, cols=-1, names_to="fam_history", values_to="OR_fam"
-    ) %>% 
+    ) %>%
         mutate(fam_history=as.numeric(fam_history))
     return(df_fam_history_or)
 }
@@ -187,7 +187,7 @@ p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx) {
 
 OR_abx_calculator <- function(
     age, dose, params=c(BETA_ABX_0, BETA_ABX_AGE, BETA_ABX_DOSE)
-){
+) {
     if (dose == 0) {
         return(1)
     } else {
@@ -200,8 +200,8 @@ OR_fam_calculator <- function(
     age,
     fam_hist,
     params=c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2)
-){
-    if (age < MIN_ASTHMA_AGE | fam_hist == 0 | age > MAX_ABX_AGE) {
+) {
+    if (age < MIN_ASTHMA_AGE || fam_hist == 0 || age > MAX_ABX_AGE) {
         return(1)
     } else {
         return(exp(params[1] + params[2] * (pmin(age, 5) - 3)))
@@ -217,7 +217,7 @@ OR_risk_factor_calculator <- function(
         c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2),
         c(BETA_ABX_0, BETA_ABX_AGE, BETA_ABX_DOSE)
     )
-){
+) {
     if (age < MIN_ASTHMA_AGE) {
         return(1)
     } else {
@@ -230,7 +230,7 @@ OR_risk_factor_calculator <- function(
 
 
 #' Compute the combined antibiotic exposure and family history odds ratio.
-#' 
+#'
 #' @param chosen_year The current year.
 #' @param chosen_age The age of the person in years.
 #' @param chosen_sex The sex of the person; 0 = female, 1 = male.
@@ -265,14 +265,14 @@ risk_factor_generator <- function(
         filter(n_abx <= 3)
 
     # select the given age if <= 5, otherwise select age == 5
-    df_fam_history_or_age <- df_fam_history_or %>% 
-        filter(age == min(chosen_age, 5)) %>% 
+    df_fam_history_or_age <- df_fam_history_or %>%
+        filter(age == min(chosen_age, 5)) %>%
         select(-age)
 
     # select the given age if <= 8, otherwise select age == 8
     # filter out n_abx > 3
-    df_abx_or_age <- df_abx_or %>% 
-        filter(age == min(chosen_age, MAX_ABX_AGE + 1)) %>% 
+    df_abx_or_age <- df_abx_or %>%
+        filter(age == min(chosen_age, MAX_ABX_AGE + 1)) %>%
         select(-age) %>%
         filter(n_abx <= 3)
 
@@ -290,7 +290,7 @@ risk_factor_generator <- function(
         left_join(p_fam_distribution, by=c("fam_history")) %>%
         left_join(df_abx_prob, by=c("n_abx")) %>%
         left_join(df_fam_history_or_age, by=c("fam_history")) %>%
-        left_join(df_abx_or_age, by=c("n_abx")) %>% 
+        left_join(df_abx_or_age, by=c("n_abx")) %>%
         mutate(
             prob=prob_fam * prob_abx,
             OR=OR_abx * OR_fam
@@ -305,7 +305,7 @@ risk_factor_generator <- function(
 
 #' Compute the loss function given the effects of risk factors in the incidence equation, for
 #' each year, age, and sex.
-#' 
+#'
 #' @param chosen_year The current year.
 #' @param chosen_age The age of the person in years.
 #' @param chosen_sex The sex of the person; 0 = female, 1 = male.
@@ -494,8 +494,7 @@ calibrator <- function(
         inc_risk_set <- risk_factor_generator(
             chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
             df_fam_history_or, df_abx_or
-        ) %>%
-            select(fam_history, n_abx, year, sex, age, prob)
+        )
 
         if (chosen_age > MAX_ABX_AGE) {
             inc_risk_set <- inc_risk_set %>% filter(n_abx == 0)
@@ -548,7 +547,7 @@ calculate_correction <- function(
     df_prevalence,
     df_reassessment,
     inc_beta_params=optimized_inc_beta
-){
+) {
 
     df_results <- data.frame(
         year=chosen_year,
@@ -597,7 +596,7 @@ inc_beta_solver <- function(
     stabilization_year=STABILIZATION_YEAR,
     max_age=MAX_AGE,
     inc_beta_params=INC_BETA_PARAMS
-){
+) {
     years <- baseline_year:(stabilization_year + 1)
     ages <- 4:max_age
     sexes <- 0:1
