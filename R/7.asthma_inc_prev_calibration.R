@@ -11,6 +11,7 @@ STABILIZATION_YEAR <- 2025
 BASELINE_YEAR <- 2001
 MAX_AGE <- 63
 MAX_ASTHMA_AGE <- 62
+MAX_ABX_AGE <- 7
 MIN_ASTHMA_AGE <- 3
 # odds ratio between asthma prevalence at age 3 and family history (CHILD Study)
 OR_ASTHMA_AGE_3 <- 1.13
@@ -143,7 +144,7 @@ load_abx_exposure_data <- function() {
         select(age, OR0, OR1:OR5) %>%
         mutate(across(contains("OR"), exp)) %>%
         filter(age >= 3) %>%
-        rbind(data.frame(age=8, OR0=1, OR1=1, OR2=1, OR3=1, OR4=1, OR5=1))
+        rbind(data.frame(age=MAX_ABX_AGE + 1, OR0=1, OR1=1, OR2=1, OR3=1, OR4=1, OR5=1))
 
     df_abx_or <- pivot_longer(
         df_abx_or, cols=-1, names_to="n_abx", values_to="OR_abx"
@@ -190,7 +191,7 @@ OR_abx_calculator <- function(
     if (dose == 0) {
         return(1)
     } else {
-        return(exp(sum(params * c(1, pmin(age, 7), pmin(dose, 3)))))
+        return(exp(sum(params * c(1, pmin(age, MAX_ABX_AGE), pmin(dose, 3)))))
     }
 }
 
@@ -200,7 +201,7 @@ OR_fam_calculator <- function(
     fam_hist,
     params=c(log(OR_ASTHMA_AGE_3), (log(OR_ASTHMA_AGE_5) - log(OR_ASTHMA_AGE_3)) / 2)
 ){
-    if (age < MIN_ASTHMA_AGE | fam_hist == 0 | age > 7) {
+    if (age < MIN_ASTHMA_AGE | fam_hist == 0 | age > MAX_ABX_AGE) {
         return(1)
     } else {
         return(exp(params[1] + params[2] * (pmin(age, 5) - 3)))
@@ -271,7 +272,7 @@ risk_factor_generator <- function(
     # select the given age if <= 8, otherwise select age == 8
     # filter out n_abx > 3
     df_abx_or_age <- df_abx_or %>% 
-        filter(age == min(chosen_age, 8)) %>% 
+        filter(age == min(chosen_age, MAX_ABX_AGE + 1)) %>% 
         select(-age) %>%
         filter(n_abx <= 3)
 
@@ -366,7 +367,7 @@ calibrator <- function(
         df_fam_history_or, df_abx_or
     )
 
-    if (chosen_age > 7) {
+    if (chosen_age > MAX_ABX_AGE) {
         risk_set <- risk_set %>%
             group_by(fam_history, year, sex, age) %>%
             summarise(
@@ -453,14 +454,14 @@ calibrator <- function(
             select(ra) %>%
             unlist()
 
-        if (chosen_age > 8) {
+        if (chosen_age - 1 > MAX_ABX_AGE) {
             past_risk_set <- past_risk_set %>%
                 group_by(fam_history) %>%
                 summarise(
                     prob=sum(prob),
                     OR=mean(OR)
                 )
-        } else if (chosen_age == 8) {
+        } else if (chosen_age - 1 == MAX_ABX_AGE) {
 
             ttt_asthma_prev_risk_factor_params <- prev_calibrator(
                 asthma_prev_target=past_asthma_prev_target,
@@ -496,7 +497,7 @@ calibrator <- function(
         ) %>%
             select(fam_history, n_abx, year, sex, age, prob)
 
-        if (chosen_age > 7) {
+        if (chosen_age > MAX_ABX_AGE) {
             inc_risk_set <- inc_risk_set %>% filter(n_abx == 0)
         }
 
@@ -510,7 +511,7 @@ calibrator <- function(
                 )
             })
 
-        if (chosen_age <= 7) {
+        if (chosen_age <= MAX_ABX_AGE) {
             inc_risk_set$prob <- inc_risk_set$prob / sum(inc_risk_set$prob)
         }
     }
