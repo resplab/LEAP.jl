@@ -494,10 +494,10 @@ calibrator <- function(
             chosen_year, chosen_sex, chosen_age, model_abx, p_fam_distribution,
             df_fam_history_or, df_abx_or
         ) %>%
-            select(fam_history, abx_exposure, year, sex, age, prob)
+            select(fam_history, n_abx, year, sex, age, prob)
 
         if (chosen_age > 7) {
-            inc_risk_set <- inc_risk_set %>% filter(abx_exposure==0)
+            inc_risk_set <- inc_risk_set %>% filter(n_abx == 0)
         }
 
         inc_risk_set$OR <- inc_risk_set %>%
