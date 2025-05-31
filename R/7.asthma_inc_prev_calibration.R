@@ -150,19 +150,18 @@ load_abx_exposure_data <- function() {
 
 
 #' Compute the probability of number of courses of antibiotics during infancy.
-#' 
+#'
 #' @param chosen_year The birth year of the infant.
 #' @param chosen_sex The sex of the infant; 0 = female, 1 = male.
 #' @param model_abx The fitted Negative Binomial model for the number of courses of antibiotics.
 #' @returns A dataframe with the probability of the number of courses of antibiotics,
 #' ranging from 0 - 5+.
-p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx){
+p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx) {
     # 2025 for females
     # 2028 for males
-    # to cap it
-    if(chosen_sex == 1){
+    if (chosen_sex == 1) {
         chosen_year <- min(2028 - 1, chosen_year)
-    }  else{
+    } else {
         chosen_year <- min(2025 - 1, chosen_year)
     }
     df <- data.frame(
@@ -170,10 +169,10 @@ p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx){
         year=chosen_year,
         N=1,
         after2005=as.numeric(chosen_year > 2005)
-    ) %>% 
-        mutate(after2005year=after2005*year)
+    ) %>%
+        mutate(after2005year=after2005 * year)
 
-    mu <- exp(predict(model_abx, newdata=df, type='link'))
+    mu <- exp(predict(model_abx, newdata=df, type="link"))
     size <- model_abx$family$getTheta(trans=TRUE)
     prob <- dnbinom(c(0:5), mu=mu, size=size)
     prob[6] <- 1 - sum(prob[1:5])
