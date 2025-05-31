@@ -611,8 +611,15 @@ inc_beta_solver <- function(
             )$mean_diff_log_OR
         }) %>% mean()
     }
-  
-    res_optim <- optim(unlist(inc_beta_params), fn=obj, method='BFGS')
+
+    res_optim <- stats::optim(
+        par=unlist(inc_beta_params),
+        fn=obj,
+        method="BFGS",
+        control=list(
+            trace=10, REPORT=1
+        )
+    )
     res_nlm <- nlm(obj, unlist(inc_beta_params), steptol=1e-6, gradtol=1e-6, print.level=2)
     write_rds(res_optim, here("R/res_optim.rds"))
 }
