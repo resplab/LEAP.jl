@@ -620,7 +620,6 @@ inc_beta_solver <- function(
             trace=10, REPORT=1
         )
     )
-    res_nlm <- nlm(obj, unlist(inc_beta_params), steptol=1e-6, gradtol=1e-6, print.level=2)
     write_rds(res_optim, here("R/res_optim.rds"))
 }
 
