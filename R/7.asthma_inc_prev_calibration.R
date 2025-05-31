@@ -142,9 +142,9 @@ load_abx_exposure_data <- function() {
         rbind(data.frame(age=8, OR0=1, OR1=1, OR2=1, OR3=1, OR4=1, OR5=1))
 
     df_abx_or <- pivot_longer(
-        df_abx_or, cols=-1, names_to="abx_exposure", values_to="OR_abx"
-    ) %>% 
-        mutate(abx_exposure=as.numeric(str_remove(abx_exposure, "OR")))
+        df_abx_or, cols=-1, names_to="n_abx", values_to="OR_abx"
+    ) %>%
+        mutate(n_abx=as.numeric(str_remove(n_abx, "OR")))
     return(df_abx_or)
 }
 
@@ -176,7 +176,7 @@ p_antibiotic_exposure <- function(chosen_year, chosen_sex, model_abx) {
     size <- model_abx$family$getTheta(trans=TRUE)
     prob <- dnbinom(c(0:5), mu=mu, size=size)
     prob[6] <- 1 - sum(prob[1:5])
-    return(data.frame(abx_exposure=c(0:5), prob_abx=prob))
+    return(data.frame(n_abx=c(0:5), prob_abx=prob))
 }
 
 
@@ -254,10 +254,10 @@ risk_factor_generator <- function(
     birth_year <- chosen_year - chosen_age
     df_abx_exposure <- p_antibiotic_exposure(max(birth_year, 2000), chosen_sex, model_abx)
 
-    # combine abx_exposure = 3, 4, 5+ into 3+
+    # combine n_abx = 3, 4, 5+ into 3+
     df_abx_exposure$prob_abx[4] <- sum(df_abx_exposure$prob_abx[4:6])
     df_abx_exposure <- df_abx_exposure %>% 
-        filter(abx_exposure <= 3)
+        filter(n_abx <= 3)
 
     # select the given age if <= 5, otherwise select age == 5
     df_fam_history_or_age <- df_fam_history_or %>% 
@@ -265,32 +265,32 @@ risk_factor_generator <- function(
         select(-age)
 
     # select the given age if <= 8, otherwise select age == 8
-    # filter out abx_exposure > 3
+    # filter out n_abx > 3
     df_abx_or_age <- df_abx_or %>% 
         filter(age == min(chosen_age, 8)) %>% 
         select(-age) %>%
-        filter(abx_exposure <= 3)        
+        filter(n_abx <= 3)
 
 
     risk_set <- expand.grid(
         fam_history=c(0, 1),
-        abx_exposure=c(0, 1, 2, 3, 4, 5)
+        n_abx=c(0, 1, 2, 3, 4, 5)
     ) %>%
         mutate(
             year=chosen_year,
             sex=chosen_sex,
             age=chosen_age
         ) %>%
-        filter(abx_exposure <= 3) %>% 
+        filter(n_abx <= 3) %>%
         left_join(p_fam_distribution, by=c("fam_history")) %>%
-        left_join(df_abx_exposure, by=c("abx_exposure")) %>%
+        left_join(df_abx_exposure, by=c("n_abx")) %>%
         left_join(df_fam_history_or_age, by=c("fam_history")) %>%
-        left_join(df_abx_or_age, by=c("abx_exposure")) %>% 
+        left_join(df_abx_or_age, by=c("n_abx")) %>% 
         mutate(
             prob=prob_fam * prob_abx,
             OR=OR_abx * OR_fam
         ) %>%
-        select(fam_history, abx_exposure, year, sex, age, prob, OR)
+        select(fam_history, n_abx, year, sex, age, prob, OR)
     return(risk_set)
 }
 
