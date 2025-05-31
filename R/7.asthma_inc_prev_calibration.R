@@ -252,11 +252,11 @@ risk_factor_generator <- function(
 ){
 
     birth_year <- chosen_year - chosen_age
-    df_abx_exposure <- p_antibiotic_exposure(max(birth_year, 2000), chosen_sex, model_abx)
+    df_abx_prob <- p_antibiotic_exposure(max(birth_year, 2000), chosen_sex, model_abx)
 
     # combine n_abx = 3, 4, 5+ into 3+
-    df_abx_exposure$prob_abx[4] <- sum(df_abx_exposure$prob_abx[4:6])
-    df_abx_exposure <- df_abx_exposure %>% 
+    df_abx_prob$prob_abx[4] <- sum(df_abx_prob$prob_abx[4:6])
+    df_abx_prob <- df_abx_prob %>%
         filter(n_abx <= 3)
 
     # select the given age if <= 5, otherwise select age == 5
@@ -283,7 +283,7 @@ risk_factor_generator <- function(
         ) %>%
         filter(n_abx <= 3) %>%
         left_join(p_fam_distribution, by=c("fam_history")) %>%
-        left_join(df_abx_exposure, by=c("n_abx")) %>%
+        left_join(df_abx_prob, by=c("n_abx")) %>%
         left_join(df_fam_history_or_age, by=c("fam_history")) %>%
         left_join(df_abx_or_age, by=c("n_abx")) %>% 
         mutate(
