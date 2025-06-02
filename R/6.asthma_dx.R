@@ -4,8 +4,7 @@ library(here)
 # goal: estimate the "un"diagnosis prob,
 # i.e., the prob that an asthma patient "outgrows" asthma and becomes undiagnosed with asthma
 
-starting_year <- 1999
-end_year <- 2065
+STARTING_YEAR <- 1999
 STABILIZATION_YEAR <- 2025
 
 predict_asthma_occurrence <- function(
@@ -19,9 +18,9 @@ predict_asthma_occurrence <- function(
 
 get_reassessment_data <- function(
     chosen_province="CA",
-    starting_year=1999,
+    starting_year=STARTING_YEAR,
     end_year=2065,
-    stabilization_year=2025,
+    stabilization_year=STABILIZATION_YEAR,
     asthma_max_age=62
 ) {
 
