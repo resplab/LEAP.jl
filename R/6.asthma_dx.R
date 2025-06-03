@@ -81,7 +81,7 @@ get_reassessment_data <- function(
         ) / df_prevalence_past
 
         results_assessment[[i]] <- cbind(
-            data.frame(age=4:110, year=year),
+            data.frame(age=4:110, year=tmp_year),
             df_assessment
         )
     }
