@@ -149,14 +149,14 @@ function compute_hospitalization_prob(agent::AgentModule, exac_severity::Exacerb
     else
         # extract all the mean parameters
         # control => exac =>  sum up all the mean parameters for each tmp age
-        cal_year = agent.cal_year - (agent.age - agent.asthma_age)
+        year = agent.year - (agent.age - agent.asthma_age)
         total_rate = 0
         for age in agent.asthma_age:max_age
             control_levels = compute_control_levels(control, sex, age)
             # exac mean
-            total_rate += compute_num_exacerbations(age, sex, cal_year, control_levels,
+            total_rate += compute_num_exacerbations(age, sex, year, control_levels,
                 exacerbation)
-            cal_year += 1
+            year += 1
         end
         # toss a coin: avg chance of having at least one hosp
         prob_severe_exacerbation = min(exac_severity.parameters[:p][4], 0.9999999999999)

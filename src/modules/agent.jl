@@ -6,9 +6,9 @@ A person in the model.
 # Fields
 - `sex::Bool`: Sex of person, true = male, false = female.
 - `age::Integer`: Age of person in years.
-- `cal_year::Integer`: the calendar year of the current iteration, e.g. 2027.
-- `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if
-    the simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
+- `year::Integer`: the calendar year of the current iteration, e.g. 2027.
+- `year_index::Integer`: An integer representing the year of the simulation. For example, if
+    the simulation starts in 2023, then the `year_index` for 2023 is 1, for 2024 is 2, etc.
 - `alive::Bool`: Whether the person is alive, true = alive.
 - `num_antibiotic_use::Int`: TODO.
 - `has_asthma::Bool`: Whether the person has astham, true = has asthma.
@@ -27,8 +27,8 @@ A person in the model.
     uuid::UUID4
     sex::Bool
     age::Integer
-    cal_year::Integer
-    cal_year_index::Integer
+    year::Integer
+    year_index::Integer
     alive::Bool
     num_antibiotic_use::Union{Nothing, Integer}
     has_asthma::Bool
@@ -42,8 +42,8 @@ A person in the model.
     asthma_status::Bool
     census_division::Union{Nothing, CensusDivisionModule}
     pollution::Union{Nothing, PollutionModule}
-    function Agent(; sex::Bool, age::Integer, cal_year::Integer,
-        cal_year_index::Integer, province::String="CA", month::Integer=1, alive::Bool=true,
+    function Agent(; sex::Bool, age::Integer, year::Integer,
+        year_index::Integer, province::String="CA", month::Integer=1, alive::Bool=true,
         has_asthma::Bool=false,
         asthma_age::Union{Integer, Nothing}=nothing, severity=nothing, control_levels=nothing,
         exac_hist::ExacerbationHistModule=ExacerbationHist(0, 0),
@@ -56,14 +56,14 @@ A person in the model.
     )
 
         uuid = UUID4()
-        census_division = CensusDivision(province, cal_year, census_table)
-        pollution = Pollution(census_division.cduid, cal_year, month, SSP, pollution_table)
+        census_division = CensusDivision(province, year, census_table)
+        pollution = Pollution(census_division.cduid, year, month, SSP, pollution_table)
 
         if antibiotic_exposure !== nothing && family_hist !== nothing
             num_antibiotic_use = compute_num_antibiotic_use(
                 antibiotic_exposure=antibiotic_exposure,
                 sex=sex,
-                birth_year=cal_year - age
+                birth_year=year - age
             )
             has_family_hist = has_family_history_of_asthma(family_hist)
         else
@@ -72,7 +72,7 @@ A person in the model.
         end
 
         new(
-            uuid, sex, age, cal_year, cal_year_index, alive, num_antibiotic_use, has_asthma,
+            uuid, sex, age, year, year_index, alive, num_antibiotic_use, has_asthma,
             asthma_age, severity, control_levels, exac_hist, exac_sev_hist, total_hosp,
             has_family_hist, asthma_status, census_division, pollution
         )
@@ -81,8 +81,8 @@ A person in the model.
         uuid::UUID4,
         sex::Bool,
         age::Integer,
-        cal_year::Integer,
-        cal_year_index::Integer,
+        year::Integer,
+        year_index::Integer,
         alive::Bool,
         num_antibiotic_use::Integer,
         has_asthma::Bool,
@@ -98,7 +98,7 @@ A person in the model.
         pollution::Union{Nothing, PollutionModule}
     )
         new(
-            uuid, sex, age, cal_year, cal_year_index, alive, num_antibiotic_use, has_asthma,
+            uuid, sex, age, year, year_index, alive, num_antibiotic_use, has_asthma,
             asthma_age, severity, control_levels, exac_hist, exac_sev_hist, total_hosp,
             has_family_hist, asthma_status, census_division, pollution
         )

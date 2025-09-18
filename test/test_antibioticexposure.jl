@@ -15,15 +15,15 @@ end
 @testset "test antibiotic_exposure_prob" begin
     parameters = Dict(
         :β0 => 1,
-        :βcal_year => 0.01,
+        :βyear => 0.01,
         :βsex => 1,
         :θ => 500,
         :fixyear => nothing,
         :βfloor => 0.05,
         :β2005 => 1,
-        :β2005_cal_year => 1
+        :β2005_year => 1
     )
-    p = LEAP.antibiotic_exposure_prob(sex=false, cal_year=2001, parameters=parameters)
+    p = LEAP.antibiotic_exposure_prob(sex=false, year=2001, parameters=parameters)
     @test round(p, sigdigits=3) == 0.000000375
 end
 
@@ -32,13 +32,13 @@ end
     config = JSON.parsefile(CONFIG_PATH)
     config["antibiotic_exposure"]["parameters"] = Dict(
         :β0 => -100000,
-        :βcal_year => -0.01,
+        :βyear => -0.01,
         :βsex => -1,
         :θ => 500,
         :fixyear => nothing,
         :βfloor => 0.0,
         :β2005 => 1,
-        :β2005_cal_year => 1
+        :β2005_year => 1
     )
     antibiotic_exposure = LEAP.AntibioticExposure(config["antibiotic_exposure"])
     num_antibiotic_use = LEAP.compute_num_antibiotic_use(

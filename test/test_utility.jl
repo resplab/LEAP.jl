@@ -29,8 +29,8 @@ function test_compute_utility()
         agent = LEAP.Agent(
             sex=false,
             age=9,
-            cal_year=2024,
-            cal_year_index=1,
+            year=2024,
+            year_index=1,
             family_hist=LEAP.FamilyHistory(config["family_history"]),
             antibiotic_exposure=LEAP.AntibioticExposure(config["antibiotic_exposure"]),
             province="BC",
@@ -50,8 +50,8 @@ function test_compute_utility()
         agent = LEAP.Agent(
             sex=false,
             age=9,
-            cal_year=2024,
-            cal_year_index=1,
+            year=2024,
+            year_index=1,
             exac_sev_hist=LEAP.ExacerbationSeverityHist([1, 5, 1, 0], zeros(4)),
             control_levels=Dict(
                 :fully_controlled => 0.0,

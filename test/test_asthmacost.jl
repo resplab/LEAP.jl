@@ -20,8 +20,8 @@ function test_compute_cost()
         agent = LEAP.Agent(
             sex=true,
             age=20,
-            cal_year=2024,
-            cal_year_index=1,
+            year=2024,
+            year_index=1,
             family_hist=LEAP.FamilyHistory(config["family_history"]),
             antibiotic_exposure=LEAP.AntibioticExposure(config["antibiotic_exposure"]),
             province="BC",

@@ -14,10 +14,16 @@ CA <- NULL
 BC <- NULL
 
 for(year in min_year:max_year){
-  life_table_male <- openxlsx::read.xlsx(xlsxFile = 'public_dataset/1980-2020_Tbl_1YR-eng.xlsx',sheet=year_index(year),startRow=22) %>% 
+  life_table_male <- openxlsx::read.xlsx(
+      xlsxFile=here("data_generation/public_dataset/1980-2020_Tbl_1YR-eng.xlsx"),
+      sheet=year_index(year),
+      startRow=22) %>% 
     select(1,4,5)
   
-  life_table_female <- openxlsx::read.xlsx(xlsxFile = 'public_dataset/1980-2020_Tbl_1YR-eng.xlsx',sheet=year_index(year),startRow=22) %>% 
+  life_table_female <- openxlsx::read.xlsx(
+      xlsxFile=here("data_generation/public_dataset/1980-2020_Tbl_1YR-eng.xlsx"),
+      sheet=year_index(year),
+      startRow=22) %>% 
     select(11,14,15)
   
   colnames(life_table_male) <- colnames(life_table_female) <- c("age","prob_death","se")

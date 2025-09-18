@@ -40,11 +40,11 @@ function test_get_num_newborn()
         max_age = 2
         province = "BC"
         starting_year = 2022
-        cal_year_index = 3
+        year_index = 3
         num_births_initial = 1000
         population_growth_type = "LG"
         birth = LEAP.Birth(starting_year, province, population_growth_type)
-        num_new_born = LEAP.get_num_newborn(birth, num_births_initial, cal_year_index)
+        num_new_born = LEAP.get_num_newborn(birth, num_births_initial, year_index)
         @test num_new_born == 982
     end
 end

@@ -9,11 +9,11 @@ A struct containing information about immigration to Canada.
         `year`: integer year the range 2001 - 2065.
         `age`: integer age.
         `sex`: integer, 0 = female, 1 = male.
-        `n_prop_birth`: the number of immigrants relative to the number of births in that year. To
-            compute the number of immigrants in a given year, multiply the number of births by
-            `n_prop_birth`.
-        `weights`: the proportion of immigrants for a given age and sex relative to the total
-            number of immigrants for a given year and projection scenario.
+        `prop_immigrants_birth`: the number of immigrants relative to the number of births
+            in that year. To compute the number of immigrants in a given year, multiply the number
+            of births by `prop_immigrants_birth`.
+        `prop_immigrants_year`: the proportion of immigrants for a given age and sex relative to
+            the total number of immigrants for a given year and projection scenario.
     See `master_immigration_table.csv`.
 """
 struct Immigration <: ImmigrationModule
@@ -80,23 +80,23 @@ end
 
 
 """
-    get_num_new_immigrants(immigration, num_new_born, cal_year_index)
+    get_num_new_immigrants(immigration, num_new_born, year_index)
 
 Get the number of new immigrant to Canada in a given year.
 
 # Arguments
 - `immigration::Immigration`: an Immigration object, see  [`Immigration`](@ref).
 - `num_new_born::Integer`: number of births in the given year of the simulation.
-- `cal_year_index::Integer`: An integer representing the year of the simulation. For example, if the
-    simulation starts in 2023, then the `cal_year_index` for 2023 is 1, for 2024 is 2, etc.
+- `year_index::Integer`: An integer representing the year of the simulation. For example, if the
+    simulation starts in 2023, then the `year_index` for 2023 is 1, for 2024 is 2, etc.
 
 # Returns
 - `Integer`: the number of new immigrants to Canada in a given year.
 """
-function get_num_new_immigrants(immigration::Immigration, num_new_born::Integer, cal_year_index::Integer)
+function get_num_new_immigrants(immigration::Immigration, num_new_born::Integer, year_index::Integer)
     num_new_immigrants = ceil(
         Int,
-        num_new_born * sum(immigration.table[cal_year_index].n_prop_birth)
+        num_new_born * sum(immigration.table[year_index].prop_immigrants_birth)
     )
     return num_new_immigrants
 end

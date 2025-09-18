@@ -37,18 +37,20 @@ The emigration table has the following columns:
 
 The immigration table has the following columns:
 
-`year`: integer year the range 2001-2065.
-`age`: integer age.
-`sex`: integer, 0 = female, 1 = male.
-`n_prop_birth`: the proportion of immigrants for a given age and sex relative to the total
+`year`: Integer year in the range 2001-2065.
+`age`: Integer age.
+`sex`: String, "F" = female, "M" = male.
+`n_immigrants`: The number of immigrants for a given year, sex, age, province, and projection
+    scenario.
+`prop_immigrants_birth`: The proportion of immigrants for a given age and sex relative to the total
   number of births for a given year and projection scenario. To compute the number of immigrants
   for a given year, projection scenario, age, and sex, multiply the number of births by
-  `n_prop_birth`.
-`weights`: the proportion of immigrants for a given age and sex relative to the total
+  `prop_immigrants_birth`.
+`prop_immigrants_year`: The proportion of immigrants for a given age and sex relative to the total
   number of immigrants for a given year and projection scenario. To compute the number of immigrants
   for a given year, projection scenario, age, and sex, multiply the total number of immigrants for
-  that year and projection scenario by `weights`.
-`province`: a string indicating the province abbreviation, e.g. "BC". For all of Canada,
+  that year and projection scenario by `prop_immigrants_year`.
+`province`: A string indicating the province abbreviation, e.g. "BC". For all of Canada,
   set province to "CA".
 `proj_scenario`: Population growth type, one of:
   ["past", "LG", "HG", "M1", "M2", "M3", "M4", "M5", "M6", FA", "SA"].

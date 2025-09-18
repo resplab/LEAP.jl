@@ -1,6 +1,6 @@
 {
   "simulation": {
-    "min_cal_year": 2001,
+    "min_year": 2001,
     "time_horizon": 19,
     "province": "BC",
     "population_growth_type": "LG",
@@ -10,11 +10,11 @@
   "antibiotic_exposure": {
     "parameters": {
       "β0": 110.000442,
-      "βcal_year": -0.055100,
+      "βyear": -0.055100,
       "β2005": 55.033675,
       "βsex": 0.249033,
       "θ": 727.383,
-      "β2005_cal_year": -0.027437,
+      "β2005_year": -0.027437,
       "fixyear": null,
       "βfloor": 0.05
     }

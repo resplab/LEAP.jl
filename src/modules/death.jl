@@ -52,14 +52,14 @@ Determine whether or not the agent dies in a given year, based on age and sex.
 """
 function agent_dies(agent::Agent, death::Death)::Bool
     is_dead = false
-    p = death.life_table[agent.cal_year_index][agent.age + 1, agent.sex + 1]
+    p = death.life_table[agent.year_index][agent.age + 1, agent.sex + 1]
     if p == 1
         is_dead = true
     else
         # calibration
         or = p/(1 - p) * exp(
             death.parameters[:β0] +
-            death.parameters[:β1] * agent.cal_year_index +
+            death.parameters[:β1] * agent.year_index +
             death.parameters[:β2] * agent.age
         )
         p = max(min(or/(1 + or), 1), 0)
